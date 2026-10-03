@@ -84,13 +84,13 @@ Screen privacy (hiding figures in the app switcher) is handled in the Android in
 - Kotlin Multiplatform is stable on Android, iOS, desktop and server. Web through Kotlin/Wasm is in beta.
 - The Android app uses the core as an ordinary Kotlin library, with no bridging layer.
 
-**Alternative: a Rust core.** Rust compiles to every platform including the web, has a strong cryptography ecosystem, and exposes itself to Kotlin and Swift through generated bindings (UniFFI). It costs a second language, a bindings layer between the core and every interface, and a more complex build. It becomes the better choice only if the web turns into a first-class target or a non-Kotlin team takes over the core.
+**Alternative: a Rust core.** Rust compiles to every platform including the web, has a strong cryptography ecosystem, and exposes itself to Kotlin and Swift through generated bindings (UniFFI). It costs a second language, a bindings layer between the core and every interface, and a more complex build. It would be worth reconsidering only if the web became the main platform or a non-Kotlin team took over the core. For the web as a possible third platform, Kotlin's own web support is enough.
 
 **How portability is enforced.**
 
 - The core depends only on libraries that publish for all Kotlin targets.
 - The core declares three targets from the start: Android, JVM and one native target (Linux). The native target exists to prove on every change that nothing Android-only or JVM-only has crept in. It can be compiled on the build server without a Mac.
-- An iOS target is added when it is needed. Compiling it requires a Mac.
+- iOS is the next platform. Its target is added when that work starts, because compiling it requires a Mac.
 
 **Structure.** Start with two modules and split the core later only if it grows:
 
@@ -142,7 +142,7 @@ The file header (format version, salts, key derivation settings) is authenticate
 
 **PIN strength.** A PIN is short, so no key derivation function can protect it once an attacker can guess offline. The protection comes from the device key: it never leaves the phone's secure hardware, so every guess has to be made on that phone, where the growing delay applies. Two consequences:
 
-- The PIN should be at least six digits, and a longer passcode should be allowed.
+- The PIN is digits only, with a minimum of six digits.
 - On a phone that has been rooted or otherwise compromised, the delay can be bypassed and a short PIN can be guessed. The recovery phrase does not have this weakness.
 
 **Argon2id** is the stronger function for deriving keys from passwords, and `cryptography-kotlin` does not provide it. It would add a native library on every platform. PBKDF2 is acceptable here because the PIN relies on the device key and the recovery phrase is already long and random. This should be revisited for any platform without a hardware-backed key store, such as the web.
@@ -182,25 +182,25 @@ The file header (format version, salts, key derivation settings) is authenticate
 
 ## Other platforms
 
-What a new platform needs: an interface, and implementations of the six ports. The core is reused unchanged.
+The planned order is Android first, then iOS, then possibly the web. What a new platform needs: an interface, and implementations of the six ports. The core is reused unchanged.
 
-| Platform | Interface | Device key | Notes |
-|---|---|---|---|
-| iOS | Compose Multiplatform or SwiftUI | Keychain with Secure Enclave | Needs a Mac to build |
-| Desktop | Compose Multiplatform | The operating system's credential store | Protection is weaker than on a phone |
-| Web | Compose Multiplatform (beta) | None that is hardware-backed | PIN protection would need Argon2id and a longer passcode |
+| Platform | Interface | Device key | Private files | Notes |
+|---|---|---|---|---|
+| iOS (next) | Compose Multiplatform or SwiftUI | Keychain with Secure Enclave | App directory through Okio | Needs a Mac to build |
+| Web (possible) | Compose Multiplatform (beta) | None that is hardware-backed | Browser storage, since Okio has no file access in browsers | Needs its own unlock design, see below |
+| Desktop (not planned) | Compose Multiplatform | The operating system's credential store | App directory through Okio | Protection is weaker than on a phone |
+
+**iOS** fits the design as it stands. A six-digit PIN is protected the same way as on Android, by a key that cannot leave the device.
+
+**The web** does not, in one respect. A browser has no hardware-backed key store, so the stored file would be protected by the PIN alone, and there are only a million six-digit PINs, few enough for anyone who copies the file to try them all. The digits-only PIN therefore applies to Android and iOS. A web version would need a different way to unlock, such as a passkey or a long passphrase, designed before that work starts. The rest of the core, including storage and the backup format, carries over.
 
 ## Risks
 
 - **Libraries before version 1.0.** `cryptography-kotlin`, `kotlin-multiplatform-bignum` and Koalaplot may change their interfaces. Each is used behind our own wrapper or type.
 - **Portability is only proven for targets that are compiled.** The Linux target catches most problems. iOS-specific ones will only show when an iOS target is added.
 - **The single-document store has a size ceiling.** It is comfortable for snapshots and would not be for transactions.
-- **A short PIN on a compromised phone can be guessed.** This is stated under PIN strength and should be explained to the user at setup.
-
-## Open questions
-
-- Which platform comes after Android? iOS and desktop fit the design well. The web is possible but has the weakest key protection.
-- Should the app's PIN be numeric only, or allow a full passcode?
+- **A PIN on a compromised phone can be guessed.** This is stated under PIN strength and should be explained to the user at setup.
+- **The digits-only PIN does not carry over to the web.** A web version needs its own unlock design.
 
 ## Sources
 

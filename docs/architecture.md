@@ -234,4 +234,4 @@ They would live in a separate, optional connectors component, so the rest of the
 ## Open items
 
 - The design of open banking connections, listed in the [roadmap](roadmap.md).
-- The open questions in the [technology choices](technology.md).
+- How a web version would unlock, if that platform is added. See the [technology choices](technology.md).
