@@ -166,5 +166,5 @@ The £625 increase breaks down as:
 
 ## Open items
 
-- Main user flows: first-time setup, the periodic update and restoring from backup.
+- The open questions listed in the [user flows](user-flows.md).
 - Technology and implementation choices for each layer.
