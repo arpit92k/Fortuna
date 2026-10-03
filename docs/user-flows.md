@@ -108,8 +108,9 @@ Steps:
 1. The user enters a name and picks a category. The app shows whether that category is an asset or a liability.
 2. The user picks the source's currency.
 3. The user enters the opening value and its date, and an optional note.
-4. If the currency is not the base currency and has no rate on or before that date, the app asks for one.
-5. The source appears on the dashboard and in the periodic update.
+4. The user sets how often they expect to update the source, or keeps the default.
+5. If the currency is not the base currency and has no rate on or before that date, the app asks for one.
+6. The source appears on the dashboard and in the periodic update.
 
 Rules:
 
@@ -149,6 +150,7 @@ Steps:
 Rules:
 
 - Amount added defaults to zero.
+- A fresh exchange rate is optional. The user can keep the last rate, and the app shows its age so they can decide.
 - Each entry is saved as it is made, so the user can stop part-way and lose nothing.
 - A skipped source keeps its last value in the totals and is shown as out of date.
 - If a new value is very different from the last one, the app asks the user to confirm it, to catch typing mistakes.
@@ -182,8 +184,8 @@ Steps:
 Rules:
 
 - Entering a snapshot on a date that already has one replaces it, after confirmation.
-- Amount added always covers the period since the previous snapshot. Adding a snapshot between two existing ones shortens the period the later one covers, so the app shows the later snapshot's amount added and asks the user to adjust it.
-- Deleting a snapshot lengthens the period the next one covers, so the app offers to add the deleted amount added to the next snapshot.
+- Amount added always covers the period since the previous snapshot. Adding a snapshot between two existing ones shortens the period the later one covers, so the app subtracts the new snapshot's amount added from the later one and shows the result for the user to accept or change.
+- Deleting a snapshot lengthens the period the next one covers, so the app adds the deleted amount added to the next snapshot and shows the result for the user to accept or change.
 - If the earliest snapshot is deleted, the next one becomes the opening balance.
 
 ### UF-07 Close a source
@@ -271,7 +273,7 @@ Steps:
 Rules:
 
 - Every figure is in the base currency unless stated.
-- Sources not updated recently are marked as out of date.
+- Each source has an expected update frequency, such as monthly or yearly, starting from a default. A source is marked as out of date once that period has passed since its last snapshot.
 - A source counts from the date of its opening snapshot and not before.
 
 ### UF-11 View a source
@@ -338,9 +340,3 @@ Rules:
 
 - Changing the PIN does not affect backups.
 - Backups made before a recovery phrase change can only be opened with the old phrase. The app says so and recommends a new backup straight away.
-
-## Open questions
-
-- **Backfilling.** UF-06 asks the user to adjust the later snapshot's amount added by hand. The alternative is for the app to subtract the new amount automatically.
-- **Out-of-date threshold.** How long before a source is marked as out of date, and should it vary by source?
-- **Rates during an update.** UF-04 lets the user keep an old rate. Should a fresh rate be required?

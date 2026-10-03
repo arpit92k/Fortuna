@@ -43,7 +43,7 @@ These keep the MVP small. Each is lifted by an item in the future plans.
 
 ### Recording
 
-- **Backfilling (UF-06).** Insert or delete snapshots in the middle of a source's history, with the amount-added adjustments.
+- **Backfilling (UF-06).** Insert or delete snapshots in the middle of a source's history, with the app adjusting the neighbouring amount added for the user to confirm.
 - **Close a source (UF-07).** Closing snapshot, archiving and reopening.
 - **Manage categories (UF-08).** Add, rename and archive categories, and move sources between them.
 - **Periodic update extras (UF-04).** The "unchanged" shortcut, the typing-mistake check and the end-of-update summary.
@@ -55,7 +55,7 @@ These keep the MVP small. Each is lifted by an item in the future plans.
 - **Change breakdown (UF-10).** Added, growth and currency effect across all sources, for a chosen period.
 - **Allocation by category (UF-10).**
 - **Base-currency view of a source (UF-11),** including the currency effect.
-- **Out-of-date markers** on sources not updated recently.
+- **Out-of-date markers.** Each source gets an expected update frequency, with a default, and is marked once that period has passed.
 
 ### Protecting the data
 
