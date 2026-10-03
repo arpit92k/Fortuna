@@ -144,12 +144,13 @@ Steps:
    - enters the new value, the amount added since the last snapshot and an optional note
    - marks it unchanged, which records the same value with nothing added
    - skips it, which records nothing
-4. The app shows a summary: the change in net worth since the previous update, split into added, growth and currency effect.
+4. The app shows a summary: the change in net worth since the previous update, split into added, growth, currency effect and newly tracked sources.
 5. The app offers to make a backup (UF-12).
 
 Rules:
 
 - Amount added defaults to zero.
+- The previous update is the most recent earlier date on which any snapshot was recorded.
 - A fresh exchange rate is optional. The user can keep the last rate, and the app shows its age so they can decide.
 - Each entry is saved as it is made, so the user can stop part-way and lose nothing.
 - A skipped source keeps its last value in the totals and is shown as out of date.
@@ -253,6 +254,7 @@ Steps:
 Rules:
 
 - Only files that follow the template are accepted.
+- The file is not protected by the app, so the app tells the user to delete it once the import is done.
 - Nothing is written until the user confirms.
 - The import either succeeds completely or changes nothing.
 
@@ -266,7 +268,7 @@ Steps:
 
 1. The dashboard shows current net worth in the base currency, with total assets and total liabilities.
 2. A timeline shows net worth over a period the user chooses.
-3. For that period, the app shows the change split into added, growth and currency effect.
+3. For that period, the app shows the change split into added, growth, currency effect and newly tracked sources.
 4. The app shows how the total is divided between categories.
 5. The app lists sources with their current value and how long ago each was updated.
 
@@ -274,7 +276,7 @@ Rules:
 
 - Every figure is in the base currency unless stated.
 - Each source has an expected update frequency, such as monthly or yearly, starting from a default. A source is marked as out of date once that period has passed since its last snapshot.
-- A source counts from the date of its opening snapshot and not before.
+- A source counts from the date of its opening snapshot and not before. Its opening balance appears in the split as newly tracked, since it is neither added nor growth.
 
 ### UF-11 View a source
 
@@ -306,7 +308,7 @@ Steps:
 
 Rules:
 
-- The file can only be opened with the recovery phrase.
+- The file can only be opened with the recovery phrase. The user does not need to enter the phrase to make a backup.
 - The app never sends the file anywhere itself. The user decides where it goes.
 - The app shows when the last backup was made and whether data has changed since.
 
@@ -339,4 +341,5 @@ Steps:
 Rules:
 
 - Changing the PIN does not affect backups.
+- A new recovery phrase also replaces the key that protects the data, so the old phrase cannot open anything made afterwards.
 - Backups made before a recovery phrase change can only be opened with the old phrase. The app says so and recommends a new backup straight away.

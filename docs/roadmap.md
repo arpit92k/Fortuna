@@ -52,7 +52,7 @@ These keep the MVP small. Each is lifted by an item in the future plans.
 
 ### Insights
 
-- **Change breakdown (UF-10).** Added, growth and currency effect across all sources, for a chosen period.
+- **Change breakdown (UF-10).** Added, growth, currency effect and newly tracked sources, across all sources and for a chosen period.
 - **Allocation by category (UF-10).**
 - **Base-currency view of a source (UF-11),** including the currency effect.
 - **Out-of-date markers.** Each source gets an expected update frequency, with a default, and is marked once that period has passed.
