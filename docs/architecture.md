@@ -164,6 +164,8 @@ The £625 increase breaks down as:
 - There is no automatic bank sync. All entry is manual or by file import.
 - Exchange rates cannot be fetched and are entered by hand.
 
+The [roadmap](roadmap.md) lists two future features that would relax this constraint: automatic exchange rates and open banking connections. Both would be opt-in.
+
 ## Open items
 
 - The open questions listed in the [user flows](user-flows.md).

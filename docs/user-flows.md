@@ -8,24 +8,26 @@ There is one kind of user: the owner of the device, tracking their own wealth.
 
 ## Overview
 
-| ID | Flow | How often |
-|---|---|---|
-| [UF-01](#uf-01-first-time-setup) | First-time setup | Once |
-| [UF-02](#uf-02-unlock-the-app) | Unlock the app | Every use |
-| [UF-03](#uf-03-add-a-source) | Add a source | Occasionally |
-| [UF-04](#uf-04-periodic-update) | Periodic update | Regularly, for example monthly |
-| [UF-05](#uf-05-update-a-single-source) | Update a single source | Occasionally |
-| [UF-06](#uf-06-correct-or-backfill-history) | Correct or backfill history | Rarely |
-| [UF-07](#uf-07-close-a-source) | Close a source | Rarely |
-| [UF-08](#uf-08-manage-categories) | Manage categories | Rarely |
-| [UF-09](#uf-09-manage-currencies-and-rates) | Manage currencies and rates | Occasionally |
-| [UF-10](#uf-10-view-net-worth-over-time) | View net worth over time | Every use |
-| [UF-11](#uf-11-view-a-source) | View a source | Often |
-| [UF-12](#uf-12-back-up) | Back up | After each update |
-| [UF-13](#uf-13-restore-from-a-backup) | Restore from a backup | Rarely |
-| [UF-14](#uf-14-recover-from-a-forgotten-pin) | Recover from a forgotten PIN | Rarely |
-| [UF-15](#uf-15-import-history-from-a-spreadsheet) | Import history from a spreadsheet | Once or twice |
-| [UF-16](#uf-16-change-security-settings) | Change security settings | Rarely |
+| ID | Flow | How often | Release |
+|---|---|---|---|
+| [UF-01](#uf-01-first-time-setup) | First-time setup | Once | MVP |
+| [UF-02](#uf-02-unlock-the-app) | Unlock the app | Every use | MVP, PIN only |
+| [UF-03](#uf-03-add-a-source) | Add a source | Occasionally | MVP |
+| [UF-04](#uf-04-periodic-update) | Periodic update | Regularly, for example monthly | MVP, basic |
+| [UF-05](#uf-05-update-a-single-source) | Update a single source | Occasionally | MVP |
+| [UF-06](#uf-06-correct-or-backfill-history) | Correct or backfill history | Rarely | MVP, basic |
+| [UF-07](#uf-07-close-a-source) | Close a source | Rarely | Future |
+| [UF-08](#uf-08-manage-categories) | Manage categories | Rarely | Future |
+| [UF-09](#uf-09-manage-currencies-and-rates) | Manage currencies and rates | Occasionally | MVP, basic |
+| [UF-10](#uf-10-view-net-worth-over-time) | View net worth over time | Every use | MVP, basic |
+| [UF-11](#uf-11-view-a-source) | View a source | Often | MVP, basic |
+| [UF-12](#uf-12-back-up) | Back up | After each update | MVP |
+| [UF-13](#uf-13-restore-from-a-backup) | Restore from a backup | Rarely | MVP |
+| [UF-14](#uf-14-recover-from-a-forgotten-pin) | Recover from a forgotten PIN | Rarely | MVP |
+| [UF-15](#uf-15-import-history-from-a-spreadsheet) | Import history from a spreadsheet | Once or twice | Future |
+| [UF-16](#uf-16-change-security-settings) | Change security settings | Rarely | Future |
+
+The release column shows where each flow falls in the [roadmap](roadmap.md), which also says which parts of a "basic" flow come later.
 
 ## Getting in
 
@@ -236,17 +238,19 @@ As a user who has tracked my wealth elsewhere, I want to bring that history in, 
 
 Steps:
 
-1. The user picks a file.
-2. The user matches its columns to source, date, value, amount added and currency.
-3. The app shows a preview and lists anything that needs a decision:
+1. The user gets an empty template from the app. It is deliberately simple: one row per value, with columns for source, date, value, amount added and currency.
+2. The user fills it in outside the app.
+3. The user picks the filled-in file.
+4. The app shows a preview and lists anything that needs a decision:
    - sources that do not exist yet, to create
    - dates that already have a snapshot, to replace or skip
    - foreign currencies with no rate, to enter
-4. The user resolves these and confirms.
-5. The history appears.
+5. The user resolves these and confirms.
+6. The history appears.
 
 Rules:
 
+- Only files that follow the template are accepted.
 - Nothing is written until the user confirms.
 - The import either succeeds completely or changes nothing.
 
@@ -338,7 +342,5 @@ Rules:
 ## Open questions
 
 - **Backfilling.** UF-06 asks the user to adjust the later snapshot's amount added by hand. The alternative is for the app to subtract the new amount automatically.
-- **Readable export.** Should the user be able to export an unencrypted spreadsheet for their own analysis? It is useful, but it puts the data outside the app's protection.
-- **Update reminders.** Should the app remind the user to do a periodic update, and how often?
 - **Out-of-date threshold.** How long before a source is marked as out of date, and should it vary by source?
 - **Rates during an update.** UF-04 lets the user keep an old rate. Should a fresh rate be required?
