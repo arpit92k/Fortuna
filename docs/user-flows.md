@@ -72,11 +72,12 @@ Steps:
 
 1. The user opens the app and sees the lock screen.
 2. The user unlocks with biometric or PIN.
-3. The app opens on the dashboard.
+3. The app opens on the dashboard, or returns to the screen the user was on if it locked while in use.
 
 Rules:
 
-- The app locks again shortly after it leaves the foreground.
+- The app locks one minute after it leaves the foreground, or two minutes if the user was entering a value: adding a source, adding or editing a value, or doing a periodic update. Closing the app always locks it.
+- Anything the user had typed before the app locked is still there after unlocking, so looking up a balance in another app does not lose an entry.
 - Financial figures are not visible in the device's app switcher.
 - Each failed attempt makes the user wait longer before the next one.
 - The lock screen offers the recovery phrase as a way in (UF-14).
