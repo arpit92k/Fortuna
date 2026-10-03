@@ -73,6 +73,7 @@ erDiagram
     SOURCE {
         text name
         text status "active or archived"
+        text update_frequency "expected, for example monthly"
         text note
     }
     SNAPSHOT {
@@ -93,7 +94,7 @@ erDiagram
 
 ### Entities
 
-- **Source**: anything that holds value, such as a bank account, brokerage, pension, property or loan. It belongs to one category and has one currency.
+- **Source**: anything that holds value, such as a bank account, brokerage, pension, property or loan. It belongs to one category and has one currency. It also has an expected update frequency, used to mark it as out of date.
 - **Snapshot**: the value of one source on one date, with the net amount added since the previous snapshot and an optional note.
 - **Category**: a grouping such as cash, investments, property or debt. It decides whether its sources are assets or liabilities.
 - **Currency**: a currency in use. Exactly one is the base currency that totals and charts are reported in.
@@ -164,7 +165,9 @@ The £625 increase breaks down as:
 - There is no automatic bank sync. All entry is manual or by file import.
 - Exchange rates cannot be fetched and are entered by hand.
 
+The [roadmap](roadmap.md) lists two future features that would relax this constraint: automatic exchange rates and open banking connections. Both would be opt-in.
+
 ## Open items
 
-- Main user flows: first-time setup, the periodic update and restoring from backup.
+- The design of open banking connections, listed in the [roadmap](roadmap.md).
 - Technology and implementation choices for each layer.
