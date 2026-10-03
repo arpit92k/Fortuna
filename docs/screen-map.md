@@ -7,7 +7,7 @@ It names each screen, says what it is for and where it leads. It does not descri
 ## Structure
 
 - **One home screen.** The dashboard is the home of the app. Every other screen is reached from it and returns to it. There are no tabs in the MVP, because there are too few destinations to need them.
-- **The lock screen sits above everything.** When the app locks, the lock screen covers whatever was open. After unlocking, the user returns to the same screen with anything they had typed still there.
+- **The lock screen sits above everything.** When the app locks, the lock screen covers whatever was open. After unlocking, the user returns to the same screen with anything they had typed still there. The app waits a short grace period before locking; see [Locking in the background](#locking-in-the-background).
 - **Setup is a fixed sequence.** Its screens are shown once, in order, and cannot be skipped.
 
 There are seventeen screens: eight for getting in and nine for the main app.
@@ -136,6 +136,15 @@ The future plans add screens or extend existing ones. They are listed here so th
 | Change base currency | An action on S-16 |
 | Update reminders | A setting on S-15 |
 
-## Open question
+## Locking in the background
 
-**How long before the app locks in the background?** During a periodic update the user will often switch to a banking app to read a balance and come back. If Fortuna locks the moment it leaves the foreground, every lookup costs a PIN entry until biometric unlock exists. A short grace period, for example one minute, avoids that at a small cost in protection. The user flows say only "shortly after".
+During a periodic update the user will often switch to a banking app to read a balance and come back. To keep that from costing a PIN entry every time, the app waits before locking once it leaves the foreground.
+
+| Screen open when the app leaves the foreground | Grace period |
+|---|---|
+| S-11 Add source, S-12 Value entry, S-13 and S-14 Update | Two minutes |
+| Any other screen | One minute |
+
+- The longer period applies to the screens where the user is entering a value, because those are the ones that send them to another app to look something up.
+- Returning within the grace period needs no PIN. After it, the lock screen appears and the user returns to the same screen once unlocked.
+- Closing the app or restarting the phone always locks it, whatever the grace period.
