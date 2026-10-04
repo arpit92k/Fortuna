@@ -98,8 +98,9 @@ erDiagram
     }
     SETTINGS {
         text default_update_frequency
+        number revision "rises with every saved change"
+        number last_backup_revision
         date last_backup
-        date last_change
     }
 ```
 
@@ -110,7 +111,15 @@ erDiagram
 - **Category**: a grouping such as cash, investments, property or debt. It decides whether its sources are assets or liabilities.
 - **Currency**: a currency in use. Exactly one is the base currency that totals and charts are reported in.
 - **Exchange rate**: the rate from a currency to the base currency on a date.
-- **Settings**: a single record of app-wide values: the default update frequency for new sources, when the last backup was made, and when data last changed. The last two let the app say whether the backup is up to date.
+- **Settings**: a single record of app-wide values: the default update frequency for new sources, a revision number, the revision at which the last backup was made, and the date of that backup.
+
+### Whether the backup is up to date
+
+- The revision number rises by one with every saved change.
+- Making a backup records the current revision and today's date. Recording them does not count as a change, so it does not raise the revision.
+- The backup is up to date when the two revisions match. Dates cannot answer this, because a backup and a later change often fall on the same day.
+- The date of the last backup is kept only to show it to the user.
+- Restored data counts as backed up, because it is identical to the file it came from.
 
 ### Liabilities
 
@@ -132,13 +141,17 @@ erDiagram
 
 ### Splitting a change into its parts
 
-The change in a source between two snapshots, expressed in the base currency, splits into three parts:
+The change in a source between two snapshots, expressed in the base currency, splits into three parts. The total change is the closing value converted at the closing rate, minus the opening value converted at the opening rate.
 
 | Part | Definition |
 |---|---|
 | Added | Amount added, converted at the closing rate |
 | Growth | Closing value minus opening value minus amount added, converted at the closing rate |
-| Currency effect | Opening value multiplied by the change in rate |
+| Currency effect | The remainder: total change minus the other two parts |
+
+- Taking the currency effect as the remainder guarantees the three parts add up to the total after each has been rounded.
+- Before rounding, the remainder equals the opening value multiplied by the change in rate.
+- Rounding can leave a remainder of one smallest unit on a foreign-currency source even when the rate has not moved.
 
 Worked example, with a US brokerage account and GBP as the base currency:
 
@@ -153,7 +166,7 @@ The £625 increase breaks down as:
 
 - Added: $1,000 at 0.75 is £750.
 - Growth: the remaining $500 at 0.75 is £375.
-- Currency effect: the opening $10,000 lost 0.05 per dollar, which is −£500.
+- Currency effect: the remainder, £625 minus £750 minus £375, which is −£500. It is the opening $10,000 losing 0.05 per dollar.
 
 ### Splitting the change in net worth over a period
 
@@ -172,13 +185,14 @@ For each source, over a period from a start date to an end date:
 - A snapshot is in the period if its date is after the start date and on or before the end date.
 - The value and the rate on a date are the latest ones on or before it.
 - Each part is summed across sources. A liability's parts are subtracted.
-- Taking the currency effect as the remainder guarantees the parts always add up to the total. It is zero for sources in the base currency.
+- The currency effect is the remainder here too, so the parts always add up to the total. It is zero for sources in the base currency.
 - The update summary uses the period from the most recent earlier date on which any snapshot was recorded to the date of the update.
 
 ### Rules
 
 - A source has at most one snapshot per date. A second entry for the same date replaces the first.
 - A currency has at most one rate per date.
+- No snapshot or exchange rate is dated in the future.
 - A foreign currency has a rate on or before its earliest snapshot, so every snapshot can be converted.
 - Names are unique among active sources.
 - A source's currency cannot change once it has snapshots. If an account is converted, archive it and start a new one.
