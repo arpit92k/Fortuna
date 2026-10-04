@@ -169,7 +169,7 @@ Each block is pure Kotlin with no file access, no clock and no dependency on the
 - **Tests:**
   - A dataset written and read back is equal to the original.
   - A sample JSON file kept in the repository loads. This is the first format fixture.
-- **Done when:** the dataset can express everything in the architecture's domain model, including the fields the MVP does not show yet (status, update frequency), so the saved format does not need to change when those features arrive.
+- **Done when:** the dataset can express everything in the architecture's domain model, including the fields the MVP does not show yet (status, update frequency, the revision number and the revision of the last backup), so the saved format does not need to change when those features arrive.
 
 ### Step 07: recording rules
 
@@ -179,11 +179,16 @@ Each block is pure Kotlin with no file access, no clock and no dependency on the
   - Add a snapshot, edit a snapshot's value, amount added and note, and delete a source's latest snapshot.
   - Delete a source that has only its opening snapshot.
   - Add, correct and delete an exchange rate.
-  - The periodic update's queue: the active sources with no snapshot on the update date, the one updated longest ago first, and the foreign currencies in use with each one's last rate and its age.
+  - The periodic update's queue: the active sources whose latest snapshot is before the update date, the one updated longest ago first; the number of sources left out because they already have a value on or after that date; and the foreign currencies in use with each one's last rate and its age.
+  - Every function that takes a date is also given today's date, so the rules stay free of the clock.
 - **Tests:** one named test for each rule.
   - Names are unique among active sources.
   - The opening snapshot has no amount added.
-  - A new snapshot must be dated after the source's latest one (MVP simplification).
+  - A new snapshot must be dated on or after the source's latest one (MVP simplification).
+  - A new snapshot dated the same as the latest one replaces it.
+  - A replacement for the opening snapshot has no amount added.
+  - A snapshot or a rate dated in the future is rejected.
+  - The update queue leaves out a source with a value on or after the update date, and counts it.
   - A snapshot's date cannot be edited.
   - A foreign-currency source needs a rate on or before its opening date.
   - The rate that covers a currency's earliest snapshot cannot be deleted.
@@ -200,9 +205,10 @@ Each block is pure Kotlin with no file access, no clock and no dependency on the
   - The source list: each source's current value and the date it was last updated.
   - A source's history: for each snapshot, the change since the previous one, the amount added and the growth, with totals since the opening balance.
   - The timeline: net worth on each date in a period on which a value or a rate changed.
-  - The split of a change between two snapshots into added, growth and currency effect.
+  - The split of a change between two snapshots into added, growth and currency effect, with the currency effect taken as the remainder.
 - **Tests:**
   - The architecture's worked example: the £625 rise splits into £750 added, £375 growth and −£500 currency effect.
+  - The parts add up to the total after rounding: $10.01 to $10.02 with nothing added, at rates 0.333 and 0.337, is a £0.05 rise made of £0.00 growth and £0.05 currency effect.
   - A liability is subtracted.
   - A source does not count before its opening date.
   - A source with no new snapshot keeps its last value.
@@ -222,10 +228,11 @@ Each block is pure Kotlin with no file access, no clock and no dependency on the
 
 ### Step 10: document store
 
-- **Builds:** the `Private files` port and its Okio implementation. The store: open the file with the data key and hold the dataset in memory, exposed as a flow; apply a recording rule and write the result as a new file that is moved into place; discard the key and the dataset on lock. On start, recover a new file left waiting by an interrupted move.
+- **Builds:** the `Private files` port and its Okio implementation. The store: open the file with the data key and hold the dataset in memory, exposed as a flow; apply a recording rule, raise the revision number by one and write the result as a new file that is moved into place; discard the key and the dataset on lock. On start, recover a new file left waiting by an interrupted move. The store is the one place the revision is raised. It also offers a second kind of write for bookkeeping, such as the record of a backup, which saves without raising the revision.
 - **Tests:** against Okio's in-memory file system.
   - A change is still there after the store is closed and reopened.
-  - A rule that returns an error leaves the file untouched.
+  - Each saved change raises the revision by one.
+  - A rule that returns an error leaves the file and the revision untouched.
   - A write interrupted before the move leaves the old data readable.
   - A write interrupted after the move is recovered on start.
   - After locking, the store holds no data.
@@ -250,9 +257,11 @@ Each block is pure Kotlin with no file access, no clock and no dependency on the
 
 ### Step 12: backup and restore
 
-- **Builds:** export, which produces the backup file without asking for the phrase and records the date of the backup. Restore, which opens a backup with the phrase, then writes the store and a new lock state under a new PIN in one go.
+- **Builds:** export, which produces the backup file without asking for the phrase and records the date of the backup and the revision it was made at, without raising the revision. Restore, which opens a backup with the phrase, then writes the store and a new lock state under a new PIN in one go.
 - **Tests:**
   - Back up on one stand-in device and restore on another: the datasets are equal.
+  - After a backup, the revision of the last backup equals the current revision. A change made later the same day raises the current revision past it.
+  - After a restore, the two revisions are equal.
   - A wrong phrase changes nothing on the device.
   - A damaged file changes nothing on the device.
   - A backup file kept in the repository restores with a known phrase.
@@ -295,13 +304,13 @@ The screens where a value is entered (S-11 to S-14) each get the two-minute grac
 
 ### Step 17: source page and value entry
 
-- **Builds:** S-10 Source, with the snapshot list (change, amount added and growth for each) and totals since the opening balance. S-12 Value entry for a new value and for editing one. Deleting the latest snapshot, and deleting a source that has only its opening snapshot, each behind the confirm dialog.
-- **Done when:** the user can record a new value, correct it, delete it, and remove a source created by mistake. The dashboard totals follow each change.
+- **Builds:** S-10 Source, with the snapshot list (change, amount added and growth for each) and totals since the opening balance. S-12 Value entry for a new value and for editing one, with the confirm dialog when a new value replaces the one already recorded for that date. Deleting the latest snapshot, and deleting a source that has only its opening snapshot, each behind the confirm dialog.
+- **Done when:** the user can record a new value, correct it, replace it by entering the same date again, delete it, and remove a source created by mistake. The dashboard totals follow each change.
 
 ### Step 18: periodic update
 
-- **Builds:** S-13 Update, with the date only for now. S-14 Update: source step, which walks the sources from the one updated longest ago, and lets the user enter a value and amount added or skip.
-- **Done when:** the user can update every source in one sitting, leave half-way, and on starting again continue with the sources not yet updated.
+- **Builds:** S-13 Update, with the date and the number of sources left out, and no rates for now. S-14 Update: source step, which walks the sources from the one updated longest ago, and lets the user enter a value and amount added or skip.
+- **Done when:** the user can update every source in one sitting, leave half-way, and on starting again with the same date continue with the sources not yet updated. An update dated before a source's latest value leaves that source out and says so.
 
 ### Step 19: foreign currencies
 

@@ -16,7 +16,7 @@ The line is drawn with one rule. The MVP captures and protects everything that c
 
 - **UF-03 Add a source.** Name, category, currency, opening value and date.
 - **UF-05 Update a single source.** Value, amount added, date and note.
-- **UF-04 Periodic update, basic.** Walk through the sources, entering a value or skipping, after confirming rates for foreign currencies.
+- **UF-04 Periodic update, basic.** Walk through the sources, entering a value or skipping, after confirming the date and the rates for foreign currencies.
 - **UF-06 Corrections, basic.** Edit any snapshot's figures, delete a source's latest snapshot, and delete a source created by mistake.
 - **UF-09 Currencies and rates, basic.** Add a currency when adding a source, then enter and correct rates by hand.
 
@@ -34,7 +34,8 @@ The line is drawn with one rule. The MVP captures and protects everything that c
 
 These keep the MVP small. Each is lifted by an item in the future plans.
 
-- A new snapshot must be dated after the source's latest one, so history can only be entered in date order.
+- A new snapshot must be dated on or after the source's latest one, so history can only be entered in date order. One dated the same as the latest replaces it, after confirmation.
+- A periodic update dated earlier than a source's latest snapshot leaves that source out, and says how many sources were left out and why.
 - A source cannot be closed. The workaround is to record a value of zero by hand; the source stays in the list.
 - Categories cannot be added, renamed or removed.
 - The PIN can only be changed through the forgotten-PIN flow.

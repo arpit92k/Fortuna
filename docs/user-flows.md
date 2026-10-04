@@ -116,7 +116,7 @@ Steps:
 Rules:
 
 - The opening snapshot has no amount added.
-- The opening date can be in the past.
+- The opening date can be in the past, but not in the future.
 - A liability's value is entered as a positive amount.
 - Names are unique among active sources.
 
@@ -139,9 +139,9 @@ flowchart TD
 
 Steps:
 
-1. The user starts an update. The date defaults to today and can be changed.
+1. The user starts an update. The date defaults to today and can be changed to an earlier one.
 2. For each foreign currency in use, the app shows the last rate and its age, and the user enters a new rate or keeps the old one.
-3. The app walks through the active sources one at a time, starting with the one updated longest ago. For each, it shows the last value and date, and the user does one of three things:
+3. The app walks through the active sources that have no value on the update date yet, one at a time, starting with the one updated longest ago. For each, it shows the last value and date, and the user does one of three things:
    - enters the new value, the amount added since the last snapshot and an optional note
    - marks it unchanged, which records the same value with nothing added
    - skips it, which records nothing
@@ -154,6 +154,7 @@ Rules:
 - The previous update is the most recent earlier date on which any snapshot was recorded.
 - A fresh exchange rate is optional. The user can keep the last rate, and the app shows its age so they can decide.
 - Each entry is saved as it is made, so the user can stop part-way and lose nothing.
+- A source that already has a value on the update date is left out. Starting an update again with the same date therefore continues with the sources not yet updated, and offers the skipped ones again.
 - A skipped source keeps its last value in the totals and is shown as out of date.
 - If a new value is very different from the last one, the app asks the user to confirm it, to catch typing mistakes.
 - Moving money between two sources is recorded as a negative amount added on one and a positive amount added on the other. The two cancel out in the total.
@@ -171,7 +172,7 @@ Steps:
 Rules:
 
 - The same rules apply as for an entry in the periodic update.
-- The date defaults to today. A past date is a backfill (UF-06).
+- The date defaults to today and cannot be in the future. A past date is a backfill (UF-06).
 
 ### UF-06 Correct or backfill history
 
@@ -186,6 +187,7 @@ Steps:
 Rules:
 
 - Entering a snapshot on a date that already has one replaces it, after confirmation.
+- A replacement for the opening snapshot is still an opening balance, with no amount added.
 - Amount added always covers the period since the previous snapshot. Adding a snapshot between two existing ones shortens the period the later one covers, so the app subtracts the new snapshot's amount added from the later one and shows the result for the user to accept or change.
 - Deleting a snapshot lengthens the period the next one covers, so the app adds the deleted amount added to the next snapshot and shows the result for the user to accept or change.
 - If the earliest snapshot is deleted, the next one becomes the opening balance.

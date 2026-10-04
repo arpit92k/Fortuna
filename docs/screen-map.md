@@ -73,7 +73,7 @@ Every screen below returns to the one it was opened from, and S-14 returns to th
 | S-10 Source | Shows one source: its value over time in its own currency, its snapshots with the change, amount added and growth for each, and totals since the opening balance. | S-12 | UF-11, UF-05, UF-06 |
 | S-11 Add source | Form for name, category, currency, opening value, date and note. | Back to S-09 | UF-03 |
 | S-12 Value entry | Form for value, amount added, date and note. Used to add a new value and to edit an existing one. | Back to S-10 | UF-05, UF-06 |
-| S-13 Update: date and rates | Starts a periodic update. The user confirms the date and, for each foreign currency, keeps the last rate or enters a new one. | S-14 | UF-04, UF-09 |
+| S-13 Update: date and rates | Starts a periodic update. The user confirms the date and, for each foreign currency, keeps the last rate or enters a new one. Says how many sources the update leaves out. | S-14 | UF-04, UF-09 |
 | S-14 Update: source step | One source at a time, the one updated longest ago first. Shows the last value and date. The user enters a new value and amount added, or skips. | The next source, then S-09 | UF-04 |
 | S-15 Settings | Entry point for currencies and rates and for backup. | S-16, S-17 | |
 | S-16 Currencies and rates | Lists the currencies in use with the rates entered for each. The user adds or corrects a rate. | Back to S-15 | UF-09 |
@@ -82,10 +82,13 @@ Every screen below returns to the one it was opened from, and S-14 returns to th
 Notes:
 
 - **Empty dashboard.** With no sources, the dashboard shows only an invitation to add the first one.
+- **Dates.** No date can be in the future. On S-12 a new value is dated on or after the source's latest one.
+- **A new value on the same date.** If the date of a new value on S-12 is the date of the source's latest snapshot, the new value replaces it after the user confirms. A replacement for the opening snapshot has no amount added.
 - **Editing a value.** S-12 opens with the snapshot's figures filled in. The value, amount added and note can be changed. The date cannot, because moving a snapshot in time is backfilling, which comes later.
 - **Deleting.** On S-10 the user can delete the latest snapshot. A source can be deleted only while it has just its opening snapshot.
 - **A new foreign currency.** If the currency chosen on S-11 has no rate yet, the screen asks for one before saving.
-- **Stopping an update.** Each entry on S-14 is saved as it is made, so leaving part-way loses nothing. Starting an update again continues with the sources not yet updated.
+- **Sources in an update.** S-14 walks through the active sources whose latest snapshot is before the update date. A source with a value on or after that date is left out, and S-13 says how many were left out and why once the date is chosen.
+- **Stopping an update.** Each entry on S-14 is saved as it is made, so leaving part-way loses nothing. Starting an update again with the same date continues with the sources not yet updated, and offers the skipped ones again.
 
 ## Dialogs and system screens
 
@@ -94,6 +97,7 @@ These appear over a screen and are not destinations of their own.
 | Dialog | Where | Purpose |
 |---|---|---|
 | Confirm delete | S-10 | Before deleting a snapshot or a source |
+| Confirm replace | S-12 | Before a new value replaces the one already recorded for that date |
 | Rate entry | S-11, S-13, S-16 | Enter or correct an exchange rate for a date |
 | Date picker | S-11, S-12, S-13 | Choose a date |
 | System file picker | S-06, S-17 | Choose the backup file to open, or where to save it |
