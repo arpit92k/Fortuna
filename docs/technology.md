@@ -151,9 +151,9 @@ The file header (format version, salts, key derivation settings) is authenticate
 
 ## Data representation
 
-- **Money.** Amounts are stored as whole numbers of the currency's smallest unit (pence, cents), so they are exact. Floating point is never used for money.
+- **Money.** Amounts are stored as whole numbers of the currency's smallest unit (pence, cents), so they are exact. Floating point is never used for money. The currencies offered, and the number of decimal places of each, come from a fixed list built into the core and taken from ISO 4217.
 - **Exchange rates.** Stored as decimal text and multiplied with a decimal library. `kotlin-multiplatform-bignum` works on every target; it is feature-complete but its last release is about two years old. It is used only inside our own `Money` and `Rate` types, so it can be replaced without touching the rest of the core.
-- **Rounding.** One rule, applied in one place: convert, then round half-up to the base currency's smallest unit.
+- **Rounding.** One rule, applied in one place: convert, then round half-up to the base currency's smallest unit. Negative amounts round half away from zero, so converting −x always gives minus the conversion of x and transfers still cancel.
 - **Dates.** Calendar dates with no time or time zone, using `kotlinx-datetime`. A snapshot belongs to a day, wherever the user is.
 - **Serialization.** The dataset is written as JSON with `kotlinx.serialization` before encryption. JSON is easy to inspect when debugging and easy to migrate between format versions. Size is not a concern.
 - **Import template.** A CSV file, which every spreadsheet application opens and which can be read in shared code. Spreadsheet-native formats would need a JVM-only library.
@@ -171,14 +171,15 @@ The file header (format version, salts, key derivation settings) is authenticate
 - **Device key.** An AES key in the Android Keystore, in StrongBox when the phone has it and in the trusted execution environment otherwise.
 - **Biometrics (future).** `androidx.biometric`, with the Keystore key set to require a biometric check for each use.
 - **Backup and import files.** The Storage Access Framework lets the user pick a location without the app needing any storage permission.
-- **SDK levels.** Minimum SDK 24, as already set. Everything above works from that level; StrongBox and data extraction rules apply on newer versions and fall back safely on older ones.
+- **SDK levels.** Minimum SDK 26 (Android 8.0), with compile and target SDK 37 (Android 17). The minimum was raised from 24 so that PBKDF2 with SHA-256 can come from the platform, which was not certain on 24 and 25. StrongBox and data extraction rules apply on newer versions and fall back safely on older ones.
 
 ## Testing and build
 
 - **Core tests.** Written with `kotlin.test` in the shared source set and run on the JVM, where they are fast. The domain rules and the change breakdown are the first things tested, using the worked examples in the architecture as test cases.
 - **Format tests.** A stored file from each format version is kept in the repository and must always decrypt and load.
-- **Build.** Gradle with the Kotlin DSL and a version catalog for dependencies.
+- **Build.** Gradle with the Kotlin DSL and a version catalog for dependencies. The catalog, `gradle/libs.versions.toml`, is the one place versions are set.
 - **Checks on every pull request.** GitHub Actions runs the core tests, compiles the native target, and builds a debug version of the Android app that can be downloaded and installed.
+- **Signing of debug builds.** Every debug build is signed with one fixed key, held as a GitHub secret named `DEBUG_KEYSTORE_BASE64`, so each build installs over the last without losing the app's data. Without the secret the build still passes, signed with a throwaway key.
 
 ## Other platforms
 
