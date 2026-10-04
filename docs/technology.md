@@ -171,7 +171,7 @@ The file header (format version, salts, key derivation settings) is authenticate
 - **Device key.** An AES key in the Android Keystore, in StrongBox when the phone has it and in the trusted execution environment otherwise.
 - **Biometrics (future).** `androidx.biometric`, with the Keystore key set to require a biometric check for each use.
 - **Backup and import files.** The Storage Access Framework lets the user pick a location without the app needing any storage permission.
-- **SDK levels.** Minimum SDK 26 (Android 8.0), with compile and target SDK 36. The minimum was raised from 24 so that PBKDF2 with SHA-256 can come from the platform, which was not certain on 24 and 25. StrongBox and data extraction rules apply on newer versions and fall back safely on older ones.
+- **SDK levels.** Minimum SDK 26 (Android 8.0), with compile and target SDK 37 (Android 17). The minimum was raised from 24 so that PBKDF2 with SHA-256 can come from the platform, which was not certain on 24 and 25. StrongBox and data extraction rules apply on newer versions and fall back safely on older ones.
 
 ## Testing and build
 

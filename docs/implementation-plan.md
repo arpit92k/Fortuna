@@ -108,7 +108,7 @@ flowchart TB
   - Gradle with the Kotlin DSL and a version catalog.
   - `core`: a Kotlin Multiplatform module with Android, JVM and Linux targets, and all code in the common source set.
   - `androidApp`: the Hello World app, with its greeting supplied by a function in `core`.
-  - Minimum SDK 26, compile and target SDK 36.
+  - Minimum SDK 26, compile and target SDK 37.
   - Manifest: no `INTERNET` permission, `allowBackup` off, data extraction rules that exclude the app's files.
   - GitHub Actions on every pull request: run the core tests, compile the Linux target, build the debug app and attach it.
   - Signing: debug builds use one fixed key, held as a GitHub secret, so each build installs over the last.
