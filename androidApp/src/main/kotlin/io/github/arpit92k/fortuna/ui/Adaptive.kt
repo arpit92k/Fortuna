@@ -98,12 +98,13 @@ fun AdaptiveScreen(
                 ) { action() }
             }
         } else {
+            val screenHeight = maxHeight
             Box(Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
                 val column = Modifier.widthIn(max = ReadableWidth).fillMaxWidth()
                 val sized = when {
                     actionScrolls -> column.fillMaxHeight()
                     // At least the screen's height, so the action can sit at its bottom.
-                    actionAtBottom -> column.verticalScroll(rememberScrollState()).heightIn(min = maxHeight)
+                    actionAtBottom -> column.verticalScroll(rememberScrollState()).heightIn(min = screenHeight)
                     else -> column.verticalScroll(rememberScrollState())
                 }
                 Column(
