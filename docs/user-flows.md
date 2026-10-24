@@ -274,7 +274,7 @@ Steps:
 2. A timeline shows net worth over a period the user chooses.
 3. For that period, the app shows the change split into added, growth, currency effect and newly tracked sources.
 4. The app shows how the total is divided between categories.
-5. The app lists sources with their current value and how long ago each was updated.
+5. The app lists sources with their current value and how long ago each was updated. The value is in the source's own currency, with the base-currency equivalent beside it for a foreign source.
 
 Rules:
 

@@ -69,7 +69,7 @@ Every screen below returns to the one it was opened from, and S-14 returns to th
 
 | Screen | Purpose | Leads to | Flows |
 |---|---|---|---|
-| S-09 Dashboard | Shows current net worth, total assets and total liabilities, the net worth timeline, and the list of sources with each value and when it was last updated. | S-10, S-11, S-13, S-15 | UF-10 |
+| S-09 Dashboard | Shows current net worth, total assets and total liabilities in the base currency, the net worth timeline, and the list of sources with each value and when it was last updated. | S-10, S-11, S-13, S-15 | UF-10 |
 | S-10 Source | Shows one source: its value over time in its own currency, its snapshots with the change, amount added and growth for each, and totals since the opening balance. | S-12 | UF-11, UF-05, UF-06 |
 | S-11 Add source | Form for name, category, currency, opening value, date and note. | Back to S-09 | UF-03 |
 | S-12 Value entry | Form for value, amount added, date and note. Used to add a new value and to edit an existing one. | Back to S-10 | UF-05, UF-06 |
@@ -82,6 +82,7 @@ Every screen below returns to the one it was opened from, and S-14 returns to th
 Notes:
 
 - **Empty dashboard.** With no sources, the dashboard shows only an invitation to add the first one.
+- **Values in the source list.** Each source shows its value in its own currency, as its statement does. A source in a foreign currency also shows the base-currency equivalent beside it, for example "$11,500 · £8,625", so the list can be checked against the totals. A source in the base currency shows one value.
 - **Dates.** No date can be in the future. On S-12 a new value is dated on or after the source's latest one.
 - **A new value on the same date.** If the date of a new value on S-12 is the date of the source's latest snapshot, the new value replaces it after the user confirms. A replacement for the opening snapshot has no amount added.
 - **Editing a value.** S-12 opens with the snapshot's figures filled in. The value, amount added and note can be changed. The date cannot, because moving a snapshot in time is backfilling, which comes later.
