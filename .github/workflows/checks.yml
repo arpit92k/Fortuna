@@ -75,8 +75,8 @@ jobs:
           else
             echo "::warning title=Throwaway signing key::The DEBUG_KEYSTORE_BASE64 secret is not set, so this build is signed with a new key and will not install over an earlier build."
           fi
-      - name: Build the debug app, compile its device tests and check its manifest
-        run: ./gradlew :androidApp:assembleDebug :androidApp:assembleDebugAndroidTest :androidApp:verifyDebugNoInternetPermission 2>&1 | tee "$RUNNER_TEMP/gradle.log"
+      - name: Build the debug app, run its view model tests, compile its device tests and check its manifest
+        run: ./gradlew :androidApp:assembleDebug :androidApp:testDebugUnitTest :androidApp:assembleDebugAndroidTest :androidApp:verifyDebugNoInternetPermission 2>&1 | tee "$RUNNER_TEMP/gradle.log"
       - name: Attach the debug app
         uses: actions/upload-artifact@v7
         with:

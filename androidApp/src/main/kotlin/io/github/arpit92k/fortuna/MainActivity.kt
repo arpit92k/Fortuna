@@ -1,45 +1,35 @@
 package io.github.arpit92k.fortuna
 
 import android.os.Bundle
+import android.view.WindowManager
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.stringResource
-import io.github.arpit92k.fortuna.core.session.SessionState
-import io.github.arpit92k.fortuna.ui.FortunaTheme
+import androidx.lifecycle.viewmodel.compose.viewModel
+import io.github.arpit92k.fortuna.core.money.Currency
+import io.github.arpit92k.fortuna.lock.LockViewModel
+import io.github.arpit92k.fortuna.setup.SetupViewModel
+import java.util.Locale
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        // Figures and the recovery phrase never appear in the app switcher or
+        // in screenshots and screen recordings.
+        window.setFlags(WindowManager.LayoutParams.FLAG_SECURE, WindowManager.LayoutParams.FLAG_SECURE)
         enableEdgeToEdge()
-        val session = (application as FortunaApplication).session
+        val core = (application as FortunaApplication).core
         setContent {
-            FortunaTheme {
-                Surface(modifier = Modifier.fillMaxSize()) {
-                    Box(
-                        modifier = Modifier.fillMaxSize(),
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        // The screens arrive from step 15. Until then, the state the core reports.
-                        val state by session.state.collectAsState()
-                        val text = when (state) {
-                            SessionState.NoData -> R.string.state_no_data
-                            is SessionState.SettingUp -> R.string.state_setting_up
-                            is SessionState.Locked -> R.string.state_locked
-                            SessionState.Unlocked -> R.string.state_unlocked
-                        }
-                        Text(text = stringResource(text))
-                    }
-                }
-            }
+            // Scoped to the activity, so folding, unfolding and rotating keep what was typed.
+            val setup = viewModel { SetupViewModel(core, suggestedCurrency = regionCurrency()) }
+            val lock = viewModel { LockViewModel(core) }
+            FortunaApp(core, setup, lock)
         }
     }
 }
+
+/** The currency of the phone's region, if the app offers it. */
+private fun regionCurrency(): Currency? =
+    runCatching { java.util.Currency.getInstance(Locale.getDefault()).currencyCode }
+        .getOrNull()
+        ?.let { Currency.forCode(it) }

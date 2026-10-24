@@ -376,6 +376,9 @@ Decided since this plan was written:
 - **Timing the wait:** by the device's clock since start-up, with the boot count to tell start-ups apart. A restart makes the current wait begin again.
 - **Device tests:** a separate workflow, started by hand, runs them on emulators at Android 8.0 and Android 16. Pull requests only compile them.
 - **Device key and the phone's own lock:** the key does not require the phone to be unlocked, so changing the phone's screen lock never destroys it.
+- **PIN entry:** on the app's own number pad, never the phone's keyboard.
+- **Confirming the phrase:** three words at random positions. A wrong answer leads back to the phrase.
+- **Responsive layout:** every screen, from step 15 on, adapts to the window's width class, so tablets and foldables work well. The technology document has the rules.
 - **Interrupted setup:** nothing is saved until setup finishes. The store is written first and the lock state last, and the lock state marks that data exists; a store without one is removed on start.
 
 Two notes on working order:

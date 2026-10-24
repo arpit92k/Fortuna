@@ -48,6 +48,8 @@ Notes:
 - In a new setup the PIN comes before the recovery phrase. In a restore the phrase comes first, because it opens the backup.
 - The user can go back within setup until the phrase is confirmed. After that, setup only moves forward.
 - S-03 is the only screen that shows the recovery phrase. S-04, S-06 and S-08 ask for it and never show it.
+- S-04 asks for three of the twelve words, at random positions. A wrong answer leads back to S-03, and new positions are asked next time.
+- Every screen adapts to the window's width, as the technology document describes: on a wide window, S-01 to S-07 show their explanation beside the action.
 
 ## Main app
 

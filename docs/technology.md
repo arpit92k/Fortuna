@@ -161,6 +161,9 @@ The file header (format version, salts, key derivation settings) is authenticate
 ## User interface
 
 - **Android.** Jetpack Compose, as already chosen, with view models and Navigation Compose. The interface calls the core's use cases and observes its state through Kotlin flows.
+- **Responsive layout.** Every screen adapts to the width of its window, not to the kind of device, using Material's width classes: compact under 600dp, medium to 840dp, expanded beyond. Phones, foldables folded and unfolded, tablets, split screen and landscape all follow the same rules. Text and forms keep a readable width; a screen made of an explanation and an action shows them side by side on an expanded window, or on a medium one too short to stack them. From the dashboard on, wide windows get a navigation rail instead of a bottom bar, and lists show their details beside them where it helps. Folding, unfolding and rotating keep what was typed and where the user is. Tests check screens at phone, foldable and tablet sizes.
+- **PIN entry.** The PIN is typed on the app's own number pad, never the phone's keyboard, so no keyboard app sees it.
+- **Calls to the core.** The interface makes every call to the session on one background thread of its own, in order, so the screens never wait on slow work such as deriving the PIN's key.
 - **Reuse later.** Compose Multiplatform is stable on Android, iOS and desktop, and is in beta on the web. It runs the same Compose code, so the Android interface can be moved to it when a second platform is added. Until then, plain Jetpack Compose keeps the project simpler.
 - **Charts.** The net worth timeline and source history need a line chart. Koalaplot and Vico both work with Compose and both publish for Android, iOS, desktop and web. Koalaplot is still before version 1.0. The choice is made when the dashboard is built, and the chart sits behind one composable so it can be swapped.
 
