@@ -26,6 +26,13 @@ android {
 
     buildFeatures {
         compose = true
+        // BuildConfig.DEBUG: debug builds allow screenshots; release builds never do.
+        buildConfig = true
+    }
+
+    testOptions {
+        // View model tests run on the JVM; any Android call they reach returns a default.
+        unitTests.isReturnDefaultValues = true
     }
 }
 
@@ -37,10 +44,18 @@ dependencies {
     implementation(libs.compose.material3)
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.lifecycle.process)
+    implementation(libs.androidx.lifecycle.viewmodel.compose)
+
+    testImplementation(libs.kotlin.test.junit)
+    testImplementation(libs.kotlinx.coroutines.test)
+    testImplementation(libs.okio.fakefilesystem)
 
     androidTestImplementation(libs.androidx.test.runner)
     androidTestImplementation(libs.androidx.test.junit)
     androidTestImplementation(libs.kotlin.test.junit)
+    androidTestImplementation(platform(libs.compose.bom))
+    androidTestImplementation(libs.compose.ui.test.junit4)
+    debugImplementation(libs.compose.ui.test.manifest)
 }
 
 /**

@@ -18,23 +18,29 @@ import kotlin.time.Duration
  * while the phone is in deep sleep and may then run late; the check made on
  * return covers that, since it uses the clock that keeps counting.
  *
+ * Events arrive on the main thread and are passed on through [dispatch], so
+ * they reach the core on whichever thread it takes its calls.
+ *
  * Call [observe] on the main thread.
  */
-class ProcessAppLifecycle(private val checkAfter: List<Duration>) : AppLifecycle {
+class ProcessAppLifecycle(
+    private val checkAfter: List<Duration>,
+    private val dispatch: (() -> Unit) -> Unit = { it() },
+) : AppLifecycle {
     private val handler = Handler(Looper.getMainLooper())
 
     override fun observe(listener: LifecycleListener) {
-        val check = Runnable { listener.checkAutoLock() }
+        val check = Runnable { dispatch { listener.checkAutoLock() } }
         ProcessLifecycleOwner.get().lifecycle.addObserver(
             object : DefaultLifecycleObserver {
                 override fun onStop(owner: LifecycleOwner) {
-                    listener.onLeftForeground()
+                    dispatch { listener.onLeftForeground() }
                     for (delay in checkAfter) handler.postDelayed(check, delay.inWholeMilliseconds)
                 }
 
                 override fun onStart(owner: LifecycleOwner) {
                     handler.removeCallbacks(check)
-                    listener.onReturnedToForeground()
+                    dispatch { listener.onReturnedToForeground() }
                 }
             },
         )

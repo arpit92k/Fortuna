@@ -72,7 +72,7 @@ A port is an interface the core defines and each platform implements. These are 
 | App lifecycle | Tells the core when the app leaves the foreground | `ProcessLifecycleOwner` |
 | Clock | Supplies today's date, the time since the device started, and which start-up this is | System clock, `SystemClock.elapsedRealtime` and the boot count |
 
-Screen privacy (hiding figures in the app switcher) is handled in the Android interface with `FLAG_SECURE`, not through a port, because the core never draws anything.
+Screen privacy (hiding figures in the app switcher) is handled in the Android interface with `FLAG_SECURE`, not through a port, because the core never draws anything. It applies to release builds; debug builds leave it off, so screens can be captured during development.
 
 ## Shared code: Kotlin Multiplatform
 
@@ -161,6 +161,9 @@ The file header (format version, salts, key derivation settings) is authenticate
 ## User interface
 
 - **Android.** Jetpack Compose, as already chosen, with view models and Navigation Compose. The interface calls the core's use cases and observes its state through Kotlin flows.
+- **Responsive layout.** Every screen adapts to the width of its window, not to the kind of device, using Material's width classes: compact under 600dp, medium to 840dp, expanded beyond. Phones, foldables folded and unfolded, tablets, split screen and landscape all follow the same rules. Text and forms keep a readable width; a screen made of an explanation and an action shows them side by side on an expanded window, or on a medium one too short to stack them. From the dashboard on, wide windows get a navigation rail instead of a bottom bar, and lists show their details beside them where it helps. Folding, unfolding and rotating keep what was typed and where the user is. Tests check screens at phone, foldable and tablet sizes.
+- **PIN entry.** The PIN is typed on the app's own number pad, never the phone's keyboard, so no keyboard app sees it. Each key press gives a light haptic tick through the system's own key-tap feedback, which is felt only on a phone with a vibration motor and while touch feedback is on in the phone's settings.
+- **Calls to the core.** The interface makes every call to the session on one background thread of its own, in order, so the screens never wait on slow work such as deriving the PIN's key.
 - **Reuse later.** Compose Multiplatform is stable on Android, iOS and desktop, and is in beta on the web. It runs the same Compose code, so the Android interface can be moved to it when a second platform is added. Until then, plain Jetpack Compose keeps the project simpler.
 - **Charts.** The net worth timeline and source history need a line chart. Koalaplot and Vico both work with Compose and both publish for Android, iOS, desktop and web. Koalaplot is still before version 1.0. The choice is made when the dashboard is built, and the chart sits behind one composable so it can be swapped.
 

@@ -10,20 +10,23 @@ import io.github.arpit92k.fortuna.platform.androidPrivateFiles
 
 /** Creates the core once, with the Android adapters, and hands it to the interface. */
 class FortunaApplication : Application() {
-    lateinit var session: Session
+    lateinit var core: Core
         private set
 
     override fun onCreate() {
         super.onCreate()
-        session = Session(
+        val session = Session(
             files = androidPrivateFiles(this),
             crypto = PlatformCrypto,
             deviceKey = KeystoreDeviceKey(),
             clock = AndroidClock(this),
         )
+        core = Core(session)
         session.start(
             ProcessAppLifecycle(
                 checkAfter = listOf(Session.gracePeriod(enteringValue = false), Session.gracePeriod(enteringValue = true)),
+                // Lifecycle events arrive on the main thread; the session takes them on its own.
+                dispatch = { event -> core.post { event() } },
             ),
         )
     }

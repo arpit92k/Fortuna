@@ -2,9 +2,55 @@
 <resources>
     <string name="app_name">Fortuna</string>
 
-    <!-- What the core reports, shown until the screens arrive in step 15. -->
-    <string name="state_no_data">No data on device</string>
-    <string name="state_setting_up">Setting up</string>
-    <string name="state_locked">Locked</string>
-    <string name="state_unlocked">Unlocked</string>
+    <!-- S-01 Welcome -->
+    <string name="welcome_title">Welcome to Fortuna</string>
+    <string name="welcome_body">Fortuna tracks what you own and what you owe, and how it changes over time. Everything stays on this phone.</string>
+    <string name="welcome_no_account">There is no account and nothing is sent anywhere. A PIN protects your data, and a recovery phrase gets you back in if you forget the PIN.</string>
+    <string name="welcome_warning">If you lose both your PIN and your recovery phrase, nobody can recover your data.</string>
+    <string name="welcome_start">Get started</string>
+
+    <!-- S-02 Create PIN -->
+    <string name="pin_create_title">Choose a PIN</string>
+    <string name="pin_create_body">Use six digits or more. You will enter it each time you open Fortuna.</string>
+    <string name="pin_repeat_title">Enter your PIN again</string>
+    <string name="pin_repeat_body">To make sure it is the one you meant.</string>
+    <string name="pin_too_short">A PIN needs at least six digits.</string>
+    <string name="pin_did_not_match">The two PINs were different. Choose your PIN again.</string>
+
+    <!-- The number pad -->
+    <string name="pin_delete">Delete</string>
+    <string name="pin_ok">OK</string>
+    <string name="pin_digits_entered">%1$d digits entered</string>
+
+    <!-- S-03 Recovery phrase -->
+    <string name="phrase_title">Your recovery phrase</string>
+    <string name="phrase_body">Write these twelve words down on paper, in order, and keep them somewhere safe. They are the only way back in if you forget your PIN. This is the only time they are shown.</string>
+    <string name="phrase_written_down">I have written them down</string>
+
+    <!-- S-04 Confirm phrase -->
+    <string name="confirm_title">Check your phrase</string>
+    <string name="confirm_body">Enter these words from what you wrote down.</string>
+    <string name="confirm_word_label">Word %1$d</string>
+    <string name="confirm_wrong">Those words do not match. Look at the phrase again and check what you wrote.</string>
+    <string name="confirm_button">Check</string>
+    <string name="confirm_show_again">Show the phrase again</string>
+
+    <!-- S-05 Base currency -->
+    <string name="currency_title">Your main currency</string>
+    <string name="currency_body">Totals and charts are shown in this currency. Accounts in other currencies are converted to it.</string>
+    <string name="currency_search">Search by name or code</string>
+    <string name="currency_suggested">Your region\'s currency</string>
+
+    <!-- S-07 Lock -->
+    <string name="lock_title">Fortuna is locked</string>
+    <string name="lock_body">Enter your PIN.</string>
+    <string name="lock_wrong_pin">That PIN is not right.</string>
+    <string name="lock_not_this_device">This phone can no longer open your data with the PIN. Your recovery phrase will get you back in.</string>
+    <string name="lock_wait">Try again in %1$s</string>
+
+    <!-- The placeholder dashboard, until step 16 -->
+    <string name="home_title">You are in</string>
+    <string name="home_body">Your dashboard arrives in the next version.</string>
+    <string name="home_base_currency">Main currency: %1$s</string>
+    <string name="home_lock_now">Lock now</string>
 </resources>

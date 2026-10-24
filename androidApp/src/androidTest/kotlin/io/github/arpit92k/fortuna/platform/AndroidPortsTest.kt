@@ -127,7 +127,7 @@ class AndroidPortsTest {
     @Test
     fun theAppCreatesTheCoreOnStart() {
         val app = context.applicationContext as FortunaApplication
-        val state = app.session.state.value
+        val state = app.core.state.value
         assertTrue(state == SessionState.NoData || state is SessionState.Locked, "the core started: $state")
     }
 }
