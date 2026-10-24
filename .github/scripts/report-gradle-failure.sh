@@ -10,8 +10,10 @@ if [ ! -f "$log" ]; then
 fi
 
 {
-  # Compiler errors, then Gradle's own account of what went wrong.
+  # Compiler errors, failing tests with the first lines of their cause,
+  # then Gradle's own account of what went wrong.
   grep -E '^e: ' "$log" | head -n 15
+  grep -E -A 4 ' FAILED$' "$log" | head -n 40
   sed -n '/^FAILURE: /,/^\* Try:/p' "$log" | grep -v '^\* Try:' | head -n 40
 } | cut -c1-400 > "${log}.cause"
 
