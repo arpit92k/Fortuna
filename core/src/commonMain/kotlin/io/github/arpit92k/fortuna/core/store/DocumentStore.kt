@@ -4,13 +4,16 @@ import io.github.arpit92k.fortuna.core.crypto.Crypto
 import io.github.arpit92k.fortuna.core.domain.Dataset
 import io.github.arpit92k.fortuna.core.domain.DatasetJson
 import io.github.arpit92k.fortuna.core.file.EncryptedFile
+import io.github.arpit92k.fortuna.core.file.LockedKey
 import io.github.arpit92k.fortuna.core.ports.PrivateFiles
+import io.github.arpit92k.fortuna.core.ports.deleteWithLeftovers
 import io.github.arpit92k.fortuna.core.ports.finishInterruptedReplace
 import io.github.arpit92k.fortuna.core.ports.replaceSafely
 import io.github.arpit92k.fortuna.core.recording.RecordingResult
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.datetime.LocalDate
 
 /**
  * The encrypted store: the single source of truth for everything recorded.
@@ -91,6 +94,46 @@ class DocumentStore(private val files: PrivateFiles, private val crypto: Crypto)
         return changed
     }
 
+    /**
+     * Makes a backup file of the current dataset, without asking for the
+     * recovery phrase: it is encrypted with the data key, and [phraseCopy],
+     * the data key locked by the phrase, goes in its header so that the phrase
+     * opens it on any device.
+     *
+     * The file already records itself as the latest backup, so restored data
+     * counts as backed up. The store records it only when [confirmBackupSaved]
+     * is called, once the file has been saved where the user chose.
+     */
+    fun prepareBackup(phraseCopy: LockedKey, today: LocalDate): PreparedBackup {
+        val current = requireOpen()
+        val recorded = current.copy(
+            settings = current.settings.copy(lastBackupRevision = current.settings.revision, lastBackup = today),
+        )
+        val file = EncryptedFile.seal(DatasetJson.encode(recorded).encodeToByteArray(), dataKey!!, crypto, phraseCopy)
+        return PreparedBackup(file, current.settings.revision, today)
+    }
+
+    /**
+     * Records that [backup] was saved, without raising the revision. Returns
+     * false, and records nothing, if the data has changed since the backup was
+     * made, because the backup would not hold that change.
+     */
+    fun confirmBackupSaved(backup: PreparedBackup): Boolean {
+        val current = requireOpen()
+        if (current.settings.revision != backup.revision) return false
+        saveBookkeeping { it.copy(settings = it.settings.copy(lastBackupRevision = backup.revision, lastBackup = backup.date)) }
+        return true
+    }
+
+    /**
+     * Deletes the store from the device. Only for a store left without a lock
+     * state by an interrupted setup or restore, which nothing can open.
+     */
+    fun deleteUnfinished() {
+        lock()
+        files.deleteWithLeftovers(MAIN)
+    }
+
     /** Forgets the data key and the dataset. The store stays on disk, encrypted. */
     fun lock() {
         dataKey?.fill(0)
@@ -117,3 +160,11 @@ class DocumentStore(private val files: PrivateFiles, private val crypto: Crypto)
         const val PARTIAL: String = "$MAIN.partial"
     }
 }
+
+/** A backup file ready to save, and what the store records once it has been saved. */
+class PreparedBackup internal constructor(
+    /** The encrypted backup file. */
+    val file: ByteArray,
+    internal val revision: Long,
+    val date: LocalDate,
+)
