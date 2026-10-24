@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Themed icon layer (Android 13+): same shapes as the foreground in a single
+    colour. The system tints it, so the colour used here does not matter.
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <group
+        android:pivotX="90"
+        android:pivotY="90"
+        android:scaleX="0.55"
+        android:scaleY="0.55"
+        android:translateX="-36"
+        android:translateY="-36">
+
+        <path
+            android:pathData="M90,34 L138,52 V90 C138,118 115,136 90,146 C65,136 42,118 42,90 V52 Z"
+            android:fillColor="#00000000"
+            android:strokeColor="#FFFFFF"
+            android:strokeWidth="7"
+            android:strokeLineJoin="round" />
+
+        <path
+            android:pathData="M70,62 H110 V76 H84 V120 H70 Z M84,86 H106 V99 H84 Z"
+            android:fillColor="#FFFFFF" />
+    </group>
+</vector>
