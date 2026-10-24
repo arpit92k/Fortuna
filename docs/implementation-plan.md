@@ -180,7 +180,7 @@ Each block is pure Kotlin with no file access, no clock and no dependency on the
 - **Builds:** every change the MVP allows, as a function that takes a dataset and returns either a new dataset or a named error. No function changes anything in place.
   - Choose the base currency.
   - Add a source with its opening snapshot.
-  - Add a snapshot, edit a snapshot's value, amount added and note, and delete a source's latest snapshot.
+  - Add a snapshot, edit a snapshot's value, amount added and note, and delete a source's latest snapshot unless it is the only one.
   - Delete a source that has only its opening snapshot.
   - Add, correct and delete an exchange rate.
   - The periodic update's queue: the active sources whose latest snapshot is before the update date, the one updated longest ago first; the number of sources left out because they already have a value on or after that date; and the foreign currencies in use with each one's last rate and its age.
@@ -199,7 +199,9 @@ Each block is pure Kotlin with no file access, no clock and no dependency on the
   - The base currency's rate is always one.
   - A second rate for a date replaces the first.
   - A source with more than its opening snapshot cannot be deleted.
-  - A liability's value is entered as a positive amount.
+  - A negative value is accepted for an asset and for a liability.
+  - A source's only snapshot cannot be deleted; the source is deleted instead.
+  - The opening snapshot's amount added stays zero, when added, replaced or edited.
 - **Done when:** every rule under "Rules" in the architecture that applies to the MVP has a test that names it.
 
 ### Step 08: insights

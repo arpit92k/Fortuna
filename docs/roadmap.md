@@ -17,8 +17,8 @@ The line is drawn with one rule. The MVP captures and protects everything that c
 - **UF-03 Add a source.** Name, category, currency, opening value and date.
 - **UF-05 Update a single source.** Value, amount added, date and note.
 - **UF-04 Periodic update, basic.** Walk through the sources, entering a value or skipping, after confirming the date and the rates for foreign currencies.
-- **UF-06 Corrections, basic.** Edit any snapshot's figures, delete a source's latest snapshot, and delete a source created by mistake.
-- **UF-09 Currencies and rates, basic.** Add a currency when adding a source, then enter and correct rates by hand.
+- **UF-06 Corrections, basic.** Edit any snapshot's figures, delete a source's latest snapshot unless it is the only one, and delete a source created by mistake. Edits are saved without a confirmation; deleting and replacing ask first.
+- **UF-09 Currencies and rates, basic.** Add a currency when adding a source, then enter, correct and delete rates by hand. A rate the earliest snapshot depends on cannot be deleted.
 
 ### Insights
 

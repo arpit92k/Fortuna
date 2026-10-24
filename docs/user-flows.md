@@ -117,7 +117,7 @@ Rules:
 
 - The opening snapshot has no amount added.
 - The opening date can be in the past, but not in the future.
-- A liability's value is entered as a positive amount.
+- A liability's value is entered as a positive amount. A negative value means the opposite of the usual: a credit card in credit, or for an asset an overdrawn account.
 - Names are unique among active sources.
 
 ### UF-04 Periodic update
@@ -182,7 +182,7 @@ Steps:
 
 1. From the source's page, the user picks a snapshot to edit or delete, or adds one with a past date.
 2. The user makes the change.
-3. The app shows which later figures are affected and asks the user to confirm.
+3. The app shows which later figures are affected and asks the user to confirm. In the first version, only deleting and replacing ask; an edit is saved straight away, since editing again undoes it.
 
 Rules:
 
