@@ -2,11 +2,9 @@ package io.github.arpit92k.fortuna.lock
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
@@ -14,9 +12,7 @@ import androidx.compose.ui.unit.dp
 import io.github.arpit92k.fortuna.R
 import io.github.arpit92k.fortuna.setup.Problem
 import io.github.arpit92k.fortuna.ui.AdaptiveScreen
-import io.github.arpit92k.fortuna.ui.Centred
-import io.github.arpit92k.fortuna.ui.PinDots
-import io.github.arpit92k.fortuna.ui.PinPad
+import io.github.arpit92k.fortuna.ui.PinEntry
 
 /** S-07 Lock: the PIN, and the wait after wrong ones. */
 @Composable
@@ -41,11 +37,15 @@ fun LockScreen(ui: LockUi, onDigit: (Char) -> Unit, onDelete: () -> Unit, onOk: 
             }
         },
         action = {
-            Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(24.dp)) {
-                PinDots(ui.entered.length)
-                if (ui.working) Centred { CircularProgressIndicator() }
-                PinPad(onDigit = onDigit, onDelete = onDelete, onOk = onOk, okEnabled = ui.okEnabled, enabled = ui.padEnabled)
-            }
+            PinEntry(
+                digits = ui.entered.length,
+                working = ui.working,
+                onDigit = onDigit,
+                onDelete = onDelete,
+                onOk = onOk,
+                okEnabled = ui.okEnabled,
+                enabled = ui.padEnabled,
+            )
         },
     )
 }

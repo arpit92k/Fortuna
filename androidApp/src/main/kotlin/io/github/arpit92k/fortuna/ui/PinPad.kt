@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -116,6 +117,36 @@ const val PIN_DOTS = "pin-dots"
 const val PIN_DELETE = "pin-delete"
 const val PIN_OK = "pin-ok"
 const val PIN_KEY = "pin-key-"
+
+/**
+ * The dots and the pad together, centred across the full width they are
+ * given. While the PIN is being checked, a small spinner takes the dots'
+ * place, so the pad does not move.
+ */
+@Composable
+fun PinEntry(
+    digits: Int,
+    working: Boolean,
+    onDigit: (Char) -> Unit,
+    onDelete: () -> Unit,
+    onOk: () -> Unit,
+    okEnabled: Boolean,
+    enabled: Boolean,
+    modifier: Modifier = Modifier,
+) {
+    Column(
+        modifier.fillMaxWidth().testTag(PIN_ENTRY),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(24.dp),
+    ) {
+        Box(Modifier.height(24.dp), contentAlignment = Alignment.Center) {
+            if (working) CircularProgressIndicator(Modifier.size(20.dp), strokeWidth = 2.dp) else PinDots(digits)
+        }
+        PinPad(onDigit = onDigit, onDelete = onDelete, onOk = onOk, okEnabled = okEnabled, enabled = enabled)
+    }
+}
+
+const val PIN_ENTRY = "pin-entry"
 
 /** Keeps a narrow [content] centred within the width it is given. */
 @Composable

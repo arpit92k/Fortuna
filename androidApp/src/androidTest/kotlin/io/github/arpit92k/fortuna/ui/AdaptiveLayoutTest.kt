@@ -19,6 +19,7 @@ import io.github.arpit92k.fortuna.lock.LockUi
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
+import kotlin.math.abs
 import kotlin.test.assertTrue
 
 /**
@@ -51,6 +52,17 @@ class AdaptiveLayoutTest {
         showLockAt(411.dp, 891.dp)
         compose.onNodeWithTag(STACKED).assertExists()
         compose.onNodeWithTag(SIDE_BY_SIDE).assertDoesNotExist()
+    }
+
+    // The pad sits in the middle of the screen, not against its left edge.
+    @Test
+    fun onAPhoneThePadIsCentred() {
+        showLockAt(411.dp, 891.dp)
+        val frame = compose.onNodeWithTag(FRAME).getBoundsInRoot()
+        val pad = compose.onNodeWithTag(PIN_PAD).getBoundsInRoot()
+        val padMiddle = (pad.left + pad.right) / 2
+        val frameMiddle = (frame.left + frame.right) / 2
+        assertTrue(abs((padMiddle - frameMiddle).value) <= 1f, "the pad's middle is at $padMiddle, the screen's at $frameMiddle")
     }
 
     @Test

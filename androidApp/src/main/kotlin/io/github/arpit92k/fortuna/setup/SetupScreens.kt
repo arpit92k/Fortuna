@@ -35,8 +35,7 @@ import io.github.arpit92k.fortuna.R
 import io.github.arpit92k.fortuna.core.money.Currency
 import io.github.arpit92k.fortuna.ui.AdaptiveScreen
 import io.github.arpit92k.fortuna.ui.Centred
-import io.github.arpit92k.fortuna.ui.PinDots
-import io.github.arpit92k.fortuna.ui.PinPad
+import io.github.arpit92k.fortuna.ui.PinEntry
 
 /** First-time setup, S-01 to S-05, one step at a time. */
 @Composable
@@ -113,13 +112,15 @@ fun CreatePinScreen(step: SetupStep.CreatePin, onDigit: (Char) -> Unit, onDelete
             }
         },
         action = {
-            Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(24.dp)) {
-                PinDots(step.entered.length)
-                if (step.working) {
-                    Centred { CircularProgressIndicator() }
-                }
-                PinPad(onDigit = onDigit, onDelete = onDelete, onOk = onOk, okEnabled = step.okEnabled, enabled = !step.working)
-            }
+            PinEntry(
+                digits = step.entered.length,
+                working = step.working,
+                onDigit = onDigit,
+                onDelete = onDelete,
+                onOk = onOk,
+                okEnabled = step.okEnabled,
+                enabled = !step.working,
+            )
         },
     )
 }
