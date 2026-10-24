@@ -59,6 +59,20 @@ class KeyGuard(
         save(setup.lockState)
     }
 
+    /**
+     * Prepares the lock state for data restored from a backup: [newPin] for
+     * this device, and the backup's own copy of the data key locked by the
+     * phrase. Nothing is saved until [finishSetup], after the store is written.
+     */
+    fun beginRestore(phrase: RecoveryPhrase, phraseCopy: LockedKey, dataKey: ByteArray, newPin: String): SetupResult {
+        pinProblem(newPin)?.let { return SetupResult.InvalidPin(it) }
+        val state = LockState(lockWithPin(newPin, dataKey), phraseCopy, 0, null)
+        return SetupResult.Ready(PendingSetup(dataKey, phrase, state))
+    }
+
+    /** The data key locked by the recovery phrase, for a backup's header; null before setup. */
+    fun phraseCopy(): LockedKey? = load()?.phrase
+
     /** How long until the next PIN may be tried; zero if it may be tried now. */
     fun waitRemaining(): Duration = load()?.let { remainingWait(it).second } ?: Duration.ZERO
 

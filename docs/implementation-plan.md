@@ -263,7 +263,7 @@ Each block is pure Kotlin with no file access, no clock and no dependency on the
 
 ### Step 12: backup and restore
 
-- **Builds:** export, which produces the backup file without asking for the phrase and records the date of the backup and the revision it was made at, without raising the revision. Restore, which opens a backup with the phrase, then writes the store and a new lock state under a new PIN in one go.
+- **Builds:** export, which produces the backup file without asking for the phrase and, once the file has been saved, records the date of the backup and the revision it was made at, without raising the revision. Restore, which opens a backup with the phrase, then writes the store and a new lock state under a new PIN in one go.
 - **Tests:**
   - Back up on one stand-in device and restore on another: the datasets are equal.
   - After a backup, the revision of the last backup equals the current revision. A change made later the same day raises the current revision past it.
