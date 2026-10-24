@@ -76,7 +76,7 @@ Every screen below returns to the one it was opened from, and S-14 returns to th
 | S-13 Update: date and rates | Starts a periodic update. The user confirms the date and, for each foreign currency, keeps the last rate or enters a new one. Says how many sources the update leaves out. | S-14 | UF-04, UF-09 |
 | S-14 Update: source step | One source at a time, the one updated longest ago first. Shows the last value and date. The user enters a new value and amount added, or skips. | The next source, then S-09 | UF-04 |
 | S-15 Settings | Entry point for currencies and rates and for backup. | S-16, S-17 | |
-| S-16 Currencies and rates | Lists the currencies in use with the rates entered for each. The user adds or corrects a rate. | Back to S-15 | UF-09 |
+| S-16 Currencies and rates | Lists the currencies in use with the rates entered for each. The user adds, corrects or deletes a rate. | Back to S-15 | UF-09 |
 | S-17 Backup | Explains that the file can only be opened with the recovery phrase, and exports it to a location the user picks. | Back to S-15 | UF-12 |
 
 Notes:
@@ -85,8 +85,11 @@ Notes:
 - **Values in the source list.** Each source shows its value in its own currency, as its statement does. A source in a foreign currency also shows the base-currency equivalent beside it, for example "$11,500 · £8,625", so the list can be checked against the totals. A source in the base currency shows one value.
 - **Dates.** No date can be in the future. On S-12 a new value is dated on or after the source's latest one.
 - **A new value on the same date.** If the date of a new value on S-12 is the date of the source's latest snapshot, the new value replaces it after the user confirms. A replacement for the opening snapshot has no amount added.
-- **Editing a value.** S-12 opens with the snapshot's figures filled in. The value, amount added and note can be changed. The date cannot, because moving a snapshot in time is backfilling, which comes later.
-- **Deleting.** On S-10 the user can delete the latest snapshot. A source can be deleted only while it has just its opening snapshot.
+- **Editing a value.** S-12 opens with the snapshot's figures filled in. The value, amount added and note can be changed. The date cannot, because moving a snapshot in time is backfilling, which comes later. Saving an edit needs no confirmation.
+- **The opening snapshot.** For a source's first snapshot, S-12 does not show the amount added, which stays zero.
+- **Negative values.** A value can be negative, such as an overdrawn account. S-09, S-10 and S-12 show a negative value clearly, so a stray minus sign is easy to spot.
+- **Deleting.** On S-10 the user can delete the latest snapshot, unless it is the only one: then S-10 offers deleting the source instead. A source can be deleted only while it has just its opening snapshot.
+- **Deleting a rate.** On S-16 a rate can be deleted, unless a source's earliest snapshot would be left with no rate on or before its date.
 - **A new foreign currency.** If the currency chosen on S-11 has no rate yet, the screen asks for one before saving.
 - **Sources in an update.** S-14 walks through the active sources whose latest snapshot is before the update date. A source with a value on or after that date is left out, and S-13 says how many were left out and why once the date is chosen.
 - **Stopping an update.** Each entry on S-14 is saved as it is made, so leaving part-way loses nothing. Starting an update again with the same date continues with the sources not yet updated, and offers the skipped ones again.
@@ -97,7 +100,7 @@ These appear over a screen and are not destinations of their own.
 
 | Dialog | Where | Purpose |
 |---|---|---|
-| Confirm delete | S-10 | Before deleting a snapshot or a source |
+| Confirm delete | S-10, S-16 | Before deleting a snapshot, a source or a rate |
 | Confirm replace | S-12 | Before a new value replaces the one already recorded for that date |
 | Rate entry | S-11, S-13, S-16 | Enter or correct an exchange rate for a date, either way round |
 | Date picker | S-11, S-12, S-13 | Choose a date |

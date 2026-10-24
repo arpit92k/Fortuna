@@ -125,7 +125,8 @@ erDiagram
 ### Liabilities
 
 - Asset or liability is a property of the category, so a source inherits it and the rule lives in one place.
-- Values are always entered as positive amounts. The sign is applied only in calculations: net worth is assets minus liabilities.
+- A source's usual balance is entered as a positive amount: a mortgage is £180,000, not −£180,000. The sign is applied only in calculations: net worth is assets minus liabilities.
+- A negative value means the opposite of the usual: an overdrawn current account reduces net worth, and a credit card in credit adds to it. The same calculations handle it without any special case.
 
 ### Multiple currencies
 
@@ -199,6 +200,7 @@ For each source, over a period from a start date to an end date:
 - Names are unique among active sources.
 - A source's currency cannot change once it has snapshots. If an account is converted, archive it and start a new one.
 - Sources and categories with history are archived, never deleted. The exception is a source that has only its opening snapshot, which can be deleted to undo a mistake.
+- A source always has at least one snapshot. Its only snapshot cannot be deleted on its own; the source is deleted instead.
 - Changing the base currency is rare and needs rates against the new base, so it is a deliberate settings action.
 - A change that touches several records is applied completely or not at all. This covers import, restore, closing a source and the adjustments made when backfilling.
 
