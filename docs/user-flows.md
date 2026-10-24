@@ -63,6 +63,7 @@ Rules:
 
 - The recovery phrase confirmation cannot be skipped.
 - No financial data can be entered before the PIN and recovery phrase exist.
+- Nothing is saved until setup finishes. If it is interrupted, setup starts again from the beginning, with a new recovery phrase.
 
 ### UF-02 Unlock the app
 
@@ -79,7 +80,9 @@ Rules:
 - The app locks one minute after it leaves the foreground, or two minutes if the user was entering a value: adding a source, adding or editing a value, or doing a periodic update. Closing the app always locks it.
 - Anything the user had typed before the app locked is still there after unlocking, so looking up a balance in another app does not lose an entry.
 - Financial figures are not visible in the device's app switcher.
-- Each failed attempt makes the user wait longer before the next one.
+- Each failed attempt makes the user wait longer before the next one. The first three attempts are free; then the waits are 1, 5, 15 and 60 minutes, and 24 hours for every attempt after that. The data is never erased.
+- Changing the device's clock does not shorten a wait, and restarting the device makes the current wait begin again.
+- A correct PIN or a recovery with the phrase resets the count. Entering the recovery phrase never waits.
 - The lock screen offers the recovery phrase as a way in (UF-14).
 
 ### UF-14 Recover from a forgotten PIN

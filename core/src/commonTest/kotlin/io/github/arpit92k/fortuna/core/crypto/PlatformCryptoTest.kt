@@ -154,6 +154,13 @@ class PlatformCryptoTest {
     }
 
     @Test
+    fun keyDerivationRefusesSecretsThatAreNotText() {
+        // The JDK takes PBKDF2 passwords as characters; the wrapper refuses bytes that are not UTF-8 everywhere alike.
+        val notText = byteArrayOf(0xC3.toByte(), 0x28, 0xFF.toByte())
+        assertFailsWith<IllegalArgumentException> { crypto.deriveKey(notText, ByteArray(16), iterations = 1) }
+    }
+
+    @Test
     fun derivedKeysAreAesKeySizedByDefault() {
         val derived = crypto.deriveKey("123456".encodeToByteArray(), crypto.randomBytes(16), iterations = 1_000)
         assertEquals(Crypto.KEY_SIZE, derived.size)

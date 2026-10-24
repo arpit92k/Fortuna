@@ -249,7 +249,7 @@ Each block is pure Kotlin with no file access, no clock and no dependency on the
   - The data key, and its two locked copies: one under the PIN (PBKDF2, then wrapped by the device key) and one under the recovery phrase (PBKDF2 only).
   - The `Device key` and `Clock` ports, with stand-ins for tests.
   - The lock state file: the locked copies, salts and settings, and the count of failed attempts. It has its own format version.
-  - Operations: set up with a PIN and return the phrase; unlock with the PIN; recover with the phrase and set a new PIN.
+  - Operations: set up with a PIN and return the phrase, in two parts so nothing is saved until setup finishes; unlock with the PIN; recover with the phrase and set a new PIN.
   - PIN rules: digits only, six or more.
   - The growing delay. The count is saved before a PIN is checked, so closing the app during an attempt cannot avoid it.
 - **Tests:**
@@ -362,9 +362,6 @@ The design documents leave these open. Each is listed with the step that needs i
 | Decision | Needed at | Suggestion |
 |---|---|---|
 | How the timeline picks its dates | 08 | Every date on which a value or a rate changed |
-| PBKDF2 round counts, and the exact text of the phrase that is fed in | 09, 11 | Fix both in the version 1 format; store the round count in the header so it can rise later |
-| The schedule of the growing delay | 11 | A few free attempts, then 30 seconds, 1, 5, 15 and 60 minutes |
-| How the wait is measured, so that changing the phone's clock does not skip it | 11, 14 | Decide when the `Clock` port is defined; it needs more than today's date |
 | How many words S-04 asks for | 15 | Three, at random positions |
 | Chart library | 21 | As the technology document says, decided when the charts are built |
 
@@ -374,6 +371,10 @@ Decided since this plan was written:
 - **Currencies offered:** a fixed list built into the core, taken from ISO 4217, with the decimal places of each.
 - **Minimum SDK:** 26, which removes the doubt about PBKDF2 with SHA-256 on Android 7. Step 14's device test still confirms it on the lowest supported version.
 - **Signing of debug builds:** one fixed key, held as a GitHub secret.
+- **PBKDF2 rounds:** for the PIN, measured on the device whenever a PIN is set to take about a quarter of a second, with a floor of 100,000; for the recovery phrase, a fixed 100,000. The phrase's 16 secret bytes are what is fed in. Every round count is stored with its locked copy.
+- **The growing delay:** three free attempts, then 1, 5, 15 and 60 minutes, then 24 hours for each attempt after that. The data is never erased.
+- **Timing the wait:** by the device's clock since start-up, with the boot count to tell start-ups apart. A restart makes the current wait begin again.
+- **Interrupted setup:** nothing is saved until setup finishes. The store is written first and the lock state last, and the lock state marks that data exists; a store without one is removed on start.
 
 Two notes on working order:
 

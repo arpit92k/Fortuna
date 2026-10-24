@@ -50,6 +50,11 @@ object PlatformCrypto : Crypto {
     override fun deriveKey(secret: ByteArray, salt: ByteArray, iterations: Int, size: Int): ByteArray {
         require(iterations > 0) { "Iterations must be positive: $iterations" }
         require(size > 0) { "Size must be positive: $size" }
+        try {
+            secret.decodeToString(throwOnInvalidSequence = true)
+        } catch (e: CharacterCodingException) {
+            throw IllegalArgumentException("A PBKDF2 secret must be UTF-8 text; encode binary secrets first", e)
+        }
         return provider.get(PBKDF2)
             .secretDerivation(digest = SHA256, iterations = iterations, outputSize = size.bytes, salt = salt)
             .deriveSecretToByteArrayBlocking(secret)

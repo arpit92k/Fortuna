@@ -5,6 +5,8 @@ import io.github.arpit92k.fortuna.core.domain.Dataset
 import io.github.arpit92k.fortuna.core.domain.DatasetJson
 import io.github.arpit92k.fortuna.core.file.EncryptedFile
 import io.github.arpit92k.fortuna.core.ports.PrivateFiles
+import io.github.arpit92k.fortuna.core.ports.finishInterruptedReplace
+import io.github.arpit92k.fortuna.core.ports.replaceSafely
 import io.github.arpit92k.fortuna.core.recording.RecordingResult
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -18,17 +20,9 @@ import kotlinx.coroutines.flow.asStateFlow
  * written as a complete new file and moved into place, so a change is saved
  * completely or not at all. Locking forgets the key and the dataset.
  *
- * A write goes through three names, so an interruption at any point can be
- * tidied on the next start by [recover]:
- *
- * 1. the new file is written to [PARTIAL] and forced to disk;
- * 2. [PARTIAL] is moved to [NEW], marking it complete;
- * 3. [NEW] is moved onto [MAIN].
- *
- * A [PARTIAL] file may be incomplete, so it is thrown away. A [NEW] file is
- * always complete and is the latest change, so it is moved into place. That
- * also covers platforms where the last move removes the old file before
- * failing to rename the new one.
+ * A write replaces the file through `replaceSafely`, so an interruption at
+ * any point leaves the old dataset or the new one, and [recover] tidies up on
+ * the next start. See SafeReplace.kt for how.
  *
  * Calls must not overlap: the session (step 13) makes them one at a time.
  */
@@ -42,10 +36,7 @@ class DocumentStore(private val files: PrivateFiles, private val crypto: Crypto)
     val isOpen: Boolean get() = dataKey != null
 
     /** Tidies up after an interrupted write. Call once on start, before anything else. */
-    fun recover() {
-        files.delete(PARTIAL)
-        if (files.exists(NEW)) files.move(NEW, MAIN)
-    }
+    fun recover() = files.finishInterruptedReplace(MAIN)
 
     /** Whether a store has been created on this device. */
     fun exists(): Boolean = files.exists(MAIN)
@@ -111,9 +102,7 @@ class DocumentStore(private val files: PrivateFiles, private val crypto: Crypto)
 
     private fun write(dataset: Dataset, key: ByteArray) {
         val sealed = EncryptedFile.seal(DatasetJson.encode(dataset).encodeToByteArray(), key, crypto)
-        files.write(PARTIAL, sealed)
-        files.move(PARTIAL, NEW)
-        files.move(NEW, MAIN)
+        files.replaceSafely(MAIN, sealed)
         state.value = dataset
     }
 
@@ -122,9 +111,9 @@ class DocumentStore(private val files: PrivateFiles, private val crypto: Crypto)
         const val MAIN: String = "fortuna.store"
 
         /** A complete new copy, waiting to be moved onto [MAIN]. */
-        const val NEW: String = "fortuna.store.new"
+        const val NEW: String = "$MAIN.new"
 
         /** A new copy being written, which may be incomplete. */
-        const val PARTIAL: String = "fortuna.store.partial"
+        const val PARTIAL: String = "$MAIN.partial"
     }
 }
