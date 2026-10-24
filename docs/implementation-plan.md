@@ -2,7 +2,7 @@
 
 This document orders the work of building the first version (the MVP) in the [roadmap](roadmap.md), using the choices in the [technology document](technology.md). It starts with small, independent pieces of the shared core, each with its own tests, then assembles them, then connects them to the Android app one group of screens at a time.
 
-Starting point: the repository holds the design documents and no code. The Hello World project from the earlier sanity check is not in it yet.
+Starting point: when this plan was written, the repository held the design documents and no code. Step 00 creates the project afresh; the Hello World project from the earlier sanity check is not reused.
 
 ## How the plan works
 
@@ -108,8 +108,10 @@ flowchart TB
   - Gradle with the Kotlin DSL and a version catalog.
   - `core`: a Kotlin Multiplatform module with Android, JVM and Linux targets, and all code in the common source set.
   - `androidApp`: the Hello World app, with its greeting supplied by a function in `core`.
+  - Minimum SDK 26, compile and target SDK 37.
   - Manifest: no `INTERNET` permission, `allowBackup` off, data extraction rules that exclude the app's files.
   - GitHub Actions on every pull request: run the core tests, compile the Linux target, build the debug app and attach it.
+  - Signing: debug builds use one fixed key, held as a GitHub secret, so each build installs over the last.
 - **Tests:** one trivial core test, and a check that the built app's manifest does not contain the `INTERNET` permission.
 - **Done when:** a pull request shows all checks passing, and the app downloaded from it installs and shows the greeting from `core`.
 
@@ -119,7 +121,7 @@ Each block is pure Kotlin with no file access, no clock and no dependency on the
 
 ### Step 01: money
 
-- **Builds:** `Currency` (code and number of decimal places) and `Money` (a whole number of the smallest unit, in one currency). Reading an amount from decimal text and writing it back. Add, subtract and negate.
+- **Builds:** `Currency` (code and number of decimal places, from a fixed list built into the core and taken from ISO 4217) and `Money` (a whole number of the smallest unit, in one currency). Reading an amount from decimal text and writing it back. Add, subtract and negate.
 - **Tests:**
   - "10000.00" in pounds is 1,000,000 pence and writes back unchanged.
   - A currency with no decimal places, such as yen.
@@ -129,11 +131,11 @@ Each block is pure Kotlin with no file access, no clock and no dependency on the
 
 ### Step 02: rates and conversion
 
-- **Builds:** `Rate`, read from decimal text and held as a decimal, with `kotlin-multiplatform-bignum` used only inside it. One conversion function: multiply, then round half-up to the target currency's smallest unit.
+- **Builds:** `Rate`, read from decimal text and held as a decimal, with `kotlin-multiplatform-bignum` used only inside it. One conversion function: multiply, then round half-up to the target currency's smallest unit. Negative amounts round half away from zero.
 - **Tests:**
   - From the architecture's example: $10,000 at 0.80 is £8,000, and $11,500 at 0.75 is £8,625.
   - Results that land exactly half-way.
-  - Negative amounts.
+  - Negative amounts: converting −x gives minus the conversion of x.
   - Currencies with different numbers of decimal places.
   - A zero or negative rate is rejected.
 - **Done when:** conversion and rounding exist in exactly one function.
@@ -355,15 +357,19 @@ The design documents leave these open. Each is listed with the step that needs i
 
 | Decision | Needed at | Suggestion |
 |---|---|---|
-| How half-up rounding treats negative amounts | 02 | Round half away from zero, so converting −x always gives minus the conversion of x and transfers still cancel |
-| Which currencies are offered, and their decimal places | 01, 16 | A fixed list built into the core, taken from ISO 4217 |
 | How the timeline picks its dates | 08 | Every date on which a value or a rate changed |
 | PBKDF2 round counts, and the exact text of the phrase that is fed in | 09, 11 | Fix both in the version 1 format; store the round count in the header so it can rise later |
 | The schedule of the growing delay | 11 | A few free attempts, then 30 seconds, 1, 5, 15 and 60 minutes |
 | How the wait is measured, so that changing the phone's clock does not skip it | 11, 14 | Decide when the `Clock` port is defined; it needs more than today's date |
 | How many words S-04 asks for | 15 | Three, at random positions |
-| PBKDF2 with SHA-256 on Android 7 (SDK 24 and 25) | 05, 14 | To be confirmed by the step 14 device test. If the platform does not provide it there, either raise the minimum SDK to 26 or build PBKDF2 from the library's HMAC |
 | Chart library | 21 | As the technology document says, decided when the charts are built |
+
+Decided since this plan was written:
+
+- **Rounding of negative amounts:** half away from zero, so converting −x always gives minus the conversion of x and transfers still cancel.
+- **Currencies offered:** a fixed list built into the core, taken from ISO 4217, with the decimal places of each.
+- **Minimum SDK:** 26, which removes the doubt about PBKDF2 with SHA-256 on Android 7. Step 14's device test still confirms it on the lowest supported version.
+- **Signing of debug builds:** one fixed key, held as a GitHub secret.
 
 Two notes on working order:
 
