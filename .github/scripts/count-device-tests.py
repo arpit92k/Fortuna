@@ -12,7 +12,7 @@ android = sys.argv[1]
 ok = True
 for project in ["core", "androidApp"]:
     tests = failures = 0
-    for path in glob.glob(f"{project}/build/outputs/androidTest-results/**/*.xml", recursive=True):
+    for path in glob.glob(f"{project}/build/outputs/**/TEST-*.xml", recursive=True):
         root = ElementTree.parse(path).getroot()
         for suite in [root] if root.tag == "testsuite" else root.iter("testsuite"):
             tests += int(suite.get("tests", 0))
