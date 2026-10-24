@@ -155,11 +155,13 @@ private val PHRASE_CONTEXT = "Fortuna phrase copy of the data key, v1".encodeToB
 /**
  * Locks [dataKey] with the recovery phrase: a key derived with PBKDF2 from the
  * phrase's 16 secret bytes, never the typed words, encrypts the data key.
+ * PBKDF2 takes its secret as text on some platforms, so the bytes are fed in
+ * as 32 lowercase hex characters.
  */
 fun lockWithPhrase(phrase: RecoveryPhrase, dataKey: ByteArray, crypto: Crypto, iterations: Int = PHRASE_ITERATIONS): LockedKey {
     val salt = crypto.randomBytes(16)
     val nonce = crypto.randomBytes(Crypto.NONCE_SIZE)
-    val key = crypto.deriveKey(phrase.toSecret(), salt, iterations)
+    val key = crypto.deriveKey(phraseInput(phrase), salt, iterations)
     val sealed = crypto.encrypt(key, nonce, dataKey, PHRASE_CONTEXT)
     return LockedKey(KeyDerivation(KeyDerivationAlgorithm.PBKDF2_HMAC_SHA256, iterations), salt, nonce, sealed)
 }
@@ -171,9 +173,18 @@ fun lockWithPhrase(phrase: RecoveryPhrase, dataKey: ByteArray, crypto: Crypto, i
  */
 fun openWithPhrase(locked: LockedKey, phrase: RecoveryPhrase, crypto: Crypto): ByteArray {
     val key = when (locked.derivation.algorithm) {
-        KeyDerivationAlgorithm.PBKDF2_HMAC_SHA256 -> crypto.deriveKey(phrase.toSecret(), locked.salt, locked.derivation.iterations)
+        KeyDerivationAlgorithm.PBKDF2_HMAC_SHA256 -> crypto.deriveKey(phraseInput(phrase), locked.salt, locked.derivation.iterations)
     }
     return crypto.decrypt(key, locked.nonce, locked.sealedKey, PHRASE_CONTEXT)
+}
+
+/** The phrase's 16 secret bytes as 32 lowercase hex characters: what PBKDF2 is given. */
+internal fun phraseInput(phrase: RecoveryPhrase): ByteArray {
+    val digits = "0123456789abcdef"
+    return phrase.toSecret().joinToString("") { byte ->
+        val b = byte.toInt() and 0xFF
+        "${digits[b shr 4]}${digits[b and 0xF]}"
+    }.encodeToByteArray()
 }
 
 // ---- Results ----

@@ -36,7 +36,13 @@ interface Crypto {
      */
     fun decrypt(key: ByteArray, nonce: ByteArray, ciphertext: ByteArray, associatedData: ByteArray): ByteArray
 
-    /** A key of [size] bytes derived from [secret] with PBKDF2-HMAC-SHA256. */
+    /**
+     * A key of [size] bytes derived from [secret] with PBKDF2-HMAC-SHA256.
+     *
+     * [secret] must be UTF-8 text, as a PIN or a passphrase is: the JDK takes
+     * PBKDF2 passwords as characters, so arbitrary bytes are refused on every
+     * platform alike with IllegalArgumentException. Encode binary secrets as text first.
+     */
     fun deriveKey(secret: ByteArray, salt: ByteArray, iterations: Int, size: Int = KEY_SIZE): ByteArray
 
     /** The 32-byte SHA-256 hash of [data]. */

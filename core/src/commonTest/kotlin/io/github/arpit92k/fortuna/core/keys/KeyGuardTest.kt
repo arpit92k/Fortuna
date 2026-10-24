@@ -342,6 +342,24 @@ class KeyGuardTest {
         assertEquals(100_000, PHRASE_ITERATIONS, "the real phrase rounds")
     }
 
+    // Decided: the phrase's 16 secret bytes are what is fed in, as hex text, not the typed words.
+    @Test
+    fun thePhraseIsFedInAsItsSecretBytesInHex() {
+        val phrase = RecoveryPhrase.fromSecret(ByteArray(16) { (it * 17).toByte() }, crypto)
+        assertEquals("00112233445566778899aabbccddeeff", phraseInput(phrase).decodeToString())
+    }
+
+    @Test
+    fun aPhraseCopyOpensWithTheSamePhraseTypedDifferently() {
+        val phrase = RecoveryPhrase.fromSecret(crypto.randomBytes(16), crypto)
+        val dataKey = crypto.randomBytes(32)
+        val locked = lockWithPhrase(phrase, dataKey, crypto, iterations = 1_000)
+        val retyped = assertIs<io.github.arpit92k.fortuna.core.phrase.PhraseParseResult.Success>(
+            RecoveryPhrase.parse("  " + phrase.toText().uppercase().replace(" ", "\n ") + " ", crypto),
+        ).phrase
+        assertContentEquals(dataKey, openWithPhrase(locked, retyped, crypto))
+    }
+
     // ---- The lock state file ----
 
     @Test

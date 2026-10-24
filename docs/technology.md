@@ -133,7 +133,7 @@ Screen privacy (hiding figures in the app switcher) is handled in the Android in
 |---|---|
 | Data key | Random 256-bit key. Encrypts the document with AES-256-GCM, using a fresh random nonce on every write. |
 | Copy locked by the PIN | The data key encrypted under a key derived from the PIN with PBKDF2, and then wrapped again by the device key. The PBKDF2 round count is measured on the device whenever a PIN is set, to take about a quarter of a second, and never falls below 100,000. |
-| Copy locked by the recovery phrase | The data key encrypted under a key derived from the phrase with PBKDF2, at a fixed 100,000 rounds so a backup opens equally on any device. What is fed in is the phrase's 16 secret bytes, not the typed words, so case, spacing or the word list can never change the key. Not tied to the device, so it works after a move. |
+| Copy locked by the recovery phrase | The data key encrypted under a key derived from the phrase with PBKDF2, at a fixed 100,000 rounds so a backup opens equally on any device. What is fed in is the phrase's 16 secret bytes, written as 32 hex characters because the JDK takes PBKDF2 passwords as text, not the typed words, so case, spacing or the word list can never change the key. Not tied to the device, so it works after a move. |
 | Copy for biometric unlock (future) | The data key wrapped by a device key that is released only after a biometric check. |
 | Lock state | A small file holding the locked copies, their salts and settings, and the failed-attempt count. |
 | Backup file | Header, the copy locked by the recovery phrase, and the encrypted document. |
