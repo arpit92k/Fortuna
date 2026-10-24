@@ -18,6 +18,10 @@ kotlin {
     linuxX64()
 
     sourceSets {
+        commonMain.dependencies {
+            // api, not implementation: dates are part of the core's public types.
+            api(libs.kotlinx.datetime)
+        }
         commonTest.dependencies {
             implementation(kotlin("test"))
         }
