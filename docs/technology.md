@@ -147,7 +147,7 @@ The file header (format version, salts, key derivation settings) is authenticate
 
 **Argon2id** is the stronger function for deriving keys from passwords, and `cryptography-kotlin` does not provide it. It would add a native library on every platform. PBKDF2 is acceptable here because the PIN relies on the device key and the recovery phrase is already long and random. This should be revisited for any platform without a hardware-backed key store, such as the web.
 
-**Recovery phrase.** Twelve words chosen from the 2,048-word BIP39 list give 128 bits of randomness and include a checksum that catches most writing mistakes. The word list and checksum are simple enough to implement in the core. The alternative, a random code in groups of characters, is easier to implement but harder to copy down correctly.
+**Recovery phrase.** Twelve words chosen from the 2,048-word BIP39 list give 128 bits of randomness and include a checksum that catches most writing mistakes. The word list is held in the core. The checksum is the first bits of a SHA-256 hash, which comes from the cryptography wrapper like every other primitive. The alternative, a random code in groups of characters, is easier to implement but harder to copy down correctly.
 
 ## Data representation
 

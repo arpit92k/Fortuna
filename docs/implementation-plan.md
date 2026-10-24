@@ -30,7 +30,7 @@ There are four stages:
 | 02 | Rates and conversion | Decimal rates, one rounding rule | Tests |
 | 03 | Dated values | "Latest on or before a date" lookup | Tests |
 | 04 | Recovery phrase | Twelve words to and from random bytes | Tests |
-| 05 | Cryptography wrapper | Encrypt, decrypt, derive a key, random bytes | Tests |
+| 05 | Cryptography wrapper | Encrypt, decrypt, derive a key, hash, random bytes | Tests |
 | 06 | Entities and dataset | The domain model and its saved form | Tests |
 | 07 | Recording rules | Every change the MVP allows, with its rules | Tests |
 | 08 | Insights | Net worth, timeline, source history | Tests |
@@ -82,6 +82,7 @@ flowchart TB
     dated --> entities
     entities --> rules
     entities --> insights
+    crypto --> phrase
     crypto --> format
     format --> store
     entities --> store
@@ -96,7 +97,7 @@ flowchart TB
     adapters --> screens
 ```
 
-- Steps 01, 03, 04 and 05 depend on nothing and can be done in any order.
+- Steps 01, 03 and 05 depend on nothing and can be done in any order. Step 04 needs SHA-256 from step 05 for its checksum, so 05 is built first.
 - The domain steps (06 to 08) and the protection steps (09, 11) do not depend on each other. They meet at step 10.
 - The building blocks are packages inside the `core` module, not separate Gradle modules. This follows the two-module structure in the technology document. The arrows above are the only dependencies allowed between packages.
 
@@ -117,7 +118,7 @@ flowchart TB
 
 ## Stage 2: building blocks
 
-Each block is pure Kotlin with no file access, no clock and no dependency on the others, except that rates build on money.
+Each block is pure Kotlin with no file access, no clock and no dependency on the others, except that rates build on money and the recovery phrase takes SHA-256 from the cryptography wrapper.
 
 ### Step 01: money
 
@@ -153,13 +154,13 @@ Each block is pure Kotlin with no file access, no clock and no dependency on the
   - The published BIP39 test vectors, in both directions.
   - A fixed example with one word swapped for another fails the checksum.
   - A word not in the list is named in the error.
-- **Done when:** the package takes its random bytes as input, so it needs no cryptography library of its own.
+- **Done when:** the package takes its random bytes as input and its SHA-256 from the step 05 wrapper, so it needs no cryptography library of its own.
 
 ### Step 05: cryptography wrapper
 
-- **Builds:** a small interface of our own with four operations: random bytes, AES-256-GCM encryption and decryption with authenticated extra data, and PBKDF2 key derivation. It is implemented with `cryptography-kotlin`, and nothing else in the core imports that library.
+- **Builds:** a small interface of our own with five operations: random bytes, AES-256-GCM encryption and decryption with authenticated extra data, PBKDF2 key derivation, and SHA-256 for the recovery phrase's checksum. It is implemented with `cryptography-kotlin`, and nothing else in the core imports that library.
 - **Tests:**
-  - Published test vectors for AES-GCM and PBKDF2.
+  - Published test vectors for AES-GCM, PBKDF2 and SHA-256.
   - Encrypt then decrypt returns the original.
   - A changed byte in the data, a changed byte in the extra data, and a wrong key are each rejected.
 - **Done when:** the tests pass on the JVM and the Linux target compiles.
