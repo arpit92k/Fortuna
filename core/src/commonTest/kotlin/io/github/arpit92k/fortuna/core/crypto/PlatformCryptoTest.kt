@@ -15,6 +15,12 @@ class PlatformCryptoTest {
 
     // AES-256-GCM: test cases 13 to 16 of "The Galois/Counter Mode of Operation
     // (GCM)" by McGrew and Viega, the specification's own test vectors.
+    //
+    // Each key and nonce pair is used to encrypt at most once in this class,
+    // as in real use. The JDK refuses to encrypt twice in a row with the same
+    // pair, so the vectors that share a pair are checked by decrypting instead,
+    // which proves the same thing: the published tag only verifies if the
+    // implementation is right.
 
     private val zeroKey = ByteArray(32)
     private val zeroNonce = ByteArray(12)
@@ -32,14 +38,15 @@ class PlatformCryptoTest {
 
     @Test
     fun gcmTestCase13EmptyPlaintext() {
-        val sealed = crypto.encrypt(zeroKey, zeroNonce, ByteArray(0), ByteArray(0))
-        assertContentEquals(hex("530f8afbc74536b9a963b4f1c4cb738b"), sealed)
+        val sealed = hex("530f8afbc74536b9a963b4f1c4cb738b")
+        assertContentEquals(ByteArray(0), crypto.decrypt(zeroKey, zeroNonce, sealed, ByteArray(0)))
     }
 
     @Test
     fun gcmTestCase14OneZeroBlock() {
         val sealed = crypto.encrypt(zeroKey, zeroNonce, ByteArray(16), ByteArray(0))
         assertContentEquals(hex("cea7403d4d606b6e074ec5d3baf39d18" + "d0d1c8a799996bf0265b98b5d48ab919"), sealed)
+        assertContentEquals(ByteArray(16), crypto.decrypt(zeroKey, zeroNonce, sealed, ByteArray(0)))
     }
 
     @Test
@@ -51,15 +58,19 @@ class PlatformCryptoTest {
 
     @Test
     fun gcmTestCase16WithAssociatedData() {
-        val sealed = crypto.encrypt(key, nonce, plaintext.copyOf(60), associatedData)
-        assertContentEquals(ciphertext.copyOf(60) + hex("76fc6ece0f4e1768cddf8853bb2d551b"), sealed)
+        val sealed = ciphertext.copyOf(60) + hex("76fc6ece0f4e1768cddf8853bb2d551b")
         assertContentEquals(plaintext.copyOf(60), crypto.decrypt(key, nonce, sealed, associatedData))
+        assertFailsWith<DecryptionFailedException> { crypto.decrypt(key, nonce, sealed, ByteArray(0)) }
     }
 
     // From the plan: encrypt then decrypt returns the original, and tampering is rejected.
 
     private val message = "The data key, or a whole dataset".encodeToByteArray()
     private val header = "Fortuna file header".encodeToByteArray()
+
+    private fun freshKey() = crypto.randomBytes(Crypto.KEY_SIZE)
+
+    private fun freshNonce() = crypto.randomBytes(Crypto.NONCE_SIZE)
 
     @Test
     fun encryptThenDecryptReturnsTheOriginal() {
@@ -72,30 +83,36 @@ class PlatformCryptoTest {
 
     @Test
     fun aChangedByteInTheDataIsRejected() {
-        val sealed = crypto.encrypt(key, nonce, message, header)
+        val k = freshKey()
+        val n = freshNonce()
+        val sealed = crypto.encrypt(k, n, message, header)
         for (index in sealed.indices) {
             val tampered = sealed.copyOf().also { it[index] = (it[index].toInt() xor 1).toByte() }
             assertFailsWith<DecryptionFailedException>("byte $index changed") {
-                crypto.decrypt(key, nonce, tampered, header)
+                crypto.decrypt(k, n, tampered, header)
             }
         }
     }
 
     @Test
     fun aChangedByteInTheAssociatedDataIsRejected() {
-        val sealed = crypto.encrypt(key, nonce, message, header)
+        val k = freshKey()
+        val n = freshNonce()
+        val sealed = crypto.encrypt(k, n, message, header)
         val otherHeader = header.copyOf().also { it[0] = (it[0].toInt() xor 1).toByte() }
-        assertFailsWith<DecryptionFailedException> { crypto.decrypt(key, nonce, sealed, otherHeader) }
-        assertFailsWith<DecryptionFailedException> { crypto.decrypt(key, nonce, sealed, ByteArray(0)) }
+        assertFailsWith<DecryptionFailedException> { crypto.decrypt(k, n, sealed, otherHeader) }
+        assertFailsWith<DecryptionFailedException> { crypto.decrypt(k, n, sealed, ByteArray(0)) }
     }
 
     @Test
     fun aWrongKeyOrNonceIsRejected() {
-        val sealed = crypto.encrypt(key, nonce, message, header)
-        val otherKey = key.copyOf().also { it[31] = (it[31].toInt() xor 1).toByte() }
-        val otherNonce = nonce.copyOf().also { it[11] = (it[11].toInt() xor 1).toByte() }
-        assertFailsWith<DecryptionFailedException> { crypto.decrypt(otherKey, nonce, sealed, header) }
-        assertFailsWith<DecryptionFailedException> { crypto.decrypt(key, otherNonce, sealed, header) }
+        val k = freshKey()
+        val n = freshNonce()
+        val sealed = crypto.encrypt(k, n, message, header)
+        val otherKey = k.copyOf().also { it[31] = (it[31].toInt() xor 1).toByte() }
+        val otherNonce = n.copyOf().also { it[11] = (it[11].toInt() xor 1).toByte() }
+        assertFailsWith<DecryptionFailedException> { crypto.decrypt(otherKey, n, sealed, header) }
+        assertFailsWith<DecryptionFailedException> { crypto.decrypt(k, otherNonce, sealed, header) }
     }
 
     @Test

@@ -22,6 +22,9 @@ interface Crypto {
      * [associatedData] is authenticated but not encrypted: decryption fails
      * unless the same bytes are given again. [nonce] must be 12 bytes and must
      * never be used twice with the same key; take it from [randomBytes].
+     *
+     * @throws IllegalStateException if the platform refuses, as the JDK does
+     *   when the previous encryption used the same key and nonce.
      */
     fun encrypt(key: ByteArray, nonce: ByteArray, plaintext: ByteArray, associatedData: ByteArray): ByteArray
 

@@ -27,7 +27,12 @@ object PlatformCrypto : Crypto {
     @OptIn(DelicateCryptographyApi::class)
     override fun encrypt(key: ByteArray, nonce: ByteArray, plaintext: ByteArray, associatedData: ByteArray): ByteArray {
         checkKeyAndNonce(key, nonce)
-        return gcmCipher(key).encryptWithIvBlocking(nonce, plaintext, associatedData)
+        return try {
+            gcmCipher(key).encryptWithIvBlocking(nonce, plaintext, associatedData)
+        } catch (e: Exception) {
+            // The JDK, for one, refuses to encrypt twice in a row with the same key and nonce.
+            throw IllegalStateException("The platform refused to encrypt; was a nonce reused with this key?", e)
+        }
     }
 
     @OptIn(DelicateCryptographyApi::class)
