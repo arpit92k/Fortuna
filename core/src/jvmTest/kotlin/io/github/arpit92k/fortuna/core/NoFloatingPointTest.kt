@@ -13,7 +13,7 @@ import kotlin.test.assertTrue
  * the type names and conversions to them, not bare literals such as 1.5.
  */
 class NoFloatingPointTest {
-    private val guardedPackages = listOf("money", "rates", "domain", "recording")
+    private val guardedPackages = listOf("money", "rates", "domain", "recording", "insights")
 
     @Test
     fun moneyRatesAndTheDomainUseNoFloatingPointTypes() {
