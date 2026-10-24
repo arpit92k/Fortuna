@@ -22,6 +22,10 @@ kotlin {
         commonMain.dependencies {
             // api, not implementation: dates are part of the core's public types.
             api(libs.kotlinx.datetime)
+            // api as well: the store exposes the dataset as a StateFlow, and
+            // the Private files port is implemented on an Okio FileSystem.
+            api(libs.kotlinx.coroutines.core)
+            api(libs.okio)
             // Only the crypto package may use these; a test checks that.
             implementation(libs.cryptography.core)
             implementation(libs.cryptography.provider.optimal)
@@ -29,6 +33,7 @@ kotlin {
         }
         commonTest.dependencies {
             implementation(kotlin("test"))
+            implementation(libs.okio.fakefilesystem)
         }
     }
 }
