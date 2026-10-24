@@ -172,6 +172,7 @@ The file header (format version, salts, key derivation settings) is authenticate
 - **Private files.** The app's no-backup directory, which only the app can read and the system never copies.
 - **Auto-lock in the background.** While the app is away, a timer asks the core to check for auto-lock at the end of each grace period, so the data key leaves memory on time rather than when the user returns.
 - **Biometrics (future).** `androidx.biometric`, with the Keystore key set to require a biometric check for each use.
+- **Sharing a picture (future).** The picture is drawn by the app from the same composables as the screen, with amounts replaced when hidden, saved as a temporary file and handed to the share sheet through a `FileProvider`. No permission is needed, and the app still has no network access.
 - **Backup and import files.** The Storage Access Framework lets the user pick a location without the app needing any storage permission.
 - **SDK levels.** Minimum SDK 26 (Android 8.0), with compile and target SDK 37 (Android 17). The minimum was raised from 24 so that PBKDF2 with SHA-256 can come from the platform, which was not certain on 24 and 25. StrongBox and data extraction rules apply on newer versions and fall back safely on older ones.
 

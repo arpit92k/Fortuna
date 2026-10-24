@@ -8,7 +8,7 @@ The line is drawn with one rule. The MVP captures and protects everything that c
 
 ### Getting in
 
-- **UF-01 First-time setup.** PIN, recovery phrase with confirmation, and base currency. Categories are a fixed starter set.
+- **UF-01 First-time setup.** PIN, recovery phrase with confirmation, and base currency. Categories are a fixed starter set. The welcome screen is reworked before release.
 - **UF-02 Unlock the app.** PIN only, with auto-lock and growing delays after failed attempts.
 - **UF-14 Recover from a forgotten PIN.** Get back in with the recovery phrase and set a new PIN.
 
@@ -41,6 +41,10 @@ These keep the MVP small. Each is lifted by an item in the future plans.
 - The PIN can only be changed through the forgotten-PIN flow.
 
 ## Future plans
+
+### Sharing
+
+- **Share a picture of a screen (UF-17).** The dashboard, a source or a chart as a picture to post on forums, with the amounts shown or hidden. With amounts hidden, percentages and the shape of charts stay, so progress can be discussed without revealing wealth. The app makes the picture itself and hands it to the phone's share sheet, so it works although the app blocks ordinary screenshots, and Fortuna itself still never uses the network.
 
 ### Recording
 
