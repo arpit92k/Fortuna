@@ -18,6 +18,7 @@ import io.github.arpit92k.fortuna.ui.PinEntry
 @Composable
 fun LockScreen(ui: LockUi, onDigit: (Char) -> Unit, onDelete: () -> Unit, onOk: () -> Unit) {
     AdaptiveScreen(
+        actionAtBottom = true,
         info = {
             Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
                 Text(stringResource(R.string.lock_title), style = MaterialTheme.typography.headlineMedium)
