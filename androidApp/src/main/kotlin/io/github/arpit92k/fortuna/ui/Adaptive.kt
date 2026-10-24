@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.widthIn
@@ -67,6 +68,10 @@ val ReadableWidth = 560.dp
  * An [action] that scrolls by itself, such as a long list, passes
  * [actionScrolls]: the screen then gives it the remaining height instead of
  * scrolling around it.
+ *
+ * With [actionAtBottom], a stacked screen keeps the info at the top and the
+ * action at the bottom, within reach of the thumbs, as for a PIN pad. When
+ * they do not both fit, the screen scrolls as usual.
  */
 @Composable
 fun AdaptiveScreen(
@@ -74,6 +79,7 @@ fun AdaptiveScreen(
     action: @Composable () -> Unit,
     modifier: Modifier = Modifier,
     actionScrolls: Boolean = false,
+    actionAtBottom: Boolean = false,
 ) {
     BoxWithConstraints(modifier.fillMaxSize().safeDrawingPadding()) {
         if (sideBySide(maxWidth, maxHeight)) {
@@ -94,14 +100,23 @@ fun AdaptiveScreen(
         } else {
             Box(Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
                 val column = Modifier.widthIn(max = ReadableWidth).fillMaxWidth()
+                val sized = when {
+                    actionScrolls -> column.fillMaxHeight()
+                    // At least the screen's height, so the action can sit at its bottom.
+                    actionAtBottom -> column.verticalScroll(rememberScrollState()).heightIn(min = maxHeight)
+                    else -> column.verticalScroll(rememberScrollState())
+                }
                 Column(
-                    (if (actionScrolls) column.fillMaxHeight() else column.verticalScroll(rememberScrollState()))
-                        .padding(horizontal = 24.dp, vertical = 24.dp)
-                        .testTag(STACKED),
-                    verticalArrangement = Arrangement.spacedBy(24.dp),
+                    sized.padding(horizontal = 24.dp, vertical = 24.dp).testTag(STACKED),
+                    verticalArrangement = if (actionAtBottom) Arrangement.SpaceBetween else Arrangement.spacedBy(24.dp),
                 ) {
                     info()
-                    if (actionScrolls) Box(Modifier.weight(1f)) { action() } else action()
+                    when {
+                        actionScrolls -> Box(Modifier.weight(1f)) { action() }
+                        // The gap the arrangement would otherwise give, for when the screen scrolls.
+                        actionAtBottom -> Box(Modifier.padding(top = 24.dp)) { action() }
+                        else -> action()
+                    }
                 }
             }
         }

@@ -98,6 +98,7 @@ fun WelcomeScreen(onGetStarted: () -> Unit) {
 @Composable
 fun CreatePinScreen(step: SetupStep.CreatePin, onDigit: (Char) -> Unit, onDelete: () -> Unit, onOk: () -> Unit) {
     AdaptiveScreen(
+        actionAtBottom = true,
         info = {
             Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
                 Heading(
