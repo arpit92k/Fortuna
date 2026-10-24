@@ -70,7 +70,7 @@ A port is an interface the core defines and each platform implements. These are 
 | Private files | Reads and replaces files in the app's own storage | App-private directory through Okio |
 | Document picker | Lets the user choose where to save or open a file | Storage Access Framework |
 | App lifecycle | Tells the core when the app leaves the foreground | `ProcessLifecycleOwner` |
-| Clock | Supplies today's date | System clock |
+| Clock | Supplies today's date, the time since the device started, and which start-up this is | System clock, `SystemClock.elapsedRealtime` and the boot count |
 
 Screen privacy (hiding figures in the app switcher) is handled in the Android interface with `FLAG_SECURE`, not through a port, because the core never draws anything.
 
@@ -132,8 +132,8 @@ Screen privacy (hiding figures in the app switcher) is handled in the Android in
 | Architecture term | Implementation |
 |---|---|
 | Data key | Random 256-bit key. Encrypts the document with AES-256-GCM, using a fresh random nonce on every write. |
-| Copy locked by the PIN | The data key encrypted under a key derived from the PIN with PBKDF2, and then wrapped again by the device key. |
-| Copy locked by the recovery phrase | The data key encrypted under a key derived from the phrase with PBKDF2. Not tied to the device, so it works after a move. |
+| Copy locked by the PIN | The data key encrypted under a key derived from the PIN with PBKDF2, and then wrapped again by the device key. The PBKDF2 round count is measured on the device whenever a PIN is set, to take about a quarter of a second, and never falls below 100,000. |
+| Copy locked by the recovery phrase | The data key encrypted under a key derived from the phrase with PBKDF2, at a fixed 100,000 rounds so a backup opens equally on any device. What is fed in is the phrase's 16 secret bytes, not the typed words, so case, spacing or the word list can never change the key. Not tied to the device, so it works after a move. |
 | Copy for biometric unlock (future) | The data key wrapped by a device key that is released only after a biometric check. |
 | Lock state | A small file holding the locked copies, their salts and settings, and the failed-attempt count. |
 | Backup file | Header, the copy locked by the recovery phrase, and the encrypted document. |

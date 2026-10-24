@@ -40,7 +40,7 @@ flowchart TD
 | S-04 Confirm phrase | Asks for some of the words back. Cannot be skipped. | S-05 | UF-01 |
 | S-05 Base currency | The user chooses the currency for totals and charts. | S-09 | UF-01 |
 | S-06 Restore | The user picks a backup file and enters the recovery phrase. | S-02 | UF-13 |
-| S-07 Lock | PIN entry. Shows the wait after failed attempts and offers the recovery phrase. | S-09, or S-08 | UF-02 |
+| S-07 Lock | PIN entry. Shows the wait after failed attempts and offers the recovery phrase; once the waits reach an hour, it points to the phrase as the quicker way in. | S-09, or S-08 | UF-02 |
 | S-08 Enter recovery phrase | The user enters the twelve words to get back in. | S-02 | UF-14 |
 
 Notes:

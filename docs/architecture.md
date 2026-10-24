@@ -213,7 +213,8 @@ Sources are updated independently, so money moved between two sources updated on
 - **No network.** The app never sends data anywhere. There is no account and no server.
 - **One data key** encrypts the store. It is never shown to the user.
 - **Locked copies of the data key.** The data key is kept in two locked copies: one opened by the everyday PIN, and one opened by a recovery phrase shown once at setup for the user to write down. Biometric unlock, when added, is a third.
-- **Lock state.** The locked copies and the count of failed attempts are kept outside the encrypted store, because they are needed before it can be opened. The count survives closing the app, so the growing delay cannot be reset.
+- **Lock state.** The locked copies and the count of failed attempts are kept outside the encrypted store, because they are needed before it can be opened. The count survives closing the app, so the growing delay cannot be reset. A wait is timed by the device's clock since it started, which cannot be changed; restarting the device makes the current wait begin again, so it never shortens one.
+- **The lock state marks that data exists.** It is always written last, after the store. On start, a store with no lock state is a setup or restore that did not finish, and is removed. Nothing is saved during setup until it finishes.
 - **Forgotten PIN:** entering the recovery phrase unlocks the data key and lets the user set a new PIN.
 - **Backup files** contain the encrypted data together with the copy of the data key locked by the recovery phrase. The user therefore does not need the phrase to make a backup, and the file can only be opened with it.
 - **New device:** the recovery phrase opens the backup and the user sets a new PIN. The PIN is not part of a backup, because anything tied to the old device does not survive the move.
