@@ -7,16 +7,16 @@ import kotlin.test.assertTrue
 /**
  * Fails if a floating-point type appears in the packages that handle money:
  * floating point cannot hold amounts like 0.10 exactly. This is the "done
- * when" of plan steps 01 and 02.
+ * when" of plan steps 01 and 02, and applies to the domain model too.
  *
  * It reads the source files as text, so it runs on the JVM only. It catches
  * the type names and conversions to them, not bare literals such as 1.5.
  */
 class NoFloatingPointTest {
-    private val guardedPackages = listOf("money", "rates")
+    private val guardedPackages = listOf("money", "rates", "domain")
 
     @Test
-    fun moneyAndRatesUseNoFloatingPointTypes() {
+    fun moneyRatesAndTheDomainUseNoFloatingPointTypes() {
         val floatingPoint = Regex("""\b(Double|Float)\b|\.to(Double|Float)\(""")
 
         val offenders = guardedPackages.flatMap { name ->
