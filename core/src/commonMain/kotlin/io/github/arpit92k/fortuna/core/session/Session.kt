@@ -229,9 +229,9 @@ class Session(
     /**
      * Locks the app if it has been in the background longer than its grace
      * period: one minute, or two if a value was being entered. The platform
-     * may also call this from a timer while the app is in the background.
+     * also calls this from a timer while the app is in the background.
      */
-    fun checkAutoLock() {
+    override fun checkAutoLock() {
         val left = leftForegroundAt ?: return
         val now = clock.now()
         val away = if (now.startUp != left.startUp) Duration.INFINITE else (now.sinceStartMillis - left.sinceStartMillis).milliseconds

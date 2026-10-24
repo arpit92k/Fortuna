@@ -168,7 +168,9 @@ The file header (format version, salts, key derivation settings) is authenticate
 
 - **No network permission.** The app does not request the `INTERNET` permission, so the operating system itself prevents it from opening any network connection. The future network features would have to add it, which is a visible change.
 - **No automatic cloud backup.** `allowBackup` is off, and data extraction rules exclude the app's files from cloud backup and device-to-device transfer.
-- **Device key.** An AES key in the Android Keystore, in StrongBox when the phone has it and in the trusted execution environment otherwise.
+- **Device key.** An AES key in the Android Keystore, in StrongBox when the phone has it and in the trusted execution environment otherwise. It does not require the phone itself to be unlocked: the app PIN and the device key already guard the data, and on some phones such a key is destroyed when the phone's own screen lock is removed or changed, which would force a recovery with the phrase.
+- **Private files.** The app's no-backup directory, which only the app can read and the system never copies.
+- **Auto-lock in the background.** While the app is away, a timer asks the core to check for auto-lock at the end of each grace period, so the data key leaves memory on time rather than when the user returns.
 - **Biometrics (future).** `androidx.biometric`, with the Keystore key set to require a biometric check for each use.
 - **Backup and import files.** The Storage Access Framework lets the user pick a location without the app needing any storage permission.
 - **SDK levels.** Minimum SDK 26 (Android 8.0), with compile and target SDK 37 (Android 17). The minimum was raised from 24 so that PBKDF2 with SHA-256 can come from the platform, which was not certain on 24 and 25. StrongBox and data extraction rules apply on newer versions and fall back safely on older ones.
@@ -179,6 +181,7 @@ The file header (format version, salts, key derivation settings) is authenticate
 - **Format tests.** A stored file from each format version is kept in the repository and must always decrypt and load.
 - **Build.** Gradle with the Kotlin DSL and a version catalog for dependencies. The catalog, `gradle/libs.versions.toml`, is the one place versions are set.
 - **Checks on every pull request.** GitHub Actions runs the core tests, compiles the native target, and builds a debug version of the Android app that can be downloaded and installed.
+- **Device tests.** The app's adapter tests, and the core's tests again, run on emulators at Android 8.0 and Android 16 from a separate Device tests workflow, started by hand rather than on every pull request, because emulators are slow. Pull requests still compile the app's device tests.
 - **Signing of debug builds.** Every debug build is signed with one fixed key, held as a GitHub secret named `DEBUG_KEYSTORE_BASE64`, so each build installs over the last without losing the app's data. Without the secret the build still passes, signed with a throwaway key.
 
 ## Other platforms
