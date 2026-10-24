@@ -205,7 +205,7 @@ Each block is pure Kotlin with no file access, no clock and no dependency on the
 
 - **Builds:** calculations over a dataset. Nothing is stored.
   - Net worth on a date: total assets, total liabilities and the difference, in the base currency.
-  - The source list: each source's current value and the date it was last updated.
+  - The source list: each source's current value in its own currency and, for a foreign source, in the base currency, and the date it was last updated.
   - A source's history: for each snapshot, the change since the previous one, the amount added and the growth, with totals since the opening balance.
   - The timeline: net worth on each date in a period on which a value or a rate changed.
   - The split of a change between two snapshots into added, growth and currency effect, with the currency effect taken as the remainder.
@@ -318,7 +318,7 @@ The screens where a value is entered (S-11 to S-14) each get the two-minute grac
 ### Step 19: foreign currencies
 
 - **Builds:** the rate entry dialog. The full currency choice on S-11, which asks for a rate when the currency has none. The rates section of S-13. S-15 Settings and S-16 Currencies and rates.
-- **Done when:** the user can add a source in another currency, see it counted in the base currency, enter a newer rate during an update or from settings, and see net worth move. The rate that the earliest snapshot depends on cannot be deleted.
+- **Done when:** the user can add a source in another currency, see its value in both currencies on the dashboard and counted in the base currency, enter a newer rate during an update or from settings, and see net worth move. The rate that the earliest snapshot depends on cannot be deleted.
 
 ### Step 20: recovery, backup and restore
 
