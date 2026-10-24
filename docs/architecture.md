@@ -94,7 +94,8 @@ erDiagram
     }
     EXCHANGE_RATE {
         date as_of
-        number rate_to_base
+        number rate "exactly as typed"
+        text direction "currency to base, or base to currency"
     }
     SETTINGS {
         text default_update_frequency
@@ -110,7 +111,7 @@ erDiagram
 - **Snapshot**: the value of one source on one date, with the net amount added since the previous snapshot and an optional note.
 - **Category**: a grouping such as cash, investments, property or debt. It decides whether its sources are assets or liabilities.
 - **Currency**: a currency in use. Exactly one is the base currency that totals and charts are reported in.
-- **Exchange rate**: the rate from a currency to the base currency on a date.
+- **Exchange rate**: the rate between a currency and the base currency on a date, kept the way round the user typed it: either one unit of the currency in the base currency, or one unit of the base currency in the currency.
 - **Settings**: a single record of app-wide values: the default update frequency for new sources, a revision number, the revision at which the last backup was made, and the date of that backup.
 
 ### Whether the backup is up to date
@@ -131,6 +132,7 @@ erDiagram
 - A source's snapshots are recorded in the source's own currency, exactly as the statement shows.
 - Exchange rates are their own dated records, not a field on each snapshot. One rate then serves every source in that currency, and the timeline can value a source on dates when it had no snapshot.
 - Rates follow the same rule as snapshots: use the latest one on or before the date in question.
+- A rate is kept exactly as typed, in either direction, such as "1 USD = 0.75 GBP" or "1 GBP = 1.33 USD". Inverting it would mean rounding it, so a rate typed from the base currency is divided by instead. Only the conversion itself rounds.
 - Because the app is offline, rates are entered by hand. The update flow shows the last rate and its age for each foreign currency in use, and entering a fresh one is optional.
 
 ### Amount added

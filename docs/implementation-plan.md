@@ -131,14 +131,15 @@ Each block is pure Kotlin with no file access, no clock and no dependency on the
 
 ### Step 02: rates and conversion
 
-- **Builds:** `Rate`, read from decimal text and held as a decimal, with `kotlin-multiplatform-bignum` used only inside it. One conversion function: multiply, then round half-up to the target currency's smallest unit. Negative amounts round half away from zero.
+- **Builds:** `Rate`, read from decimal text and kept exactly as typed, in either direction ("1 USD = 0.75 GBP" or "1 GBP = 1.33 USD"). One conversion function: multiply or divide by the rate with exact whole-number arithmetic, then round half away from zero to the target currency's smallest unit.
 - **Tests:**
   - From the architecture's example: $10,000 at 0.80 is £8,000, and $11,500 at 0.75 is £8,625.
   - Results that land exactly half-way.
   - Negative amounts: converting −x gives minus the conversion of x.
   - Currencies with different numbers of decimal places.
   - A zero or negative rate is rejected.
-- **Done when:** conversion and rounding exist in exactly one function.
+  - A rate typed the other way round gives the same result as its exact inverse.
+- **Done when:** conversion and rounding exist in exactly one function, and no floating-point type appears in the package.
 
 ### Step 03: dated values
 

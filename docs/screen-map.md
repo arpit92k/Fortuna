@@ -98,7 +98,7 @@ These appear over a screen and are not destinations of their own.
 |---|---|---|
 | Confirm delete | S-10 | Before deleting a snapshot or a source |
 | Confirm replace | S-12 | Before a new value replaces the one already recorded for that date |
-| Rate entry | S-11, S-13, S-16 | Enter or correct an exchange rate for a date |
+| Rate entry | S-11, S-13, S-16 | Enter or correct an exchange rate for a date, either way round |
 | Date picker | S-11, S-12, S-13 | Choose a date |
 | System file picker | S-06, S-17 | Choose the backup file to open, or where to save it |
 

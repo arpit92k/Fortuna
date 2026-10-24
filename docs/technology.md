@@ -17,7 +17,7 @@ Library status below is as of October 2026. Sources are listed at the end.
 | Recovery phrase | Twelve words from the BIP39 word list | Random code in groups of characters |
 | Serialization | `kotlinx.serialization`, JSON | CBOR or Protocol Buffers |
 | Dates | `kotlinx-datetime` calendar dates | None |
-| Money and rates | Integer minor units and a decimal library, behind our own types | Floating point (rejected) |
+| Money and rates | Integer minor units and exact whole-number arithmetic, behind our own types | Floating point (rejected) |
 | Files | Okio | `kotlinx-io` |
 | Android interface | Jetpack Compose | Compose Multiplatform from the start |
 | Charts | Koalaplot or Vico, decided when the dashboard is built | Hand-drawn on a Compose canvas |
@@ -152,7 +152,7 @@ The file header (format version, salts, key derivation settings) is authenticate
 ## Data representation
 
 - **Money.** Amounts are stored as whole numbers of the currency's smallest unit (pence, cents), so they are exact. Floating point is never used for money. The currencies offered, and the number of decimal places of each, come from a fixed list built into the core and taken from ISO 4217.
-- **Exchange rates.** Stored as decimal text and multiplied with a decimal library. `kotlin-multiplatform-bignum` works on every target; it is feature-complete but its last release is about two years old. It is used only inside our own `Money` and `Rate` types, so it can be replaced without touching the rest of the core.
+- **Exchange rates.** Stored as decimal text exactly as typed, with which way round it was entered, and limited to 15 digits with at most 12 after the point. Conversion multiplies or divides with exact whole-number arithmetic written in the core, then rounds once. Those limits keep the divisor below 10^18, so a short hand-written multiply and long division are all that is needed. `kotlin-multiplatform-bignum` was the planned library, but its last release was in July 2024 and built with Kotlin 2.0, so the core does without it.
 - **Rounding.** One rule, applied in one place: convert, then round half-up to the base currency's smallest unit. Negative amounts round half away from zero, so converting −x always gives minus the conversion of x and transfers still cancel.
 - **Dates.** Calendar dates with no time or time zone, using `kotlinx-datetime`. A snapshot belongs to a day, wherever the user is.
 - **Serialization.** The dataset is written as JSON with `kotlinx.serialization` before encryption. JSON is easy to inspect when debugging and easy to migrate between format versions. Size is not a concern.
@@ -197,7 +197,7 @@ The planned order is Android first, then iOS, then possibly the web. What a new 
 
 ## Risks
 
-- **Libraries before version 1.0.** `cryptography-kotlin`, `kotlin-multiplatform-bignum` and Koalaplot may change their interfaces. Each is used behind our own wrapper or type.
+- **Libraries before version 1.0.** `cryptography-kotlin` and Koalaplot may change their interfaces. Each is used behind our own wrapper.
 - **Portability is only proven for targets that are compiled.** The Linux target catches most problems. iOS-specific ones will only show when an iOS target is added.
 - **The single-document store has a size ceiling.** It is comfortable for snapshots and would not be for transactions.
 - **A PIN on a compromised phone can be guessed.** This is stated under PIN strength and should be explained to the user at setup.
@@ -210,7 +210,6 @@ The planned order is Android first, then iOS, then possibly the web. What a new 
 - [Compose Multiplatform 1.9.0: Compose for web goes beta](https://blog.jetbrains.com/kotlin/2025/09/compose-multiplatform-1-9-0-compose-for-web-beta/)
 - [SQLCipher and Kotlin Multiplatform on iOS, Zetetic forum](https://discuss.zetetic.net/t/sqlcipher-encryption-not-applied-to-room-database-for-ios/6875)
 - [cryptography-kotlin](https://klibs.io/project/whyoleg/cryptography-kotlin)
-- [kotlin-multiplatform-bignum](https://klibs.io/project/ionspin/kotlin-multiplatform-bignum)
 - [kotlinx-io](https://github.com/kotlin/kotlinx-io)
 - [Koalaplot](https://klibs.io/project/KoalaPlot/koalaplot-core)
 - [Vico](https://klibs.io/organization/patrykandpatrick)

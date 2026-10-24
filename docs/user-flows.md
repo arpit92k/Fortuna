@@ -235,6 +235,7 @@ Steps:
 Rules:
 
 - The base currency always has a rate of one.
+- A rate can be entered either way round, such as 1 USD = 0.75 GBP or 1 GBP = 1.33 USD, and is kept as typed.
 - A foreign currency needs a rate on or before its earliest snapshot. The app will not let that rate be deleted.
 - Changing the base currency is a separate, deliberate action. The app works out the new rates from the existing ones where it can, and asks the user for any that are missing.
 
