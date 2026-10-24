@@ -26,6 +26,8 @@ android {
 
     buildFeatures {
         compose = true
+        // BuildConfig.DEBUG: debug builds allow screenshots; release builds never do.
+        buildConfig = true
     }
 
     testOptions {

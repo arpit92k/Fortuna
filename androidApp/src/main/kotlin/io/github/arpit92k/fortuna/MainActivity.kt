@@ -14,9 +14,12 @@ import java.util.Locale
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        // Figures and the recovery phrase never appear in the app switcher or
-        // in screenshots and screen recordings.
-        window.setFlags(WindowManager.LayoutParams.FLAG_SECURE, WindowManager.LayoutParams.FLAG_SECURE)
+        // In the released app, figures and the recovery phrase never appear in
+        // the app switcher or in screenshots and screen recordings. Debug builds
+        // allow them, so the screens can be captured while the app is developed.
+        if (!BuildConfig.DEBUG) {
+            window.setFlags(WindowManager.LayoutParams.FLAG_SECURE, WindowManager.LayoutParams.FLAG_SECURE)
+        }
         enableEdgeToEdge()
         val core = (application as FortunaApplication).core
         setContent {
