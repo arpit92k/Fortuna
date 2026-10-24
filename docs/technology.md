@@ -138,7 +138,7 @@ Screen privacy (hiding figures in the app switcher) is handled in the Android in
 | Lock state | A small file holding the locked copies, their salts and settings, and the failed-attempt count. |
 | Backup file | Header, the copy locked by the recovery phrase, and the encrypted document. |
 
-The file header (format version, salts, key derivation settings) is authenticated along with the data, so a damaged or altered file is rejected before anything is read from it.
+The file header (format version, salts, key derivation settings) is authenticated along with the data, so a damaged or altered file is rejected before anything is read from it. The byte layout of version 1 is documented with the code that writes it, `EncryptedFile` in the core.
 
 **PIN strength.** A PIN is short, so no key derivation function can protect it once an attacker can guess offline. The protection comes from the device key: it never leaves the phone's secure hardware, so every guess has to be made on that phone, where the growing delay applies. Two consequences:
 
