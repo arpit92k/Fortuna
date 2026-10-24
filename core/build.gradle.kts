@@ -1,6 +1,7 @@
 plugins {
     alias(libs.plugins.kotlin.multiplatform)
     alias(libs.plugins.android.kotlin.multiplatform.library)
+    alias(libs.plugins.kotlin.serialization)
 }
 
 kotlin {
@@ -24,6 +25,7 @@ kotlin {
             // Only the crypto package may use these; a test checks that.
             implementation(libs.cryptography.core)
             implementation(libs.cryptography.provider.optimal)
+            implementation(libs.kotlinx.serialization.json)
         }
         commonTest.dependencies {
             implementation(kotlin("test"))
