@@ -1,5 +1,6 @@
 package io.github.arpit92k.fortuna.ui
 
+import android.view.HapticFeedbackConstants
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -19,6 +20,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
@@ -64,6 +66,12 @@ fun PinPad(
     enabled: Boolean = true,
     modifier: Modifier = Modifier,
 ) {
+    // A light tick on every key press. The system decides whether it is felt:
+    // only on a phone with a vibration motor, and only while touch feedback is
+    // on in the phone's settings. No permission is needed.
+    val view = LocalView.current
+    val tick = { view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP) }
+    val digit: (Char) -> Unit = { tick(); onDigit(it) }
     BoxWithConstraints(modifier.testTag(PIN_PAD), contentAlignment = Alignment.Center) {
         val gap = 12.dp
         // Four rows and three columns, with gaps between them.
@@ -73,18 +81,18 @@ fun PinPad(
         Column(verticalArrangement = Arrangement.spacedBy(gap)) {
             for (row in listOf("123", "456", "789")) {
                 Row(horizontalArrangement = Arrangement.spacedBy(gap)) {
-                    for (digit in row) DigitKey(digit, key, enabled, onDigit)
+                    for (d in row) DigitKey(d, key, enabled, digit)
                 }
             }
             Row(horizontalArrangement = Arrangement.spacedBy(gap), verticalAlignment = Alignment.CenterVertically) {
                 Box(Modifier.size(key), contentAlignment = Alignment.Center) {
-                    TextButton(onClick = onDelete, enabled = enabled, modifier = Modifier.testTag(PIN_DELETE)) {
+                    TextButton(onClick = { tick(); onDelete() }, enabled = enabled, modifier = Modifier.testTag(PIN_DELETE)) {
                         Text(stringResource(R.string.pin_delete))
                     }
                 }
-                DigitKey('0', key, enabled, onDigit)
+                DigitKey('0', key, enabled, digit)
                 Box(Modifier.size(key), contentAlignment = Alignment.Center) {
-                    TextButton(onClick = onOk, enabled = enabled && okEnabled, modifier = Modifier.testTag(PIN_OK)) {
+                    TextButton(onClick = { tick(); onOk() }, enabled = enabled && okEnabled, modifier = Modifier.testTag(PIN_OK)) {
                         Text(stringResource(R.string.pin_ok))
                     }
                 }
