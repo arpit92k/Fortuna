@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!--
+        Window background. It is the first thing drawn on launch, so it is also the
+        splash screen background, and the Compose theme uses it for the app's
+        background too, so the hand-off from splash to app has no colour change.
+        The dark value matches the launcher icon background.
+    -->
+    <color name="fortuna_background">#F6F8F7</color>
+</resources>
