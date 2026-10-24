@@ -145,6 +145,7 @@ The future plans add screens or extend existing ones. They are listed here so th
 | Biometric unlock and security settings | A new screen under S-15; a biometric prompt on S-07 |
 | Change base currency | An action on S-16 |
 | Update reminders | A setting on S-15 |
+| Share a picture of a screen (UF-17) | A share action on S-09, S-10 and the charts, and a preview screen where amounts are hidden or shown |
 
 ## Locking in the background
 

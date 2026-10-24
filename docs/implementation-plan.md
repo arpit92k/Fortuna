@@ -19,7 +19,7 @@ There are four stages:
 | Foundation | 00 | An empty project that builds, tests and produces an app on every pull request |
 | Building blocks | 01 to 05 | Five independent pieces, each tested alone |
 | The core, assembled | 06 to 13 | The whole app working without a screen, proven by an end-to-end test |
-| The Android app | 14 to 22 | The MVP, a group of screens at a time |
+| The Android app | 14 to 23 | The MVP, a group of screens at a time |
 
 ## Steps at a glance
 
@@ -47,7 +47,8 @@ There are four stages:
 | 19 | Foreign currencies | Rate entry, S-15, S-16 | App |
 | 20 | Recovery, backup and restore | S-08, S-17, S-06 | App |
 | 21 | Charts | Timeline on S-09, history on S-10 | App |
-| 22 | MVP release check | Frozen file format, release build | App |
+| 22 | Welcome screen | A reworked S-01, agreed before it is built | App |
+| 23 | MVP release check | Frozen file format, release build | App |
 
 Screen numbers refer to the [screen map](screen-map.md).
 
@@ -74,7 +75,7 @@ flowchart TB
     end
     subgraph app["The Android app"]
         adapters["14 Android adapters"]
-        screens["15 to 22 Screens"]
+        screens["15 to 23 Screens"]
     end
 
     money --> rates
@@ -333,7 +334,16 @@ The screens where a value is entered (S-11 to S-14) each get the two-minute grac
 - **Builds:** one chart composable, with the library (Koalaplot or Vico) chosen here. The net worth timeline on S-09 and the value over time on S-10.
 - **Done when:** both charts draw from the figures step 08 already produces, and still read sensibly with one data point, with two, and with several years of history.
 
-### Step 22: MVP release check
+### Step 22: welcome screen
+
+- **Builds:** a reworked S-01, the first screen a new user sees.
+  - **What it says:** what Fortuna does; that everything stays on the phone, with no account and no network; and what losing both the PIN and the recovery phrase means, said plainly without alarming.
+  - **How it looks:** the app's mark, a clear order of importance, and the two choices, a new start and a restore, easy to tell apart.
+  - **Everywhere:** it follows the responsive rules, so on a wide window the explanation sits beside the choices, and it works with the largest text size and with TalkBack.
+  - **Agreed first:** the design is reviewed and agreed before it is built.
+- **Done when:** it is approved on a phone and on a tablet or foldable, in the light and dark themes, and at the largest text size.
+
+### Step 23: MVP release check
 
 - **Builds:** nothing new. The file formats are frozen as version 1 and their fixtures are locked. A release build with code shrinking. Empty and error states on every screen. A manual test script that follows the flow coverage table in the screen map.
 - **Done when:** every MVP flow in the roadmap passes the manual script on a real phone, with a release build.
@@ -342,7 +352,7 @@ The screens where a value is entered (S-11 to S-14) each get the two-minute grac
 
 | MVP flow | Core steps | App step |
 |---|---|---|
-| UF-01 First-time setup | 04, 07, 11, 13 | 15 |
+| UF-01 First-time setup | 04, 07, 11, 13 | 15, and 22 for the welcome screen |
 | UF-02 Unlock the app | 11, 13 | 15 |
 | UF-03 Add a source | 07 | 16, and 19 for foreign currencies |
 | UF-04 Periodic update, basic | 07 | 18, and 19 for rates |
@@ -383,21 +393,22 @@ Decided since this plan was written:
 
 Two notes on working order:
 
-- **Data is disposable until step 20.** Before backup and restore exist, and before the format is frozen in step 22, real history should not be kept only in the app.
-- **The saved format may change until step 22.** After that, any change needs a new format version and a new fixture.
+- **Data is disposable until step 20.** Before backup and restore exist, and before the format is frozen in step 23, real history should not be kept only in the app.
+- **The saved format may change until step 23.** After that, any change needs a new format version and a new fixture.
 
 ## After the MVP
 
 The future plans in the roadmap, in a suggested order. Each is one or more steps of the same shape: core first with tests, then the screen.
 
-1. **Change breakdown for a period** (core), then the **update summary**, the "unchanged" shortcut and the typing-mistake check.
-2. **Allocation by category** and **out-of-date markers**.
-3. **Backfilling**, which lifts the date-order restriction.
-4. **Close a source** and **manage categories**.
-5. **Security settings:** change the PIN, replace the recovery phrase and the data key.
-6. **Backup prompts** and **restore over existing data**.
-7. **Biometric unlock**, which adds the `Biometric gate` port.
-8. **Spreadsheet import**, then **unencrypted export**.
+1. **Share a picture of a screen** (UF-17). A share action on the dashboard, the source page and the charts, with a preview where amounts are hidden or shown. Decided: with amounts hidden, percentages and the shape of charts stay.
+2. **Change breakdown for a period** (core), then the **update summary**, the "unchanged" shortcut and the typing-mistake check.
+3. **Allocation by category** and **out-of-date markers**.
+4. **Backfilling**, which lifts the date-order restriction.
+5. **Close a source** and **manage categories**.
+6. **Security settings:** change the PIN, replace the recovery phrase and the data key.
+7. **Backup prompts** and **restore over existing data**.
+8. **Biometric unlock**, which adds the `Biometric gate` port.
+9. **Spreadsheet import**, then **unencrypted export**.
 9. **Base-currency view of a source** and **change base currency**.
 10. **Update reminders.**
 11. **Network features**, after their own design.

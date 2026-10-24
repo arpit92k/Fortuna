@@ -26,6 +26,7 @@ There is one kind of user: the owner of the device, tracking their own wealth.
 | [UF-14](#uf-14-recover-from-a-forgotten-pin) | Recover from a forgotten PIN | Rarely | MVP |
 | [UF-15](#uf-15-import-history-from-a-spreadsheet) | Import history from a spreadsheet | Once or twice | Future |
 | [UF-16](#uf-16-change-security-settings) | Change security settings | Rarely | Future |
+| [UF-17](#uf-17-share-a-picture-of-a-screen) | Share a picture of a screen | Occasionally | Future |
 
 The release column shows where each flow falls in the [roadmap](roadmap.md), which also says which parts of a "basic" flow come later.
 
@@ -350,3 +351,22 @@ Rules:
 - Changing the PIN does not affect backups.
 - A new recovery phrase also replaces the key that protects the data, so the old phrase cannot open anything made afterwards.
 - Backups made before a recovery phrase change can only be opened with the old phrase. The app says so and recommends a new backup straight away.
+
+## Sharing
+
+### UF-17 Share a picture of a screen
+
+As a user, I want to share a picture of my dashboard, a chart or a source, with or without the amounts, so that I can talk about my progress on forums without giving away more than I mean to.
+
+Steps:
+
+1. On the dashboard, a source page or a chart, the user chooses to share.
+2. The app shows a preview of the picture, and the user chooses whether amounts are shown or hidden. Hidden is chosen to begin with.
+3. The user picks where to send it from the phone's share sheet.
+
+Rules:
+
+- With amounts hidden, every amount becomes dots. Percentages, such as a change over a period or a category's share, stay. Charts keep their shape but lose the figures on their axes.
+- Dates, source names and category names stay. The preview shows exactly what will be shared, so the user sees anything they would rather not post before sending.
+- The app makes the picture itself, so sharing works although the app blocks ordinary screenshots. The picture holds only what the preview shows, never the app's data.
+- The picture goes to the app the user picks; Fortuna itself still never uses the network. It is a temporary file, removed afterwards.
