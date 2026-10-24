@@ -292,7 +292,7 @@ The screens where a value is entered (S-11 to S-14) each get the two-minute grac
 ### Step 14: Android adapters
 
 - **Builds:** `Device key` on the Android Keystore (StrongBox where the phone has it), `Private files` on the app's private directory, `Clock`, and `App lifecycle` on `ProcessLifecycleOwner`. The core is created once and handed to the interface.
-- **Tests:** run on a device or emulator.
+- **Tests:** run on a device or emulator, from the Device tests workflow, which is started by hand.
   - A secret wrapped by the device key unwraps after the app is restarted.
   - A file replaced through the adapter is complete after a restart.
   - The core's cryptography tests pass on the lowest supported Android version.
@@ -374,6 +374,8 @@ Decided since this plan was written:
 - **PBKDF2 rounds:** for the PIN, measured on the device whenever a PIN is set to take about a quarter of a second, with a floor of 100,000; for the recovery phrase, a fixed 100,000. The phrase's 16 secret bytes are what is fed in. Every round count is stored with its locked copy.
 - **The growing delay:** three free attempts, then 1, 5, 15 and 60 minutes, then 24 hours for each attempt after that. The data is never erased.
 - **Timing the wait:** by the device's clock since start-up, with the boot count to tell start-ups apart. A restart makes the current wait begin again.
+- **Device tests:** a separate workflow, started by hand, runs them on emulators at Android 8.0 and Android 16. Pull requests only compile them.
+- **Device key and the phone's own lock:** the key does not require the phone to be unlocked, so changing the phone's screen lock never destroys it.
 - **Interrupted setup:** nothing is saved until setup finishes. The store is written first and the lock state last, and the lock state marks that data exists; a store without one is removed on start.
 
 Two notes on working order:

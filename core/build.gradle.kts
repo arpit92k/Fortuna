@@ -14,6 +14,15 @@ kotlin {
         namespace = "io.github.arpit92k.fortuna.core"
         compileSdk = libs.versions.android.compileSdk.get().toInt()
         minSdk = libs.versions.android.minSdk.get().toInt()
+
+        // The common tests also run on a phone or emulator, so the cryptography
+        // is proved on the lowest supported Android version. They run from the
+        // Device tests workflow, started by hand, not on every pull request.
+        withDeviceTestBuilder {
+            sourceSetTreeName = "test"
+        }.configure {
+            instrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        }
     }
     jvm()
     linuxX64()
@@ -34,6 +43,10 @@ kotlin {
         commonTest.dependencies {
             implementation(kotlin("test"))
             implementation(libs.okio.fakefilesystem)
+        }
+        getByName("androidDeviceTest").dependencies {
+            implementation(libs.androidx.test.runner)
+            implementation(libs.kotlin.test.junit)
         }
     }
 }

@@ -1,4 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Fortuna</string>
+
+    <!-- What the core reports, shown until the screens arrive in step 15. -->
+    <string name="state_no_data">No data on device</string>
+    <string name="state_setting_up">Setting up</string>
+    <string name="state_locked">Locked</string>
+    <string name="state_unlocked">Unlocked</string>
 </resources>

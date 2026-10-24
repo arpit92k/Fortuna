@@ -16,4 +16,11 @@ interface LifecycleListener {
     fun onLeftForeground()
 
     fun onReturnedToForeground()
+
+    /**
+     * Locks the app if it has been in the background past its grace period.
+     * The platform calls this from a timer while the app is away, so the data
+     * key leaves memory without waiting for the user to come back.
+     */
+    fun checkAutoLock()
 }
