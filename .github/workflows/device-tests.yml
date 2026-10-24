@@ -59,6 +59,9 @@ jobs:
           disable-animations: true
           # The runner uses sh for each line, which would hide a Gradle failure behind tee.
           script: bash -c 'set -o pipefail; ./gradlew connectedCheck 2>&1 | tee "$RUNNER_TEMP/gradle.log"'
+      - name: Count the tests that ran
+        if: always()
+        run: python3 .github/scripts/count-device-tests.py "${{ matrix.android }}"
       - name: Show the cause on the run
         if: failure()
         run: .github/scripts/report-gradle-failure.sh
