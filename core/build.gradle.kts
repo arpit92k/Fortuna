@@ -21,6 +21,9 @@ kotlin {
         commonMain.dependencies {
             // api, not implementation: dates are part of the core's public types.
             api(libs.kotlinx.datetime)
+            // Only the crypto package may use these; a test checks that.
+            implementation(libs.cryptography.core)
+            implementation(libs.cryptography.provider.optimal)
         }
         commonTest.dependencies {
             implementation(kotlin("test"))
