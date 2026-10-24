@@ -77,7 +77,7 @@ class LockViewModel(private val core: Core) : ViewModel() {
                 when (result) {
                     is UnlockResult.Success -> LockUi()
                     is UnlockResult.WrongPin -> it.copy(entered = "", working = false, message = LockMessage.WRONG_PIN)
-                    is UnlockResult.MustWait -> it.copy(entered = "", working = false, wait = result.wait)
+                    is UnlockResult.MustWait -> it.copy(entered = "", working = false, wait = result.remaining)
                     UnlockResult.NotThisDevice -> it.copy(entered = "", working = false, message = LockMessage.NOT_THIS_DEVICE)
                     // Neither can happen from this pad, which types only digits and needs six.
                     is UnlockResult.InvalidPin, UnlockResult.NoLockState -> it.copy(entered = "", working = false)
