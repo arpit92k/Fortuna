@@ -85,7 +85,9 @@ val HeroWidth = 360.dp
  * A screen whose action scrolls starts its info at the top, on the same line
  * as the action; any other screen centres each side.
  *
- * With [onBack], the page has a back arrow at its top.
+ * With [onBack], the page has a back arrow at its top. A [bottomBar] stays
+ * at the bottom of the window, outside the scrolling, and so just above the
+ * keyboard while one is open.
  */
 @Composable
 fun AdaptiveScreen(
@@ -96,14 +98,17 @@ fun AdaptiveScreen(
     actionAtBottom: Boolean = false,
     hero: (@Composable () -> Unit)? = null,
     onBack: (() -> Unit)? = null,
+    bottomBar: (@Composable () -> Unit)? = null,
 ) {
-    if (onBack == null) {
+    if (onBack == null && bottomBar == null) {
         Sides(info, action, modifier.fillMaxSize().safeDrawingPadding(), actionScrolls, actionAtBottom, hero)
     } else {
-        // The back arrow sits above both sides, at the start of the window.
         Column(modifier.fillMaxSize().safeDrawingPadding()) {
-            BackButton(onBack, Modifier.padding(start = 4.dp, top = 4.dp))
+            // The back arrow sits above both sides, at the start of the window.
+            if (onBack != null) BackButton(onBack, Modifier.padding(start = 4.dp, top = 4.dp))
             Sides(info, action, Modifier.fillMaxWidth().weight(1f), actionScrolls, actionAtBottom, hero)
+            // Below the content, so it stays in view just above the keyboard.
+            bottomBar?.invoke()
         }
     }
 }

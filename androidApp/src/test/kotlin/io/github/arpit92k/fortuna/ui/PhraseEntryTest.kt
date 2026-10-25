@@ -24,7 +24,19 @@ class PhraseEntryTest {
 
     @Test
     fun aSpaceInTheLastBoxStaysThere() {
-        assertNull(enterPhraseText(empty, 11, "zoo ").next)
+        val done = enterPhraseText(empty, 11, "zoo ")
+        assertNull(done.next)
+        assertTrue(done.finished)
+    }
+
+    // Typing the last word with the others filled in must not close the keyboard at each letter.
+    @Test
+    fun typingWithinAWordDoesNotFinishIt() {
+        val elevenFilled = someoneElsesPhrase.dropLast(1) + ""
+        val typing = enterPhraseText(elevenFilled, 11, "ab")
+        assertFalse(typing.finished)
+        assertNull(typing.next)
+        assertTrue(enterPhraseText(typing.words, 11, "about ").finished)
     }
 
     @Test
@@ -38,6 +50,7 @@ class PhraseEntryTest {
         val pasted = enterPhraseText(empty, 4, "  Abandon, abandon abandon\nabandon abandon abandon abandon abandon abandon abandon abandon ABOUT ")
         assertEquals(someoneElsesPhrase, pasted.words)
         assertNull(pasted.next)
+        assertTrue(pasted.finished)
     }
 
     @Test

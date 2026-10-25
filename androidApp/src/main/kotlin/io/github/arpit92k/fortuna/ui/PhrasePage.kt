@@ -28,8 +28,10 @@ fun PhrasePage(
     onContinue: () -> Unit,
     onBack: () -> Unit,
 ) {
+    val entry = rememberPhraseEntryState()
     AdaptiveScreen(
         onBack = onBack,
+        bottomBar = { PhraseSuggestions(entry, words, onWords) },
         info = {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 IconTile(FortunaIcon.Phrase)
@@ -40,7 +42,7 @@ fun PhrasePage(
         },
         action = {
             Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                PhraseEntry(words, onWords)
+                PhraseEntry(entry, words, onWords)
                 Button(
                     onClick = onContinue,
                     enabled = words.none { it.isEmpty() },
