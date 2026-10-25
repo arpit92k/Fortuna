@@ -41,8 +41,9 @@ class SourceFlowTest {
     private lateinit var page: SourcePageViewModel
     private lateinit var entry: ValueEntryViewModel
     private lateinit var dashboard: DashboardViewModel
-    private lateinit var savings: SourceId
-    private lateinit var mortgage: SourceId
+    // A new dataset's first sources get these ids; setUp checks it.
+    private val savings = SourceId(6)
+    private val mortgage = SourceId(7)
 
     private fun gbp(pence: Long) = Money(pence, pounds)
 
@@ -86,8 +87,8 @@ class SourceFlowTest {
     }
 
     private suspend fun TestScope.setUp() {
-        savings = add("Savings", 1, 300_000, january)
-        mortgage = add("Mortgage", 5, 18_000_000, january)
+        assertEquals(savings, add("Savings", 1, 300_000, january))
+        assertEquals(mortgage, add("Mortgage", 5, 18_000_000, january))
         advanceUntilIdle()
     }
 
