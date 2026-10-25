@@ -1,10 +1,13 @@
 package io.github.arpit92k.fortuna.ui
 
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
@@ -36,9 +39,13 @@ class AdaptiveLayoutTest {
     @get:Rule
     val compose = createComposeRule()
 
+    /** The bottom of the safe area: from Android 15 the app draws under the gesture bar, so the frame includes it. */
+    private var bottomInset: Dp = 0.dp
+
     private fun showLockAt(width: Dp, height: Dp, ui: LockUi = LockUi()) {
         compose.setContent {
             FortunaTheme {
+                bottomInset = with(LocalDensity.current) { WindowInsets.safeDrawing.getBottom(this).toDp() }
                 // Anchored at the top left, so a box larger than the emulator's screen is not shifted.
                 Box(Modifier.wrapContentSize(Alignment.TopStart, unbounded = true).requiredSize(width, height).testTag(FRAME)) {
                     LockScreen(ui, onDigit = {}, onDelete = {}, onOk = {})
@@ -71,7 +78,8 @@ class AdaptiveLayoutTest {
         showLockAt(411.dp, 891.dp)
         val frame = compose.onNodeWithTag(FRAME).getBoundsInRoot()
         val pad = compose.onNodeWithTag(PIN_PAD).getBoundsInRoot()
-        assertTrue(frame.bottom - pad.bottom <= 48.dp, "the pad ends ${frame.bottom - pad.bottom} above the bottom")
+        val gap = frame.bottom - bottomInset - pad.bottom
+        assertTrue(gap <= 48.dp, "the pad ends $gap above the bottom of the safe area")
     }
 
     @Test

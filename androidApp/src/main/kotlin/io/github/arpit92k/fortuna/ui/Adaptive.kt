@@ -161,7 +161,8 @@ private fun NarrowScreen(
             info()
         } else {
             Column(verticalArrangement = Arrangement.spacedBy(24.dp)) {
-                hero()
+                // Centred: the picture is narrower than the column on wider phones and unfolded foldables.
+                Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.TopCenter) { hero() }
                 info()
             }
         }
