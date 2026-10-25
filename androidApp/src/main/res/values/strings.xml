@@ -239,4 +239,10 @@
     <string name="backup_saved">The backup is saved.</string>
     <string name="backup_not_saved">The backup could not be saved there. Try choosing another place.</string>
     <string name="backup_changed_while_saving">The backup is saved, but something changed while it was saving. Save another to include it.</string>
+
+    <!-- Charts -->
+    <string name="chart_one_point">The chart fills in as you add values on more dates.</string>
+    <string name="chart_summary">From %1$s to %2$s: %3$s at the start and %4$s now. Lowest %5$s, highest %6$s.</string>
+    <string name="dashboard_chart_title">Net worth over time</string>
+    <string name="source_chart_title">Value over time</string>
 </resources>

@@ -15,6 +15,8 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
+import io.github.arpit92k.fortuna.ui.ChartPoint
+import io.github.arpit92k.fortuna.ui.netWorthPoints
 import kotlinx.datetime.LocalDate
 
 /** S-09, as of today. */
@@ -23,6 +25,8 @@ data class DashboardUi(
     val assets: Money,
     val liabilities: Money,
     val sources: List<SourceRow>,
+    /** Net worth over time, from the first value recorded to today. */
+    val timeline: List<ChartPoint> = emptyList(),
 ) {
     /** With no sources, the dashboard only invites the first one. */
     val empty: Boolean get() = sources.isEmpty()
@@ -55,7 +59,7 @@ fun dashboardOf(data: Dataset, today: LocalDate): DashboardUi {
             lastUpdated = summary.lastUpdated,
         )
     }
-    return DashboardUi(worth.total, worth.assets, worth.liabilities, rows)
+    return DashboardUi(worth.total, worth.assets, worth.liabilities, rows, netWorthPoints(data, today))
 }
 
 /**

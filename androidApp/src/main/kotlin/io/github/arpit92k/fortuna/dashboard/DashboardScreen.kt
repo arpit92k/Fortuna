@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -15,6 +16,8 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
@@ -40,6 +43,7 @@ import io.github.arpit92k.fortuna.ui.FortunaIconImage
 import io.github.arpit92k.fortuna.ui.IconTile
 import io.github.arpit92k.fortuna.core.domain.SourceId
 import io.github.arpit92k.fortuna.ui.ReadableWidth
+import io.github.arpit92k.fortuna.ui.ValueChart
 import io.github.arpit92k.fortuna.ui.RingedMark
 import io.github.arpit92k.fortuna.ui.WidthClass
 import io.github.arpit92k.fortuna.ui.categoryIcon
@@ -47,9 +51,10 @@ import io.github.arpit92k.fortuna.ui.formatDate
 import io.github.arpit92k.fortuna.ui.formatMoney
 
 /**
- * S-09 Dashboard: net worth, total assets and total liabilities, then the
- * sources. On an expanded window the totals sit beside the list; otherwise the
- * list scrolls under them, kept to a comfortable width.
+ * S-09 Dashboard: net worth, total assets and total liabilities, net worth
+ * over time, then the sources. On an expanded window the totals and the chart
+ * sit beside the list; otherwise the list scrolls under them, kept to a
+ * comfortable width.
  */
 @Composable
 fun DashboardScreen(
@@ -102,7 +107,14 @@ fun DashboardScreen(
                     Modifier.fillMaxSize().padding(horizontal = 24.dp).testTag("dashboard-side-by-side"),
                     horizontalArrangement = Arrangement.spacedBy(24.dp),
                 ) {
-                    Totals(ui, Modifier.width(360.dp).padding(top = 16.dp))
+                    // The totals and the chart beside the list, scrolling together if the window is short.
+                    Column(
+                        Modifier.width(360.dp).fillMaxHeight().verticalScroll(rememberScrollState()).padding(top = 16.dp, bottom = 96.dp),
+                        verticalArrangement = Arrangement.spacedBy(16.dp),
+                    ) {
+                        Totals(ui, Modifier.fillMaxWidth())
+                        NetWorthChart(ui, Modifier.fillMaxWidth())
+                    }
                     SourceList(ui, Modifier.weight(1f), header = false, onOpen = onOpen)
                 }
                 else -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
@@ -153,10 +165,27 @@ private fun Totals(ui: DashboardUi, modifier: Modifier = Modifier) {
 }
 
 @Composable
+private fun NetWorthChart(ui: DashboardUi, modifier: Modifier = Modifier) {
+    Card(modifier.testTag("net-worth-chart")) {
+        Column(Modifier.padding(start = 12.dp, end = 16.dp, top = 16.dp, bottom = 12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text(
+                stringResource(R.string.dashboard_chart_title),
+                style = MaterialTheme.typography.labelLarge,
+                modifier = Modifier.padding(start = 8.dp),
+            )
+            ValueChart(ui.timeline)
+        }
+    }
+}
+
+@Composable
 private fun SourceList(ui: DashboardUi, modifier: Modifier, header: Boolean, onOpen: (SourceId) -> Unit) {
     // Room at the end, so the add button never covers the last source.
     LazyColumn(modifier.testTag("source-list"), contentPadding = PaddingValues(top = 16.dp, bottom = 96.dp)) {
-        if (header) item { Totals(ui, Modifier.fillMaxWidth().padding(bottom = 16.dp)) }
+        if (header) {
+            item { Totals(ui, Modifier.fillMaxWidth().padding(bottom = 16.dp)) }
+            item { NetWorthChart(ui, Modifier.fillMaxWidth().padding(bottom = 16.dp)) }
+        }
         item {
             Text(
                 stringResource(R.string.dashboard_sources),
