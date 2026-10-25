@@ -48,7 +48,7 @@ enum class FortunaIcon {
     Currency,
     Add,
 
-    // The starter categories. Debt is drawn in the error colour.
+    // The starter categories. Debt, a bill, is drawn in the error colour.
     Cash,
     Investments,
     Property,
@@ -153,10 +153,10 @@ private fun FortunaIcon.parts(): List<Part> = when (this) {
         StrokePath("M3 12 a9 9 0 0 1 18 0 Z"),
         StrokePath("M12 12 V18 a2 2 0 0 1 -4 0", accent = true),
     )
-    // A coin with a minus: something taken away.
+    // A bill: something to be paid.
     FortunaIcon.Debt -> listOf(
-        StrokeCircle(12f, 12f, 8.5f),
-        StrokePath("M8 12 H16"),
+        StrokePath("M6 3 H18 V21 L15.5 19 L13 21 L10.5 19 L8 21 L6 19 Z"),
+        StrokePath("M9 8 H15 M9 12 H15"),
     )
 }
 
