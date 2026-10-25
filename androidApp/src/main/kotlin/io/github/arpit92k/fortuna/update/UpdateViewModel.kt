@@ -7,12 +7,15 @@ import io.github.arpit92k.fortuna.core.domain.CategoryKind
 import io.github.arpit92k.fortuna.core.domain.Dataset
 import io.github.arpit92k.fortuna.core.domain.SourceId
 import io.github.arpit92k.fortuna.core.money.AmountProblem
+import io.github.arpit92k.fortuna.core.money.Currency
 import io.github.arpit92k.fortuna.core.money.Money
 import io.github.arpit92k.fortuna.core.money.MoneyParseResult
 import io.github.arpit92k.fortuna.core.recording.RecordingError
 import io.github.arpit92k.fortuna.core.recording.RecordingResult
 import io.github.arpit92k.fortuna.core.recording.UpdateQueueResult
+import io.github.arpit92k.fortuna.core.rates.Rate
 import io.github.arpit92k.fortuna.core.recording.addSnapshot
+import io.github.arpit92k.fortuna.core.recording.recordRate
 import io.github.arpit92k.fortuna.core.recording.updateQueue
 import io.github.arpit92k.fortuna.core.session.SessionState
 import io.github.arpit92k.fortuna.source.ValueEntryProblem
@@ -36,8 +39,20 @@ data class DueSource(
     val lastDate: LocalDate,
 )
 
-/** What an update dated [date] would cover: the sources due, the one updated longest ago first, and how many are left out. */
-data class UpdatePlan(val date: LocalDate, val due: List<DueSource>, val leftOut: Int)
+/** A foreign currency of a due source, with the rate in force on the update's date and how many days old it is. */
+data class RateToConfirm(val currency: Currency, val last: Rate?, val lastDate: LocalDate?, val ageInDays: Int?)
+
+/**
+ * What an update dated [date] would cover: the sources due, the one updated
+ * longest ago first; how many are left out; and the foreign currencies of the
+ * sources due, whose rates the user keeps or renews.
+ */
+data class UpdatePlan(
+    val date: LocalDate,
+    val due: List<DueSource>,
+    val leftOut: Int,
+    val rates: List<RateToConfirm> = emptyList(),
+)
 
 /** The entry being typed for the current source. Kept across a lock, so nothing typed is lost. */
 data class StepForm(
@@ -62,6 +77,8 @@ data class UpdateUi(
     val total: Int = 0,
     val done: Int = 0,
     val form: StepForm = StepForm(),
+    /** A rate the core refused; nothing was saved. */
+    val rateNotSaved: Boolean = false,
 ) {
     /** The source to enter now, or null when the sitting is over. */
     val current: DueSource? get() = plan?.due?.firstOrNull { it.id !in skipped }
@@ -87,6 +104,7 @@ fun updatePlanOf(data: Dataset, date: LocalDate, today: LocalDate): UpdatePlan? 
             )
         },
         leftOut = queue.leftOut,
+        rates = queue.currencies.map { RateToConfirm(it.currency, it.lastRate?.value, it.lastRate?.date, it.ageInDays) },
     )
 }
 
@@ -131,6 +149,15 @@ class UpdateViewModel(private val core: Core, private val locale: () -> Locale =
         if (mutableUi.value.started) return
         chosenDate.value = date
         mutableUi.update { it.copy(date = date) }
+    }
+
+    /** Records a fresh [rate] for [currency] on the update's date. The plan then shows it as new. */
+    fun recordRate(currency: Currency, rate: Rate) {
+        val plan = mutableUi.value.plan ?: return
+        viewModelScope.launch {
+            val result = core.run { record { data, today -> data.recordRate(currency, plan.date, rate, today) } }
+            mutableUi.update { it.copy(rateNotSaved = result is RecordingResult.Failure) }
+        }
     }
 
     /** Begins S-14 with the sources due now. */

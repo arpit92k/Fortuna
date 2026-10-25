@@ -10,6 +10,7 @@ import io.github.arpit92k.fortuna.core.money.Currency
 import io.github.arpit92k.fortuna.dashboard.DashboardViewModel
 import io.github.arpit92k.fortuna.lock.LockViewModel
 import io.github.arpit92k.fortuna.navigation.Navigator
+import io.github.arpit92k.fortuna.settings.CurrenciesViewModel
 import io.github.arpit92k.fortuna.setup.SetupViewModel
 import io.github.arpit92k.fortuna.source.AddSourceViewModel
 import io.github.arpit92k.fortuna.source.SourcePageViewModel
@@ -39,6 +40,7 @@ class MainActivity : ComponentActivity() {
                 sourcePage = viewModel { SourcePageViewModel(core) },
                 valueEntry = viewModel { ValueEntryViewModel(core) },
                 update = viewModel { UpdateViewModel(core) },
+                currencies = viewModel { CurrenciesViewModel(core) },
             )
             FortunaApp(core, screens)
         }

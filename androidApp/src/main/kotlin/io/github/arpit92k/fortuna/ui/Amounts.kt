@@ -4,6 +4,9 @@ import io.github.arpit92k.fortuna.core.money.AmountProblem
 import io.github.arpit92k.fortuna.core.money.Currency
 import io.github.arpit92k.fortuna.core.money.Money
 import io.github.arpit92k.fortuna.core.money.MoneyParseResult
+import io.github.arpit92k.fortuna.core.rates.Rate
+import io.github.arpit92k.fortuna.core.rates.RateParseResult
+import io.github.arpit92k.fortuna.core.rates.RateProblem
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.toJavaLocalDate
 import java.math.BigDecimal
@@ -58,3 +61,32 @@ fun parseAmount(text: String, currency: Currency, locale: Locale = Locale.getDef
 /** A date as the phone's region writes it, such as 25 Oct 2026. */
 fun formatDate(date: LocalDate, locale: Locale = Locale.getDefault()): String =
     date.toJavaLocalDate().format(DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM).withLocale(locale))
+
+/**
+ * Reads a rate typed the way the phone's region writes numbers, as
+ * [parseAmount] does: "0,75" in Germany and "0.75" in the UK are both 0.75.
+ * One [unit] is worth the typed value in [quote].
+ */
+fun parseRate(text: String, unit: Currency, quote: Currency, locale: Locale = Locale.getDefault()): RateParseResult {
+    val symbols = DecimalFormatSymbols.getInstance(locale)
+    val plain = buildString {
+        for (c in text.trim()) {
+            when {
+                c == symbols.decimalSeparator -> append('.')
+                c == symbols.groupingSeparator || c.isWhitespace() || c == '\u00A0' || c == '\u202F' -> {}
+                else -> append(c)
+            }
+        }
+    }
+    if (plain.isEmpty()) return RateParseResult.Failure(RateProblem.EMPTY)
+    return Rate.parse(plain, unit, quote)
+}
+
+/** A rate as typed, in the region's decimal separator: "1 USD = 0.75 GBP", or "1 USD = 0,75 GBP" in Germany. */
+fun formatRate(rate: Rate, locale: Locale = Locale.getDefault()): String =
+    "1 ${rate.unit.code} = ${rateText(rate, locale)} ${rate.quote.code}"
+
+/** Just the rate's figure as typed, in the region's decimal separator, for filling in a field. */
+fun rateText(rate: Rate, locale: Locale = Locale.getDefault()): String =
+    rate.toDecimalText().replace('.', DecimalFormatSymbols.getInstance(locale).decimalSeparator)
+

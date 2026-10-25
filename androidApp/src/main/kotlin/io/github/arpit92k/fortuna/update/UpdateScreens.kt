@@ -10,7 +10,13 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.pluralStringResource
@@ -20,11 +26,15 @@ import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import io.github.arpit92k.fortuna.R
+import io.github.arpit92k.fortuna.core.money.Currency
+import io.github.arpit92k.fortuna.core.rates.Rate
 import io.github.arpit92k.fortuna.setup.Problem
 import io.github.arpit92k.fortuna.source.message
 import io.github.arpit92k.fortuna.ui.AdaptiveScreen
 import io.github.arpit92k.fortuna.ui.DateButton
 import io.github.arpit92k.fortuna.ui.IconTile
+import io.github.arpit92k.fortuna.ui.RateDialog
+import io.github.arpit92k.fortuna.ui.formatRate
 import io.github.arpit92k.fortuna.ui.categoryIcon
 import io.github.arpit92k.fortuna.ui.formatDate
 import io.github.arpit92k.fortuna.ui.formatMoney
@@ -32,8 +42,9 @@ import kotlinx.datetime.LocalDate
 
 /** S-13 Update: the date, how many accounts are due, and how many are left out and why. */
 @Composable
-fun UpdateStartScreen(ui: UpdateUi, onDate: (LocalDate?) -> Unit, onStart: () -> Unit) {
+fun UpdateStartScreen(ui: UpdateUi, base: Currency?, onDate: (LocalDate?) -> Unit, onRate: (Currency, Rate) -> Unit, onStart: () -> Unit) {
     val plan = ui.plan
+    var renewing by rememberSaveable { mutableStateOf<String?>(null) }
     AdaptiveScreen(
         info = {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -61,6 +72,13 @@ fun UpdateStartScreen(ui: UpdateUi, onDate: (LocalDate?) -> Unit, onStart: () ->
                             modifier = Modifier.testTag("update-due"),
                         )
                     }
+                    if (plan.rates.isNotEmpty() && plan.due.isNotEmpty()) {
+                        Text(stringResource(R.string.update_rates), style = MaterialTheme.typography.titleSmall)
+                        for (rate in plan.rates) {
+                            RateRow(rate, onRenew = { renewing = rate.currency.code })
+                        }
+                        if (ui.rateNotSaved) Problem(stringResource(R.string.add_source_problem_not_saved))
+                    }
                     if (plan.leftOut > 0) {
                         Text(
                             pluralStringResource(R.plurals.update_left_out, plan.leftOut, plan.leftOut),
@@ -78,6 +96,46 @@ fun UpdateStartScreen(ui: UpdateUi, onDate: (LocalDate?) -> Unit, onStart: () ->
             }
         },
     )
+
+    val renew = plan?.rates?.firstOrNull { it.currency.code == renewing }
+    if (plan != null && renew != null && base != null) {
+        RateDialog(
+            title = stringResource(R.string.update_rate_title, renew.currency.code),
+            foreign = renew.currency,
+            base = base,
+            date = plan.date,
+            initial = renew.last,
+            onConfirm = { rate, _ ->
+                onRate(renew.currency, rate)
+                renewing = null
+            },
+            onDismiss = { renewing = null },
+        )
+    }
+}
+
+/** A currency's rate in force on the update's date, how old it is, and a way to enter a newer one. Keeping it needs nothing. */
+@Composable
+private fun RateRow(rate: RateToConfirm, onRenew: () -> Unit) {
+    Row(Modifier.fillMaxWidth().testTag("update-rate-${rate.currency.code}"), verticalAlignment = Alignment.CenterVertically) {
+        Column(Modifier.weight(1f)) {
+            val last = rate.last
+            Text(if (last != null) formatRate(last) else rate.currency.code, style = MaterialTheme.typography.bodyLarge)
+            val age = rate.ageInDays
+            Text(
+                when (age) {
+                    null -> stringResource(R.string.update_rate_none)
+                    0 -> stringResource(R.string.update_rate_today)
+                    else -> pluralStringResource(R.plurals.update_rate_age, age, age)
+                },
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+        TextButton(onClick = onRenew, modifier = Modifier.testTag("update-rate-new-${rate.currency.code}")) {
+            Text(stringResource(R.string.update_rate_new))
+        }
+    }
 }
 
 /** S-14 Update: one account at a time, its last value shown; enter the new one or skip. */

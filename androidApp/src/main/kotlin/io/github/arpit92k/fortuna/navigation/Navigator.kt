@@ -27,6 +27,12 @@ sealed interface Destination {
 
     /** S-14, one source at a time. */
     data object UpdateStep : Destination
+
+    /** S-15. */
+    data object Settings : Destination
+
+    /** S-16. */
+    data object Currencies : Destination
 }
 
 /** Whether the user is entering a value on [destination], which earns the two-minute grace period. */

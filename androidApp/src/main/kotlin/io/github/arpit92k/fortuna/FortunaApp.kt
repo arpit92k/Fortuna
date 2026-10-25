@@ -20,6 +20,9 @@ import io.github.arpit92k.fortuna.lock.LockViewModel
 import io.github.arpit92k.fortuna.navigation.Destination
 import io.github.arpit92k.fortuna.navigation.Navigator
 import io.github.arpit92k.fortuna.navigation.entersValue
+import io.github.arpit92k.fortuna.settings.CurrenciesScreen
+import io.github.arpit92k.fortuna.settings.CurrenciesViewModel
+import io.github.arpit92k.fortuna.settings.SettingsScreen
 import io.github.arpit92k.fortuna.setup.SetupFlow
 import io.github.arpit92k.fortuna.setup.SetupViewModel
 import io.github.arpit92k.fortuna.source.AddSourceScreen
@@ -29,6 +32,7 @@ import io.github.arpit92k.fortuna.source.SourcePageViewModel
 import io.github.arpit92k.fortuna.source.ValueEntryScreen
 import io.github.arpit92k.fortuna.source.valueEntrySourceOf
 import io.github.arpit92k.fortuna.source.ValueEntryViewModel
+import io.github.arpit92k.fortuna.source.rateInUse
 import io.github.arpit92k.fortuna.ui.FortunaTheme
 import io.github.arpit92k.fortuna.ui.WidthClass
 import io.github.arpit92k.fortuna.update.UpdateStartScreen
@@ -46,6 +50,7 @@ class Screens(
     val sourcePage: SourcePageViewModel,
     val valueEntry: ValueEntryViewModel,
     val update: UpdateViewModel,
+    val currencies: CurrenciesViewModel,
 )
 
 /**
@@ -105,6 +110,7 @@ private fun UnlockedApp(core: Core, screens: Screens) {
                 screens.update.prepare()
                 navigator.open(Destination.Update)
             },
+            onSettings = { navigator.open(Destination.Settings) },
             onLock = { core.post { lock() } },
             modifier = modifier,
         )
@@ -114,15 +120,21 @@ private fun UnlockedApp(core: Core, screens: Screens) {
         Destination.Dashboard -> dashboard(Modifier)
         Destination.AddSource -> {
             val form by screens.addSource.form.collectAsState()
-            val base = dataset?.baseCurrency ?: return
+            val data = dataset ?: return
+            val base = data.baseCurrency ?: return
+            val today = java.time.LocalDate.now().toKotlinLocalDate()
             AddSourceScreen(
                 form = form,
-                categories = dataset?.categories.orEmpty().filter { it.status == Status.ACTIVE },
-                currency = base,
+                categories = data.categories.filter { it.status == Status.ACTIVE },
+                base = base,
+                rateInUse = rateInUse(data, form.currency ?: base, form.date ?: today),
+                today = today,
                 onName = screens.addSource::name,
                 onCategory = { screens.addSource.category(it.id) },
+                onCurrency = screens.addSource::currency,
                 onAmount = screens.addSource::amount,
                 onDate = screens.addSource::date,
+                onRate = screens.addSource::rate,
                 onNote = screens.addSource::note,
                 onSave = { screens.addSource.save(base) { navigator.back() } },
             )
@@ -156,7 +168,9 @@ private fun UnlockedApp(core: Core, screens: Screens) {
             val ui by screens.update.ui.collectAsState()
             UpdateStartScreen(
                 ui = ui,
+                base = dataset?.baseCurrency,
                 onDate = screens.update::date,
+                onRate = screens.update::recordRate,
                 onStart = {
                     screens.update.start()
                     navigator.open(Destination.UpdateStep)
@@ -179,6 +193,20 @@ private fun UnlockedApp(core: Core, screens: Screens) {
                 onNote = screens.update::note,
                 onSave = screens.update::save,
                 onSkip = screens.update::skip,
+            )
+        }
+        Destination.Settings -> SettingsScreen(
+            onCurrencies = { navigator.open(Destination.Currencies) },
+            onBack = { leave(current, screens) },
+        )
+        Destination.Currencies -> {
+            val ui by screens.currencies.ui.collectAsState()
+            CurrenciesScreen(
+                ui = ui,
+                onSave = screens.currencies::saveRate,
+                onDelete = screens.currencies::deleteRate,
+                onClearProblem = screens.currencies::clearProblem,
+                onBack = { leave(current, screens) },
             )
         }
         is Destination.ValueEntry -> {
@@ -214,6 +242,7 @@ private fun leave(current: Destination, screens: Screens) {
         // Leaving the walk keeps the date; what was entered is already saved.
         Destination.UpdateStep -> screens.update.stop()
         Destination.Update -> screens.update.finish()
+        Destination.Currencies -> screens.currencies.clearProblem()
         else -> {}
     }
     screens.navigator.back()

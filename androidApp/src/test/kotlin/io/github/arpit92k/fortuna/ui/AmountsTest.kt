@@ -4,6 +4,8 @@ import io.github.arpit92k.fortuna.core.money.AmountProblem
 import io.github.arpit92k.fortuna.core.money.Currency
 import io.github.arpit92k.fortuna.core.money.Money
 import io.github.arpit92k.fortuna.core.money.MoneyParseResult
+import io.github.arpit92k.fortuna.core.rates.RateParseResult
+import io.github.arpit92k.fortuna.core.rates.RateProblem
 import kotlinx.datetime.LocalDate
 import org.junit.Test
 import java.util.Locale
@@ -52,5 +54,18 @@ class AmountsTest {
     @Test
     fun datesAreWrittenTheWayTheRegionWritesThem() {
         assertEquals("25 Oct 2026", formatDate(LocalDate(2026, 10, 25), Locale.UK))
+    }
+
+    // A rate is typed either way round and kept as typed, in the region's format.
+    @Test
+    fun ratesAreReadAndWrittenTheWayTheRegionWritesThem() {
+        val dollars = Currency.forCode("USD")!!
+        val uk = assertIs<RateParseResult.Success>(parseRate("0.80", dollars, pounds, Locale.UK)).rate
+        assertEquals("1 USD = 0.80 GBP", formatRate(uk, Locale.UK))
+        val german = assertIs<RateParseResult.Success>(parseRate("1,25", pounds, dollars, Locale.GERMANY)).rate
+        assertEquals("1 GBP = 1,25 USD", formatRate(german, Locale.GERMANY))
+        assertEquals("1.25", german.toDecimalText())
+        assertEquals(RateProblem.EMPTY, assertIs<RateParseResult.Failure>(parseRate(" ", dollars, pounds, Locale.UK)).problem)
+        assertEquals(RateProblem.NOT_POSITIVE, assertIs<RateParseResult.Failure>(parseRate("0", dollars, pounds, Locale.UK)).problem)
     }
 }
