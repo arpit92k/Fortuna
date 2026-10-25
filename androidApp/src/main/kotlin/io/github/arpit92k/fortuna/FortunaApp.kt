@@ -1,8 +1,11 @@
 package io.github.arpit92k.fortuna
 
 import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Surface
+import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -21,7 +24,14 @@ import io.github.arpit92k.fortuna.setup.SetupFlow
 import io.github.arpit92k.fortuna.setup.SetupViewModel
 import io.github.arpit92k.fortuna.source.AddSourceScreen
 import io.github.arpit92k.fortuna.source.AddSourceViewModel
+import io.github.arpit92k.fortuna.source.SourcePageScreen
+import io.github.arpit92k.fortuna.source.SourcePageViewModel
+import io.github.arpit92k.fortuna.source.ValueEntryScreen
+import io.github.arpit92k.fortuna.source.valueEntrySourceOf
+import io.github.arpit92k.fortuna.source.ValueEntryViewModel
 import io.github.arpit92k.fortuna.ui.FortunaTheme
+import io.github.arpit92k.fortuna.ui.WidthClass
+import kotlinx.datetime.toKotlinLocalDate
 
 /** The app's view models, each made once for the activity. */
 class Screens(
@@ -30,6 +40,8 @@ class Screens(
     val navigator: Navigator,
     val dashboard: DashboardViewModel,
     val addSource: AddSourceViewModel,
+    val sourcePage: SourcePageViewModel,
+    val valueEntry: ValueEntryViewModel,
 )
 
 /**
@@ -60,7 +72,9 @@ fun FortunaApp(core: Core, screens: Screens) {
 @Composable
 private fun UnlockedApp(core: Core, screens: Screens) {
     val stack by screens.navigator.stack.collectAsState()
+    val dataset by core.dataset.collectAsState()
     val current = stack.last()
+    val navigator = screens.navigator
 
     // A screen where a value is entered earns the two-minute grace period.
     LaunchedEffect(current) {
@@ -68,22 +82,29 @@ private fun UnlockedApp(core: Core, screens: Screens) {
         core.post { enteringValue = entering }
     }
 
-    BackHandler(enabled = stack.size > 1) {
-        if (current == Destination.AddSource) screens.addSource.discard()
-        screens.navigator.back()
+    // A source deleted, here or elsewhere, takes its screens with it.
+    LaunchedEffect(current, dataset) {
+        val id = (current as? Destination.Source)?.id ?: (current as? Destination.ValueEntry)?.id
+        val data = dataset
+        if (id != null && data != null && data.source(id) == null) navigator.forget(id)
+    }
+
+    BackHandler(enabled = stack.size > 1) { leave(current, screens) }
+
+    val dashboard: @Composable (Modifier) -> Unit = { modifier ->
+        val ui by screens.dashboard.ui.collectAsState()
+        DashboardScreen(
+            ui = ui,
+            onAddSource = { navigator.open(Destination.AddSource) },
+            onOpen = { navigator.open(Destination.Source(it)) },
+            onLock = { core.post { lock() } },
+            modifier = modifier,
+        )
     }
 
     when (current) {
-        Destination.Dashboard -> {
-            val ui by screens.dashboard.ui.collectAsState()
-            DashboardScreen(
-                ui = ui,
-                onAddSource = { screens.navigator.open(Destination.AddSource) },
-                onLock = { core.post { lock() } },
-            )
-        }
+        Destination.Dashboard -> dashboard(Modifier)
         Destination.AddSource -> {
-            val dataset by core.dataset.collectAsState()
             val form by screens.addSource.form.collectAsState()
             val base = dataset?.baseCurrency ?: return
             AddSourceScreen(
@@ -95,8 +116,65 @@ private fun UnlockedApp(core: Core, screens: Screens) {
                 onAmount = screens.addSource::amount,
                 onDate = screens.addSource::date,
                 onNote = screens.addSource::note,
-                onSave = { screens.addSource.save(base) { screens.navigator.back() } },
+                onSave = { screens.addSource.save(base) { navigator.back() } },
+            )
+        }
+        is Destination.Source -> BoxWithConstraints {
+            LaunchedEffect(current.id) { screens.sourcePage.show(current.id) }
+            val ui by screens.sourcePage.ui.collectAsState()
+            val page: @Composable (Modifier) -> Unit = { modifier ->
+                SourcePageScreen(
+                    ui = ui?.takeIf { it.id == current.id },
+                    onAddValue = { navigator.open(Destination.ValueEntry(current.id)) },
+                    onEdit = { navigator.open(Destination.ValueEntry(current.id, editing = it)) },
+                    onDeleteLatest = { screens.sourcePage.deleteLatest(current.id) },
+                    onDeleteSource = { screens.sourcePage.deleteSource(current.id) { navigator.forget(current.id) } },
+                    onBack = { leave(current, screens) },
+                    modifier = modifier,
+                )
+            }
+            // On an expanded window the list stays beside the source it opened.
+            if (WidthClass.of(maxWidth) == WidthClass.EXPANDED) {
+                Row(Modifier.fillMaxSize()) {
+                    dashboard(Modifier.weight(0.42f))
+                    VerticalDivider()
+                    page(Modifier.weight(0.58f))
+                }
+            } else {
+                page(Modifier)
+            }
+        }
+        is Destination.ValueEntry -> {
+            val data = dataset ?: return
+            val source = valueEntrySourceOf(data, current.id, java.time.LocalDate.now().toKotlinLocalDate()) ?: return
+            val snapshot = current.editing?.let { data.source(current.id)?.snapshots?.on(it) }
+            LaunchedEffect(current) {
+                screens.valueEntry.open(source, current.editing, snapshot?.let { it.value to it.amountAdded }, snapshot?.note)
+            }
+            val form by screens.valueEntry.form.collectAsState()
+            ValueEntryScreen(
+                form = form,
+                source = source,
+                name = data.source(current.id)?.name.orEmpty(),
+                editing = current.editing,
+                onValue = screens.valueEntry::value,
+                onAdded = screens.valueEntry::added,
+                onDate = screens.valueEntry::date,
+                onNote = screens.valueEntry::note,
+                onSave = { screens.valueEntry.save(source, current.editing) { navigator.back() } },
+                onReplace = { screens.valueEntry.save(source, current.editing, replace = true) { navigator.back() } },
+                onKeep = screens.valueEntry::keepExisting,
             )
         }
     }
+}
+
+/** Leaves [current], forgetting anything typed on a form left without saving. */
+private fun leave(current: Destination, screens: Screens) {
+    when (current) {
+        Destination.AddSource -> screens.addSource.discard()
+        is Destination.ValueEntry -> screens.valueEntry.discard()
+        else -> {}
+    }
+    screens.navigator.back()
 }

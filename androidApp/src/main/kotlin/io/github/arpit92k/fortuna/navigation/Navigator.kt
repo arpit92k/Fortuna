@@ -1,22 +1,31 @@
 package io.github.arpit92k.fortuna.navigation
 
 import androidx.lifecycle.ViewModel
+import io.github.arpit92k.fortuna.core.domain.SourceId
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.datetime.LocalDate
 
-/** The screens of the unlocked app. Settings, the source page and the update arrive in later steps. */
+/** The screens of the unlocked app. Settings and the update arrive in later steps. */
 sealed interface Destination {
     /** S-09. */
     data object Dashboard : Destination
 
-    /** S-11. A screen where a value is entered, so it earns the longer grace period. */
+    /** S-11. */
     data object AddSource : Destination
+
+    /** S-10, one source's page. */
+    data class Source(val id: SourceId) : Destination
+
+    /** S-12: a new value for a source, or with [editing], a correction to the value on that date. */
+    data class ValueEntry(val id: SourceId, val editing: LocalDate? = null) : Destination
 }
 
 /** Whether the user is entering a value on [destination], which earns the two-minute grace period. */
-fun entersValue(destination: Destination): Boolean = destination is Destination.AddSource
+fun entersValue(destination: Destination): Boolean =
+    destination is Destination.AddSource || destination is Destination.ValueEntry
 
 /**
  * Where the user is in the unlocked app: a stack of screens, the dashboard at
@@ -31,8 +40,18 @@ class Navigator : ViewModel() {
 
     val current: Destination get() = mutableStack.value.last()
 
+    /**
+     * Opens [destination]. Opening one source's page from another's replaces
+     * it, as when the list beside it on a wide window picks a different source.
+     */
     fun open(destination: Destination) {
-        mutableStack.update { if (it.last() == destination) it else it + destination }
+        mutableStack.update {
+            when {
+                it.last() == destination -> it
+                destination is Destination.Source && it.last() is Destination.Source -> it.dropLast(1) + destination
+                else -> it + destination
+            }
+        }
     }
 
     /** Goes back one screen. Returns false on the dashboard, where back leaves the app. */
@@ -40,6 +59,13 @@ class Navigator : ViewModel() {
         if (mutableStack.value.size == 1) return false
         mutableStack.update { it.dropLast(1) }
         return true
+    }
+
+    /** Leaves every screen of a source that no longer exists. */
+    fun forget(id: SourceId) {
+        mutableStack.update { stack ->
+            stack.filterNot { (it is Destination.Source && it.id == id) || (it is Destination.ValueEntry && it.id == id) }
+        }
     }
 
     /** Back to the dashboard alone, as after a restore or a recovery. */

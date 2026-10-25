@@ -53,6 +53,10 @@
     <string name="lock_not_this_device">This phone can no longer open your data with the PIN. Your recovery phrase will get you back in.</string>
     <string name="lock_wait">Try again in %1$s</string>
 
+    <!-- Shared -->
+    <string name="date_ok">OK</string>
+    <string name="date_cancel">Cancel</string>
+
     <!-- S-09 Dashboard -->
     <string name="dashboard_lock">Lock</string>
     <string name="dashboard_net_worth">Net worth</string>
@@ -76,8 +80,6 @@
     <string name="add_source_amount">Value (%1$s)</string>
     <string name="add_source_date_today">Value as of today</string>
     <string name="add_source_date">Value as of %1$s</string>
-    <string name="add_source_date_ok">OK</string>
-    <string name="add_source_date_cancel">Cancel</string>
     <string name="add_source_note">Note (optional)</string>
     <string name="add_source_save">Add</string>
     <string name="add_source_problem_no_name">Give it a name.</string>
@@ -89,4 +91,44 @@
     <string name="add_source_problem_too_large">That amount is too large.</string>
     <string name="add_source_problem_future">The date cannot be in the future.</string>
     <string name="add_source_problem_not_saved">That could not be saved. Nothing was changed.</string>
+
+    <!-- S-10 Source -->
+    <string name="source_back">Back</string>
+    <string name="source_kind_asset">%1$s · Something you own</string>
+    <string name="source_kind_liability">%1$s · Something you owe</string>
+    <string name="source_total_added">Added since opening</string>
+    <string name="source_total_growth">Growth since opening</string>
+    <string name="source_total_borrowed">Borrowed since opening</string>
+    <string name="source_total_interest">Interest and charges</string>
+    <string name="source_add_value">Add a value</string>
+    <string name="source_history">History</string>
+    <string name="source_opening">Opening value</string>
+    <string name="source_row_asset">Added %1$s · Growth %2$s</string>
+    <string name="source_row_liability">Borrowed %1$s · Interest %2$s</string>
+    <string name="source_delete">Delete</string>
+    <string name="source_delete_value">Delete this value</string>
+    <string name="source_delete_value_title">Delete the latest value?</string>
+    <string name="source_delete_value_text">The value before it becomes the latest again, and the totals change to match.</string>
+    <string name="source_delete_source">Delete account</string>
+    <string name="source_delete_source_title">Delete %1$s?</string>
+    <string name="source_delete_source_text">It has only its opening value, so nothing else is lost. This cannot be undone.</string>
+
+    <!-- S-12 Value entry -->
+    <string name="value_new_title">New value for %1$s</string>
+    <string name="value_new_body">Enter what it is worth now, as on its latest statement.</string>
+    <string name="value_edit_title">Correct %1$s</string>
+    <string name="value_edit_body">Change the figures recorded for this date. The date itself stays.</string>
+    <string name="value_value">Value (%1$s)</string>
+    <string name="value_added">Amount added (optional)</string>
+    <string name="value_added_hint">Money you paid in since the last value. Use a minus sign for withdrawals.</string>
+    <string name="value_borrowed">New borrowing (optional)</string>
+    <string name="value_borrowed_hint">Money borrowed since the last value. Use a minus sign for repayments.</string>
+    <string name="value_opening_nothing_added">This is the opening value, so nothing counts as added.</string>
+    <string name="value_date_today">Value as of today</string>
+    <string name="value_date">Value as of %1$s</string>
+    <string name="value_save">Save</string>
+    <string name="value_replace_title">Replace the value for this date?</string>
+    <string name="value_replace_text">There is already a value for %1$s. The new figures will replace it.</string>
+    <string name="value_replace">Replace</string>
+    <string name="value_problem_before_latest">A new value cannot be dated before the latest one.</string>
 </resources>
