@@ -53,6 +53,7 @@ enum class FortunaIcon {
     Add,
     Backup,
     Restore,
+    Report,
 
     // On buttons, beside the words.
     Plus,
@@ -160,6 +161,12 @@ private fun FortunaIcon.parts(): List<Part> = when (this) {
     FortunaIcon.Restore -> listOf(
         StrokePath("M4 14 V19 a1.5 1.5 0 0 0 1.5 1.5 H18.5 a1.5 1.5 0 0 0 1.5 -1.5 V14"),
         StrokePath("M12 15 V3.5 M8 7.5 L12 3.5 L16 7.5", accent = true),
+    )
+    // A speech bubble with an exclamation mark: something to tell.
+    FortunaIcon.Report -> listOf(
+        StrokePath("M5.5 4 H18.5 a2 2 0 0 1 2 2 V14.5 a2 2 0 0 1 -2 2 H10 L6 20 V16.5 H5.5 a2 2 0 0 1 -2 -2 V6 a2 2 0 0 1 2 -2 Z"),
+        StrokePath("M12 7.5 V11", accent = true),
+        FilledCircle(12f, 13.75f, 1f, accent = true),
     )
     FortunaIcon.Plus -> listOf(
         StrokePath("M12 5 V19 M5 12 H19"),

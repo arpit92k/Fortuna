@@ -7,14 +7,24 @@ import io.github.arpit92k.fortuna.platform.AndroidClock
 import io.github.arpit92k.fortuna.platform.KeystoreDeviceKey
 import io.github.arpit92k.fortuna.platform.ProcessAppLifecycle
 import io.github.arpit92k.fortuna.platform.androidPrivateFiles
+import io.github.arpit92k.fortuna.platform.deviceInfo
+import io.github.arpit92k.fortuna.report.CrashStore
+import io.github.arpit92k.fortuna.report.recordCrashes
 
 /** Creates the core once, with the Android adapters, and hands it to the interface. */
 class FortunaApplication : Application() {
     lateinit var core: Core
         private set
 
+    /** Where crashes are recorded, to be offered for reporting the next time the app opens. */
+    lateinit var crashes: CrashStore
+        private set
+
     override fun onCreate() {
         super.onCreate()
+        // First, so a crash while starting up is recorded too.
+        crashes = CrashStore(java.io.File(filesDir, "crashes"))
+        recordCrashes(crashes, deviceInfo().appVersion)
         val session = Session(
             files = androidPrivateFiles(this),
             crypto = PlatformCrypto,

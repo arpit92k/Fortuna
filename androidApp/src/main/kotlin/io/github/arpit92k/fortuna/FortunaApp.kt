@@ -14,12 +14,17 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import io.github.arpit92k.fortuna.core.domain.Status
 import io.github.arpit92k.fortuna.core.session.SessionState
 import io.github.arpit92k.fortuna.dashboard.AmountsViewModel
 import io.github.arpit92k.fortuna.dashboard.DashboardScreen
 import io.github.arpit92k.fortuna.dashboard.DashboardViewModel
 import io.github.arpit92k.fortuna.lock.LockScreen
+import io.github.arpit92k.fortuna.platform.openEmail
+import io.github.arpit92k.fortuna.report.BugReportScreen
+import io.github.arpit92k.fortuna.report.BugReportViewModel
+import io.github.arpit92k.fortuna.report.CrashOfferDialog
 import io.github.arpit92k.fortuna.lock.LockViewModel
 import io.github.arpit92k.fortuna.lock.RecoverFlow
 import io.github.arpit92k.fortuna.lock.RecoverViewModel
@@ -65,6 +70,7 @@ class Screens(
     val currencies: CurrenciesViewModel,
     val backup: BackupViewModel,
     val amounts: AmountsViewModel,
+    val report: BugReportViewModel,
 )
 
 /**
@@ -81,8 +87,25 @@ fun FortunaApp(core: Core, screens: Screens) {
     val state by core.state.collectAsState()
     FortunaTheme {
         Surface(Modifier.fillMaxSize()) {
+            val report by screens.report.ui.collectAsState()
+            // S-18 goes over whatever is showing, locked or not: a report needs no PIN.
+            if (report.open) {
+                val context = LocalContext.current
+                BugReportScreen(
+                    ui = report,
+                    report = screens.report.reportText,
+                    onDescription = screens.report::description,
+                    onSend = { screens.report.send { openEmail(context, it) } },
+                    onDeleteCrashes = screens.report::deleteCrashes,
+                    onBack = screens.report::close,
+                )
+                return@Surface
+            }
+            if (report.offerCrash) {
+                CrashOfferDialog(onReport = screens.report::open, onDelete = screens.report::deleteCrashes, onNotNow = screens.report::notNow)
+            }
             when (state) {
-                SessionState.NoData, is SessionState.SettingUp -> SetupFlow(screens.setup, screens.restore)
+                SessionState.NoData, is SessionState.SettingUp -> SetupFlow(screens.setup, screens.restore, onReport = screens.report::open)
                 is SessionState.Locked -> {
                     val recovering by screens.recover.step.collectAsState()
                     if (recovering != null) {
@@ -95,6 +118,7 @@ fun FortunaApp(core: Core, screens: Screens) {
                             onDelete = screens.lock::deleteDigit,
                             onOk = screens.lock::ok,
                             onForgotPin = screens.recover::begin,
+                            onReport = screens.report::open,
                         )
                     }
                 }
@@ -229,6 +253,7 @@ private fun UnlockedApp(core: Core, screens: Screens) {
         Destination.Settings -> SettingsScreen(
             onCurrencies = { navigator.open(Destination.Currencies) },
             onBackup = { navigator.open(Destination.Backup) },
+            onReport = screens.report::open,
             onBack = { leave(current, screens) },
         )
         Destination.Backup -> {

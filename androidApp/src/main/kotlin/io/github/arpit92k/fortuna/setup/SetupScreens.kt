@@ -37,6 +37,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import io.github.arpit92k.fortuna.R
 import io.github.arpit92k.fortuna.core.money.Currency
+import io.github.arpit92k.fortuna.report.ReportProblemLink
 import io.github.arpit92k.fortuna.ui.AdaptiveScreen
 import io.github.arpit92k.fortuna.ui.AllowScreenshots
 import io.github.arpit92k.fortuna.ui.ButtonIcon
@@ -50,7 +51,7 @@ import io.github.arpit92k.fortuna.ui.WelcomeHero
 
 /** First-time setup, S-01 to S-05, one step at a time; or a restore, S-06, from S-01. */
 @Composable
-fun SetupFlow(viewModel: SetupViewModel, restore: RestoreViewModel) {
+fun SetupFlow(viewModel: SetupViewModel, restore: RestoreViewModel, onReport: () -> Unit = {}) {
     val step by viewModel.step.collectAsState()
     val restoring by restore.step.collectAsState()
     if (restoring != null) {
@@ -59,7 +60,7 @@ fun SetupFlow(viewModel: SetupViewModel, restore: RestoreViewModel) {
     }
     BackHandler(enabled = step != SetupStep.Welcome) { viewModel.back() }
     when (val current = step) {
-        SetupStep.Welcome -> WelcomeScreen(onGetStarted = viewModel::getStarted, onRestore = restore::begin)
+        SetupStep.Welcome -> WelcomeScreen(onGetStarted = viewModel::getStarted, onRestore = restore::begin, onReport = onReport)
         is SetupStep.CreatePin -> CreatePinScreen(
             current,
             onDigit = viewModel::digit,
@@ -94,7 +95,7 @@ private fun Heading(text: String, body: String? = null, icon: FortunaIcon? = nul
  * only way in. The picture above and the rows below say the same three things.
  */
 @Composable
-fun WelcomeScreen(onGetStarted: () -> Unit, onRestore: () -> Unit) {
+fun WelcomeScreen(onGetStarted: () -> Unit, onRestore: () -> Unit, onReport: () -> Unit = {}) {
     AdaptiveScreen(
         hero = { WelcomeHero() },
         actionAtBottom = true,
@@ -138,6 +139,8 @@ fun WelcomeScreen(onGetStarted: () -> Unit, onRestore: () -> Unit) {
                     ButtonIcon(FortunaIcon.Restore)
                     Text(stringResource(R.string.welcome_restore))
                 }
+                // Small, so it never competes with the two choices; a problem with setup can still be reported.
+                ReportProblemLink(onReport, Modifier.align(Alignment.CenterHorizontally))
             }
         },
     )

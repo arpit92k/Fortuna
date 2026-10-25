@@ -40,6 +40,7 @@ class WelcomeLayoutTest {
         const val FRAME = "frame"
         const val GET_STARTED = "get-started"
         const val RESTORE = "restore"
+        const val REPORT = "report-bug"
     }
 
     @get:Rule
@@ -67,7 +68,7 @@ class WelcomeLayoutTest {
     /** Every part is within the width of the window, and can be scrolled to. */
     private fun assertEverythingReachable() {
         val frame = compose.onNodeWithTag(FRAME).getBoundsInRoot()
-        for (tag in listOf("welcome-title", "promise-phone", "promise-account", "promise-keys", "welcome-warning", GET_STARTED, RESTORE)) {
+        for (tag in listOf("welcome-title", "promise-phone", "promise-account", "promise-keys", "welcome-warning", GET_STARTED, RESTORE, REPORT)) {
             val node = compose.onNodeWithTag(tag)
             val bounds = node.getBoundsInRoot()
             assertTrue(bounds.left >= frame.left && bounds.right <= frame.right, "$tag runs off the side")
@@ -86,8 +87,10 @@ class WelcomeLayoutTest {
         val button = compose.onNodeWithTag(GET_STARTED).getBoundsInRoot()
         val restore = compose.onNodeWithTag(RESTORE).getBoundsInRoot()
         assertTrue(hero.top < frame.top + 96.dp, "the picture starts ${hero.top - frame.top} below the top")
-        val gap = frame.bottom - bottomInset - restore.bottom
+        val report = compose.onNodeWithTag(REPORT).getBoundsInRoot()
+        val gap = frame.bottom - bottomInset - report.bottom
         assertTrue(gap <= 48.dp, "the buttons end $gap above the bottom of the safe area")
+        assertTrue(report.top >= restore.bottom, "the report link comes last, after both choices")
         assertTrue(button.top > hero.bottom, "the buttons are below the picture")
         assertTrue(restore.top >= button.bottom, "a restore comes after a new start")
     }

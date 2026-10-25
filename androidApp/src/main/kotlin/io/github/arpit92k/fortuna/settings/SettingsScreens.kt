@@ -34,6 +34,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import io.github.arpit92k.fortuna.BuildConfig
 import io.github.arpit92k.fortuna.R
 import io.github.arpit92k.fortuna.core.money.Currency
 import io.github.arpit92k.fortuna.core.rates.Rate
@@ -61,9 +62,9 @@ private fun Page(title: String, onBack: () -> Unit, tag: String, content: @Compo
     }
 }
 
-/** S-15 Settings. Bug reports join it in a later step. */
+/** S-15 Settings. */
 @Composable
-fun SettingsScreen(onCurrencies: () -> Unit, onBackup: () -> Unit, onBack: () -> Unit) {
+fun SettingsScreen(onCurrencies: () -> Unit, onBackup: () -> Unit, onReport: () -> Unit, onBack: () -> Unit) {
     Page(stringResource(R.string.settings_title), onBack, "settings") {
         SettingsItem(
             FortunaIcon.Currency,
@@ -81,6 +82,21 @@ fun SettingsScreen(onCurrencies: () -> Unit, onBackup: () -> Unit, onBack: () ->
             "settings-backup",
         )
         HorizontalDivider()
+        SettingsItem(
+            FortunaIcon.Report,
+            stringResource(R.string.settings_report),
+            stringResource(R.string.settings_report_body),
+            onReport,
+            "settings-report",
+        )
+        HorizontalDivider()
+        // Debug builds only: a crash on purpose, to check it is recorded and offered on the next start.
+        if (BuildConfig.DEBUG) {
+            TextButton(
+                onClick = { throw IllegalStateException("A crash on purpose, with £1,234.56 in its message, which is never recorded") },
+                modifier = Modifier.padding(top = 8.dp).testTag("settings-crash"),
+            ) { Text("Crash the app (debug builds only)") }
+        }
     }
 }
 
