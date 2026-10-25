@@ -3,7 +3,13 @@ package io.github.arpit92k.fortuna.core.session
 import io.github.arpit92k.fortuna.core.backup.RestoreResult
 import io.github.arpit92k.fortuna.core.backup.restoreFromBackup
 import io.github.arpit92k.fortuna.core.crypto.Crypto
+import io.github.arpit92k.fortuna.core.crypto.DecryptionFailedException
 import io.github.arpit92k.fortuna.core.domain.Dataset
+import io.github.arpit92k.fortuna.core.domain.DatasetFormatException
+import io.github.arpit92k.fortuna.core.domain.UnsupportedFormatVersionException
+import io.github.arpit92k.fortuna.core.file.DamagedFileException
+import io.github.arpit92k.fortuna.core.file.NotAnEncryptedFileException
+import io.github.arpit92k.fortuna.core.file.UnsupportedFileVersionException
 import io.github.arpit92k.fortuna.core.keys.KeyGuard
 import io.github.arpit92k.fortuna.core.keys.PHRASE_ITERATIONS
 import io.github.arpit92k.fortuna.core.keys.PendingSetup
@@ -24,13 +30,14 @@ import io.github.arpit92k.fortuna.core.recording.RecordingResult
 import io.github.arpit92k.fortuna.core.recording.chooseBaseCurrency
 import io.github.arpit92k.fortuna.core.store.DocumentStore
 import io.github.arpit92k.fortuna.core.store.PreparedBackup
+import kotlin.time.Duration
+import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.Duration.Companion.minutes
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.datetime.LocalDate
-import kotlin.time.Duration
-import kotlin.time.Duration.Companion.milliseconds
-import kotlin.time.Duration.Companion.minutes
+import okio.IOException
 
 /** Where the app is. The interface shows the screens that fit. */
 sealed interface SessionState {
@@ -153,8 +160,10 @@ class Session(
         check(state.value is SessionState.Locked) { "The app is not locked" }
         val result = keys.unlock(pin)
         if (result is UnlockResult.Success) {
-            store.open(result.dataKey)
-            result.dataKey.fill(0)
+            openStore(result.dataKey)?.let { newerApp ->
+                mutableState.value = SessionState.Locked(keys.waitRemaining())
+                return UnlockResult.DataUnreadable(newerApp)
+            }
             mutableState.value = SessionState.Unlocked
         } else {
             mutableState.value = SessionState.Locked(keys.waitRemaining())
@@ -167,11 +176,37 @@ class Session(
         check(state.value is SessionState.Locked) { "The app is not locked" }
         val result = keys.recoverWithPhrase(phrase, newPin)
         if (result is RecoveryResult.Success) {
-            store.open(result.dataKey)
-            result.dataKey.fill(0)
+            openStore(result.dataKey)?.let { newerApp -> return RecoveryResult.DataUnreadable(newerApp) }
             mutableState.value = SessionState.Unlocked
         }
         return result
+    }
+
+    /**
+     * Opens the store with [key], then clears the key. Returns null if it
+     * opened, or, if it cannot be read, whether a newer app wrote it. A store
+     * that cannot be read is left exactly as it is, so a later version of the
+     * app, or the user's own copy of the file, can still be tried.
+     */
+    private fun openStore(key: ByteArray): Boolean? = try {
+        store.open(key)
+        null
+    } catch (e: UnsupportedFileVersionException) {
+        true
+    } catch (e: UnsupportedFormatVersionException) {
+        true
+    } catch (e: DecryptionFailedException) {
+        false
+    } catch (e: DatasetFormatException) {
+        false
+    } catch (e: NotAnEncryptedFileException) {
+        false
+    } catch (e: DamagedFileException) {
+        false
+    } catch (e: IOException) {
+        false
+    } finally {
+        key.fill(0)
     }
 
     /** Locks now: the data key and the dataset are forgotten. */

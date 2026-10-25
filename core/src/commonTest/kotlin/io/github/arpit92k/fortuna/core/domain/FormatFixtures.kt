@@ -6,8 +6,8 @@ package io.github.arpit92k.fortuna.core.domain
  * Never edit one: each is what a real app wrote, and every later version of
  * the app must still read it. A new format version adds a new fixture here.
  *
- * Version 1 is not frozen until the first release (plan step 24), so until
- * then this fixture may still change along with the format.
+ * Version 1 was frozen for the first release (plan step 25); FrozenFormatsTest
+ * fails if this fixture changes.
  */
 object FormatFixtures {
     /**

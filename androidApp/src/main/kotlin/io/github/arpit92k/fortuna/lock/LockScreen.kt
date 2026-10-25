@@ -39,6 +39,8 @@ fun LockScreen(
                 when (ui.message) {
                     LockMessage.WRONG_PIN -> Problem(stringResource(R.string.lock_wrong_pin))
                     LockMessage.NOT_THIS_DEVICE -> Problem(stringResource(R.string.lock_not_this_device))
+                    LockMessage.DATA_DAMAGED -> Problem(stringResource(R.string.lock_data_damaged))
+                    LockMessage.DATA_FROM_NEWER_APP -> Problem(stringResource(R.string.lock_data_newer))
                     null -> {}
                 }
                 if (ui.waiting) {
