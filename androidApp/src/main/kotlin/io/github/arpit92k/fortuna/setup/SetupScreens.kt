@@ -27,6 +27,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
@@ -104,7 +106,8 @@ fun WelcomeScreen(onGetStarted: () -> Unit, onRestore: () -> Unit) {
                         stringResource(R.string.welcome_title),
                         style = MaterialTheme.typography.headlineMedium,
                         textAlign = align,
-                        modifier = Modifier.fillMaxWidth(),
+                        // TalkBack can jump straight to it.
+                        modifier = Modifier.fillMaxWidth().semantics { heading() }.testTag("welcome-title"),
                     )
                     Text(
                         stringResource(R.string.welcome_tagline),
@@ -113,13 +116,14 @@ fun WelcomeScreen(onGetStarted: () -> Unit, onRestore: () -> Unit) {
                         modifier = Modifier.fillMaxWidth(),
                     )
                 }
-                PromiseRow(FortunaIcon.Phone, stringResource(R.string.welcome_phone_title), stringResource(R.string.welcome_phone_body))
-                PromiseRow(FortunaIcon.NoCloud, stringResource(R.string.welcome_account_title), stringResource(R.string.welcome_account_body))
-                PromiseRow(FortunaIcon.Lock, stringResource(R.string.welcome_keys_title), stringResource(R.string.welcome_keys_body))
+                PromiseRow(FortunaIcon.Phone, stringResource(R.string.welcome_phone_title), stringResource(R.string.welcome_phone_body), Modifier.testTag("promise-phone"))
+                PromiseRow(FortunaIcon.NoCloud, stringResource(R.string.welcome_account_title), stringResource(R.string.welcome_account_body), Modifier.testTag("promise-account"))
+                PromiseRow(FortunaIcon.Lock, stringResource(R.string.welcome_keys_title), stringResource(R.string.welcome_keys_body), Modifier.testTag("promise-keys"))
                 Text(
                     stringResource(R.string.welcome_warning),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.error,
+                    modifier = Modifier.testTag("welcome-warning"),
                 )
             }
         },
