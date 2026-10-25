@@ -34,6 +34,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import io.github.arpit92k.fortuna.R
 import io.github.arpit92k.fortuna.core.money.Money
+import io.github.arpit92k.fortuna.ui.BackButton
 import io.github.arpit92k.fortuna.ui.IconTile
 import io.github.arpit92k.fortuna.ui.ReadableWidth
 import io.github.arpit92k.fortuna.ui.categoryIcon
@@ -73,7 +74,7 @@ fun SourcePageScreen(
         ) {
             item {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    if (showBack) TextButton(onClick = onBack) { Text(stringResource(R.string.source_back)) }
+                    if (showBack) BackButton(onBack)
                 }
             }
             item { Header(ui) }

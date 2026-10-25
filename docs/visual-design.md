@@ -16,6 +16,7 @@ How the app looks: its colour, its icons and its welcome picture. Layout rules f
 - **Screens:** lock, PIN (the keys of a pad), recovery phrase (a page of words), currency (two arrows, one each way), add account.
 - **Buttons:** a plus before "Add" and two chasing arrows before "Update", in the button's own colour, with the words kept.
 - **Presentation:** a small rounded tile above a screen's title; a tile beside each account on the dashboard.
+- **Icon-only buttons:** the settings gear on the dashboard and the back arrow on every page have no words. Each carries its label ("Settings", "Back") for screen readers, and the back arrow is mirrored where text runs right to left.
 - **The mark** is the launcher icon's shield and F, with the F's middle arm in the accent colour. Inside two thin rings it is the picture on the welcome screen and the empty dashboard.
 
 ## Welcome screen

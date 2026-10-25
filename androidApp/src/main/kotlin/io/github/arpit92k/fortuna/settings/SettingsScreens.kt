@@ -33,6 +33,7 @@ import io.github.arpit92k.fortuna.R
 import io.github.arpit92k.fortuna.core.money.Currency
 import io.github.arpit92k.fortuna.core.rates.Rate
 import io.github.arpit92k.fortuna.source.ConfirmDialog
+import io.github.arpit92k.fortuna.ui.BackButton
 import io.github.arpit92k.fortuna.ui.FortunaIcon
 import io.github.arpit92k.fortuna.ui.IconTile
 import io.github.arpit92k.fortuna.ui.RateDialog
@@ -46,7 +47,7 @@ import kotlinx.datetime.LocalDate
 private fun Page(title: String, onBack: () -> Unit, tag: String, content: @Composable () -> Unit) {
     Box(Modifier.fillMaxSize().safeDrawingPadding(), contentAlignment = Alignment.TopCenter) {
         Column(Modifier.widthIn(max = ReadableWidth).fillMaxWidth().padding(horizontal = 16.dp).testTag(tag)) {
-            TextButton(onClick = onBack) { Text(stringResource(R.string.source_back)) }
+            BackButton(onBack)
             Text(title, style = MaterialTheme.typography.headlineMedium, modifier = Modifier.padding(horizontal = 8.dp, vertical = 8.dp))
             content()
         }

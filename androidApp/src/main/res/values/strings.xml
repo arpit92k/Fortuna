@@ -101,7 +101,7 @@
     <string name="add_source_problem_not_saved">That could not be saved. Nothing was changed.</string>
 
     <!-- S-10 Source -->
-    <string name="source_back">Back</string>
+    <string name="back">Back</string>
     <string name="source_kind_asset">%1$s · Something you own</string>
     <string name="source_kind_liability">%1$s · Something you owe</string>
     <string name="source_total_added">Added since opening</string>

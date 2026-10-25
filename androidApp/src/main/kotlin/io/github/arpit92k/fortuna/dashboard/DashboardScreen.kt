@@ -75,8 +75,8 @@ fun DashboardScreen(
                         Text(stringResource(R.string.dashboard_update))
                     }
                 }
-                TextButton(onClick = onSettings, modifier = Modifier.testTag("open-settings")) {
-                    Text(stringResource(R.string.dashboard_settings))
+                IconButton(onClick = onSettings, modifier = Modifier.testTag("open-settings")) {
+                    FortunaIconImage(FortunaIcon.Settings, contentDescription = stringResource(R.string.dashboard_settings))
                 }
                 IconButton(onClick = onLock, modifier = Modifier.testTag("lock-now")) {
                     FortunaIconImage(FortunaIcon.Lock, contentDescription = stringResource(R.string.dashboard_lock))
