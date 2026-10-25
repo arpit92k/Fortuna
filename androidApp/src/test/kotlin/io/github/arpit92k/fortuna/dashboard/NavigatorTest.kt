@@ -1,5 +1,6 @@
 package io.github.arpit92k.fortuna.dashboard
 
+import io.github.arpit92k.fortuna.core.domain.SourceId
 import io.github.arpit92k.fortuna.navigation.Destination
 import io.github.arpit92k.fortuna.navigation.Navigator
 import io.github.arpit92k.fortuna.navigation.entersValue
@@ -25,6 +26,26 @@ class NavigatorTest {
     @Test
     fun onlyScreensWhereAValueIsEnteredEarnTheLongerGrace() {
         assertTrue(entersValue(Destination.AddSource))
+        assertTrue(entersValue(Destination.ValueEntry(SourceId(6))))
         assertFalse(entersValue(Destination.Dashboard))
+        assertFalse(entersValue(Destination.Source(SourceId(6))))
+    }
+
+    // On a wide window, picking another source in the list beside the page replaces it.
+    @Test
+    fun anotherSourceReplacesTheOneShown() {
+        val navigator = Navigator()
+        navigator.open(Destination.Source(SourceId(6)))
+        navigator.open(Destination.Source(SourceId(7)))
+        assertEquals(listOf(Destination.Dashboard, Destination.Source(SourceId(7))), navigator.stack.value)
+    }
+
+    @Test
+    fun aDeletedSourceTakesItsScreensWithIt() {
+        val navigator = Navigator()
+        navigator.open(Destination.Source(SourceId(6)))
+        navigator.open(Destination.ValueEntry(SourceId(6)))
+        navigator.forget(SourceId(6))
+        assertEquals(listOf(Destination.Dashboard), navigator.stack.value)
     }
 }

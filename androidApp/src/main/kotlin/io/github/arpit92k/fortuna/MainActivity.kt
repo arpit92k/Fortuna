@@ -12,6 +12,8 @@ import io.github.arpit92k.fortuna.lock.LockViewModel
 import io.github.arpit92k.fortuna.navigation.Navigator
 import io.github.arpit92k.fortuna.setup.SetupViewModel
 import io.github.arpit92k.fortuna.source.AddSourceViewModel
+import io.github.arpit92k.fortuna.source.SourcePageViewModel
+import io.github.arpit92k.fortuna.source.ValueEntryViewModel
 import java.util.Locale
 
 class MainActivity : ComponentActivity() {
@@ -33,6 +35,8 @@ class MainActivity : ComponentActivity() {
                 navigator = viewModel { Navigator() },
                 dashboard = viewModel { DashboardViewModel(core) },
                 addSource = viewModel { AddSourceViewModel(core) },
+                sourcePage = viewModel { SourcePageViewModel(core) },
+                valueEntry = viewModel { ValueEntryViewModel(core) },
             )
             FortunaApp(core, screens)
         }

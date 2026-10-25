@@ -1,5 +1,6 @@
 package io.github.arpit92k.fortuna.dashboard
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -34,6 +35,7 @@ import io.github.arpit92k.fortuna.R
 import io.github.arpit92k.fortuna.ui.FortunaIcon
 import io.github.arpit92k.fortuna.ui.FortunaIconImage
 import io.github.arpit92k.fortuna.ui.IconTile
+import io.github.arpit92k.fortuna.core.domain.SourceId
 import io.github.arpit92k.fortuna.ui.ReadableWidth
 import io.github.arpit92k.fortuna.ui.RingedMark
 import io.github.arpit92k.fortuna.ui.WidthClass
@@ -47,8 +49,9 @@ import io.github.arpit92k.fortuna.ui.formatMoney
  * list scrolls under them, kept to a comfortable width.
  */
 @Composable
-fun DashboardScreen(ui: DashboardUi?, onAddSource: () -> Unit, onLock: () -> Unit) {
+fun DashboardScreen(ui: DashboardUi?, onAddSource: () -> Unit, onOpen: (SourceId) -> Unit, onLock: () -> Unit, modifier: Modifier = Modifier) {
     Scaffold(
+        modifier = modifier,
         topBar = {
             Row(
                 Modifier.fillMaxWidth().statusBarsPadding().padding(start = 24.dp, end = 8.dp, top = 8.dp),
@@ -77,10 +80,10 @@ fun DashboardScreen(ui: DashboardUi?, onAddSource: () -> Unit, onLock: () -> Uni
                     horizontalArrangement = Arrangement.spacedBy(24.dp),
                 ) {
                     Totals(ui, Modifier.width(360.dp).padding(top = 16.dp))
-                    SourceList(ui, Modifier.weight(1f), header = false)
+                    SourceList(ui, Modifier.weight(1f), header = false, onOpen = onOpen)
                 }
                 else -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
-                    SourceList(ui, Modifier.widthIn(max = ReadableWidth).fillMaxWidth().padding(horizontal = 16.dp), header = true)
+                    SourceList(ui, Modifier.widthIn(max = ReadableWidth).fillMaxWidth().padding(horizontal = 16.dp), header = true, onOpen = onOpen)
                 }
             }
         }
@@ -126,7 +129,7 @@ private fun Totals(ui: DashboardUi, modifier: Modifier = Modifier) {
 }
 
 @Composable
-private fun SourceList(ui: DashboardUi, modifier: Modifier, header: Boolean) {
+private fun SourceList(ui: DashboardUi, modifier: Modifier, header: Boolean, onOpen: (SourceId) -> Unit) {
     // Room at the end, so the add button never covers the last source.
     LazyColumn(modifier.testTag("source-list"), contentPadding = PaddingValues(top = 16.dp, bottom = 96.dp)) {
         if (header) item { Totals(ui, Modifier.fillMaxWidth().padding(bottom = 16.dp)) }
@@ -138,16 +141,16 @@ private fun SourceList(ui: DashboardUi, modifier: Modifier, header: Boolean) {
             )
         }
         items(ui.sources, key = { it.id.value }) { row ->
-            SourceRowItem(row)
+            SourceRowItem(row, onClick = { onOpen(row.id) })
             HorizontalDivider()
         }
     }
 }
 
 @Composable
-private fun SourceRowItem(row: SourceRow) {
+private fun SourceRowItem(row: SourceRow, onClick: () -> Unit) {
     Row(
-        Modifier.fillMaxWidth().padding(vertical = 12.dp).testTag("source-${row.id.value}"),
+        Modifier.fillMaxWidth().clickable(onClick = onClick).padding(vertical = 12.dp).testTag("source-${row.id.value}"),
         horizontalArrangement = Arrangement.spacedBy(16.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {

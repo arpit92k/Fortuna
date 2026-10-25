@@ -7,22 +7,11 @@ import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Button
-import androidx.compose.material3.DatePicker
-import androidx.compose.material3.DatePickerDialog
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.SelectableDates
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
@@ -41,14 +30,11 @@ import io.github.arpit92k.fortuna.ui.FortunaIconImage
 import io.github.arpit92k.fortuna.ui.IconTile
 import io.github.arpit92k.fortuna.ui.categoryIcon
 import io.github.arpit92k.fortuna.ui.formatDate
+import io.github.arpit92k.fortuna.ui.DateButton
 import kotlinx.datetime.LocalDate
-import kotlinx.datetime.toJavaLocalDate
-import kotlinx.datetime.toKotlinLocalDate
-import java.time.Instant
-import java.time.ZoneOffset
 
 /** S-11 Add source, in the base currency for now. */
-@OptIn(ExperimentalLayoutApi::class, ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun AddSourceScreen(
     form: AddSourceForm,
@@ -61,7 +47,6 @@ fun AddSourceScreen(
     onNote: (String) -> Unit,
     onSave: () -> Unit,
 ) {
-    var pickingDate by rememberSaveable { mutableStateOf(false) }
     val chosen = categories.firstOrNull { it.id == form.categoryId }
 
     AdaptiveScreen(
@@ -122,17 +107,15 @@ fun AddSourceScreen(
                     modifier = Modifier.fillMaxWidth().testTag("source-amount"),
                 )
 
-                OutlinedButton(
-                    onClick = { pickingDate = true },
+                val dateText = stringResource(R.string.add_source_date)
+                DateButton(
+                    date = form.date,
+                    onDate = onDate,
+                    todayText = stringResource(R.string.add_source_date_today),
+                    dateText = { dateText.format(it) },
                     enabled = !form.saving,
-                    modifier = Modifier.fillMaxWidth().testTag("source-date"),
-                ) {
-                    val date = form.date
-                    Text(
-                        if (date == null) stringResource(R.string.add_source_date_today)
-                        else stringResource(R.string.add_source_date, formatDate(date)),
-                    )
-                }
+                    modifier = Modifier.testTag("source-date"),
+                )
 
                 OutlinedTextField(
                     value = form.note,
@@ -151,38 +134,6 @@ fun AddSourceScreen(
             }
         },
     )
-
-    if (pickingDate) {
-        // The picker works in UTC midnights; no date after today can be chosen.
-        val today = java.time.LocalDate.now()
-        val todayMillis = today.atStartOfDay(ZoneOffset.UTC).toInstant().toEpochMilli()
-        val state = rememberDatePickerState(
-            initialSelectedDateMillis = (form.date?.toJavaLocalDate() ?: today).atStartOfDay(ZoneOffset.UTC).toInstant().toEpochMilli(),
-            selectableDates = object : SelectableDates {
-                override fun isSelectableDate(utcTimeMillis: Long): Boolean = utcTimeMillis <= todayMillis
-
-                override fun isSelectableYear(year: Int): Boolean = year <= today.year
-            },
-        )
-        DatePickerDialog(
-            onDismissRequest = { pickingDate = false },
-            confirmButton = {
-                TextButton(onClick = {
-                    val millis = state.selectedDateMillis
-                    if (millis != null) {
-                        val picked = Instant.ofEpochMilli(millis).atZone(ZoneOffset.UTC).toLocalDate()
-                        onDate(if (picked == today) null else picked.toKotlinLocalDate())
-                    }
-                    pickingDate = false
-                }) { Text(stringResource(R.string.add_source_date_ok)) }
-            },
-            dismissButton = {
-                TextButton(onClick = { pickingDate = false }) { Text(stringResource(R.string.add_source_date_cancel)) }
-            },
-        ) {
-            DatePicker(state = state)
-        }
-    }
 }
 
 private fun AddSourceProblem.message(): Int = when (this) {
