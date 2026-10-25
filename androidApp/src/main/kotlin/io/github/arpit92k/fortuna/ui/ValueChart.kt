@@ -148,12 +148,15 @@ fun ValueChart(points: List<ChartPoint>, modifier: Modifier = Modifier) {
                         CartesianLayerRangeProvider.fixed(minY = range.start, maxY = range.endInclusive)
                     },
                 ),
-                startAxis = VerticalAxis.rememberStart(
-                    label = label,
-                    valueFormatter = remember(compact, hidden) {
-                        CartesianValueFormatter { _, value, _ -> if (hidden) "" else compact.format(value) }
-                    },
-                ),
+                // Hidden amounts drop the axis of amounts altogether: Vico refuses blank labels.
+                startAxis = if (hidden) {
+                    null
+                } else {
+                    VerticalAxis.rememberStart(
+                        label = label,
+                        valueFormatter = remember(compact) { CartesianValueFormatter { _, value, _ -> compact.format(value) } },
+                    )
+                },
                 bottomAxis = HorizontalAxis.rememberBottom(
                     label = label,
                     valueFormatter = remember(axisDate) {

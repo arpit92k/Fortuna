@@ -19,9 +19,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.testTag
 import androidx.compose.ui.unit.dp
 
 // Decided: the welcome picture and its three rows say the same three things,
@@ -43,8 +43,8 @@ fun WelcomeHero(modifier: Modifier = Modifier) {
             .clip(RoundedCornerShape(24.dp))
             .background(MaterialTheme.colorScheme.surfaceVariant)
             // Only a picture: TalkBack skips it, since the rows below say the same in words.
-            .clearAndSetSemantics {}
-            .testTag(WELCOME_HERO),
+            // The tag is set inside the cleared semantics, so tests still find the picture.
+            .clearAndSetSemantics { testTag = WELCOME_HERO },
         contentAlignment = Alignment.Center,
     ) {
         Box(Modifier.size(160.dp), contentAlignment = Alignment.Center) {
