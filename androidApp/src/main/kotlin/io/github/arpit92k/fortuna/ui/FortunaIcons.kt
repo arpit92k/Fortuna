@@ -56,6 +56,10 @@ enum class FortunaIcon {
     Plus,
     Update,
 
+    // On buttons with no words: the screen's label is read aloud instead.
+    Settings,
+    Back,
+
     // The starter categories. Debt, a bill, is drawn in the error colour.
     Cash,
     Investments,
@@ -152,6 +156,15 @@ private fun FortunaIcon.parts(): List<Part> = when (this) {
         StrokePath("M4 5 V9 H8"),
         StrokePath("M4 13 A8.1 8.1 0 0 0 19.5 15"),
         StrokePath("M20 19 V15 H16"),
+    )
+    // A cogwheel with a lit hub.
+    FortunaIcon.Settings -> listOf(
+        StrokePath("M10.4 5.0 L10.5 2.6 L13.5 2.6 L13.6 5.0 L15.8 5.9 L17.6 4.3 L19.7 6.4 L18.1 8.2 L19.0 10.4 L21.4 10.5 L21.4 13.5 L19.0 13.6 L18.1 15.8 L19.7 17.6 L17.6 19.7 L15.8 18.1 L13.6 19.0 L13.5 21.4 L10.5 21.4 L10.4 19.0 L8.2 18.1 L6.4 19.7 L4.3 17.6 L5.9 15.8 L5.0 13.6 L2.6 13.5 L2.6 10.5 L5.0 10.4 L5.9 8.2 L4.3 6.4 L6.4 4.3 L8.2 5.9 Z"),
+        StrokeCircle(12f, 12f, 3f, accent = true),
+    )
+    // Pointing left; mirrored where text runs right to left.
+    FortunaIcon.Back -> listOf(
+        StrokePath("M19 12 H5 M11 6 L5 12 L11 18"),
     )
     FortunaIcon.Cash -> listOf(
         StrokeRect(2.5f, 6f, 19f, 12f, 2f),
