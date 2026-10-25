@@ -1,10 +1,13 @@
 package io.github.arpit92k.fortuna.ui
 
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.getBoundsInRoot
 import androidx.compose.ui.test.junit4.createComposeRule
@@ -33,9 +36,13 @@ class WelcomeLayoutTest {
     @get:Rule
     val compose = createComposeRule()
 
+    /** The bottom of the safe area: from Android 15 the app draws under the gesture bar, so the frame includes it. */
+    private var bottomInset: Dp = 0.dp
+
     private fun showWelcomeAt(width: Dp, height: Dp) {
         compose.setContent {
             FortunaTheme {
+                bottomInset = with(LocalDensity.current) { WindowInsets.safeDrawing.getBottom(this).toDp() }
                 // Anchored at the top left, so a box larger than the emulator's screen is not shifted.
                 Box(Modifier.wrapContentSize(Alignment.TopStart, unbounded = true).requiredSize(width, height).testTag(FRAME)) {
                     WelcomeScreen(onGetStarted = {})
@@ -52,13 +59,26 @@ class WelcomeLayoutTest {
         val hero = compose.onNodeWithTag(WELCOME_HERO).getBoundsInRoot()
         val button = compose.onNodeWithTag(GET_STARTED).getBoundsInRoot()
         assertTrue(hero.top < frame.top + 96.dp, "the picture starts ${hero.top - frame.top} below the top")
-        assertTrue(frame.bottom - button.bottom <= 48.dp, "the button ends ${frame.bottom - button.bottom} above the bottom")
+        val gap = frame.bottom - bottomInset - button.bottom
+        assertTrue(gap <= 48.dp, "the button ends $gap above the bottom of the safe area")
         assertTrue(button.top > hero.bottom, "the button is below the picture")
     }
 
     @Test
     fun onAPhoneThePictureIsCentred() {
         showWelcomeAt(411.dp, 891.dp)
+        val frame = compose.onNodeWithTag(FRAME).getBoundsInRoot()
+        val hero = compose.onNodeWithTag(WELCOME_HERO).getBoundsInRoot()
+        val heroMiddle = (hero.left + hero.right) / 2
+        val frameMiddle = (frame.left + frame.right) / 2
+        assertTrue(abs((heroMiddle - frameMiddle).value) <= 1f, "the picture's middle is at $heroMiddle, the screen's at $frameMiddle")
+    }
+
+    // Still centred where the column is much wider than the picture.
+    @Test
+    fun onAnUnfoldedFoldableThePictureIsCentred() {
+        showWelcomeAt(673.dp, 841.dp)
+        compose.onNodeWithTag(STACKED).assertExists()
         val frame = compose.onNodeWithTag(FRAME).getBoundsInRoot()
         val hero = compose.onNodeWithTag(WELCOME_HERO).getBoundsInRoot()
         val heroMiddle = (hero.left + hero.right) / 2
