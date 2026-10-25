@@ -135,17 +135,7 @@ fun Problem(text: String) {
 @Composable
 fun PhraseScreen(step: SetupStep.ShowPhrase, onWrittenDown: () -> Unit) {
     AdaptiveScreen(
-        info = {
-            Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                Heading(stringResource(R.string.phrase_title), stringResource(R.string.phrase_body))
-                Text(
-                    stringResource(R.string.phrase_stay),
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = MaterialTheme.colorScheme.tertiary,
-                    modifier = Modifier.testTag("phrase-stay"),
-                )
-            }
-        },
+        info = { Heading(stringResource(R.string.phrase_title), stringResource(R.string.phrase_body)) },
         action = {
             Column(verticalArrangement = Arrangement.spacedBy(24.dp)) {
                 // Two columns of six, numbered, so the words are copied in order.
