@@ -381,6 +381,8 @@ The screens where a value is entered (S-11 to S-14) each get the two-minute grac
 ### Step 26: MVP release check
 
 - **Builds:** nothing new. The file formats are frozen as version 1 and their fixtures are locked. A release build with code shrinking, with its mapping file kept so crash reports can be read. Empty and error states on every screen. A manual test script that follows the flow coverage table in the screen map.
+  - **Decided: signing.** Release builds are `app.arpits.fortuna`, signed with the upload key named in `keystore.properties`, which stays out of the repository; without it they are unsigned. CI's release check names the debug key there instead, so its build installs for testing. Debug builds are `app.arpits.fortuna.debug`, so both share a phone.
+  - **Built:** the formats are frozen with a test that locks each fixture by its SHA-256; a lock-state fixture joins the dataset and backup ones. CI's "Release app" job builds the shrunk APK and keeps its mapping file. Data that cannot be read after a right PIN is explained on the lock screen instead of crashing the app. The script is the [manual test script](manual-test-script.md).
 - **Done when:** every MVP flow in the roadmap passes the manual script on a real phone, with a release build.
 
 ## Flow coverage

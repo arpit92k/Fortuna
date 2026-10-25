@@ -36,6 +36,13 @@ class DatasetJsonTest {
     // From the plan: a sample file kept in the repository loads. This is the first format fixture.
 
     @Test
+    fun theOpeningPrincipalFixtureLoads() {
+        val isa = DatasetJson.decode(FormatFixtures.DATASET_V1_OPENING_PRINCIPAL).source(SourceId(6))!!
+        assertEquals(Money(1_000_000, pounds), isa.openingPrincipal)
+        assertEquals(Money(1_000_000, pounds), isa.openingPutIn)
+    }
+
+    @Test
     fun theVersion1FixtureLoadsWithEveryField() {
         assertEquals(pounds, fixture.baseCurrency)
         assertEquals(11, fixture.nextId)

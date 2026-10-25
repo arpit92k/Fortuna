@@ -233,6 +233,13 @@ sealed interface UnlockResult {
     data class InvalidPin(val problem: PinProblem) : UnlockResult
 
     data object NoLockState : UnlockResult
+
+    /**
+     * The PIN was right, but the data on this phone could not be read: it is
+     * damaged, or [newerApp] a newer version of the app wrote it. Nothing was
+     * changed, and the app stays locked.
+     */
+    data class DataUnreadable(val newerApp: Boolean) : UnlockResult
 }
 
 sealed interface RecoveryResult {
@@ -243,4 +250,7 @@ sealed interface RecoveryResult {
     data class InvalidPin(val problem: PinProblem) : RecoveryResult
 
     data object NoLockState : RecoveryResult
+
+    /** The phrase was right and the new PIN is set, but the data could not be read, as for [UnlockResult.DataUnreadable]. */
+    data class DataUnreadable(val newerApp: Boolean) : RecoveryResult
 }

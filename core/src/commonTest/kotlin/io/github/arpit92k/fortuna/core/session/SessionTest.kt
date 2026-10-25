@@ -251,4 +251,28 @@ class SessionTest {
         setUp()
         assertFailsWith<IllegalStateException> { session().dataKeyForBiometricUnlock() }
     }
+
+    // ---- Data that cannot be read ----
+
+    @Test
+    fun aDamagedStoreIsReportedAndLeftAsItIs() {
+        setUp()
+        val stored = disk.read(DocumentStore.MAIN)
+        val damaged = stored.copyOf().also { it[it.lastIndex] = (it[it.lastIndex] + 1).toByte() }
+        disk.write(DocumentStore.MAIN, damaged)
+        val app = session()
+        assertEquals(UnlockResult.DataUnreadable(newerApp = false), app.unlock(pin))
+        assertIs<SessionState.Locked>(app.state.value, "still locked")
+        assertNull(app.dataset.value)
+        assertTrue(disk.read(DocumentStore.MAIN).contentEquals(damaged), "the file is left for a later attempt")
+    }
+
+    @Test
+    fun aMissingStoreIsReportedRatherThanCrashing() {
+        setUp()
+        disk.delete(DocumentStore.MAIN)
+        val app = session()
+        assertIs<SessionState.Locked>(app.state.value, "the lock state is still there")
+        assertEquals(UnlockResult.DataUnreadable(newerApp = false), app.unlock(pin))
+    }
 }

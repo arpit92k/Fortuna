@@ -48,6 +48,13 @@ android {
             applicationIdSuffix = ".debug"
         }
         release {
+            // Shrunk and obfuscated. The mapping file, kept with each build in CI,
+            // turns a crash record's code locations back into names.
+            isMinifyEnabled = true
+            isShrinkResources = true
+            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+            // The upload key from keystore.properties; without it the build is unsigned.
+            // CI's release check names the debug key there instead, so its build installs.
             signingConfig = signingConfigs.findByName("upload")
         }
     }
