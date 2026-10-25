@@ -19,7 +19,7 @@ There are four stages:
 | Foundation | 00 | An empty project that builds, tests and produces an app on every pull request |
 | Building blocks | 01 to 05 | Five independent pieces, each tested alone |
 | The core, assembled | 06 to 13 | The whole app working without a screen, proven by an end-to-end test |
-| The Android app | 14 to 23 | The MVP, a group of screens at a time |
+| The Android app | 14 to 24 | The MVP, a group of screens at a time |
 
 ## Steps at a glance
 
@@ -48,7 +48,8 @@ There are four stages:
 | 20 | Recovery, backup and restore | S-08, S-17, S-06 | App |
 | 21 | Charts | Timeline on S-09, history on S-10 | App |
 | 22 | Welcome screen | A reworked S-01, agreed before it is built | App |
-| 23 | MVP release check | Frozen file format, release build | App |
+| 23 | Bug reports | S-18, a saved record of crashes, links from S-01, S-07 and S-15 | App |
+| 24 | MVP release check | Frozen file format, release build | App |
 
 Screen numbers refer to the [screen map](screen-map.md).
 
@@ -75,7 +76,7 @@ flowchart TB
     end
     subgraph app["The Android app"]
         adapters["14 Android adapters"]
-        screens["15 to 23 Screens"]
+        screens["15 to 24 Screens"]
     end
 
     money --> rates
@@ -343,9 +344,19 @@ The screens where a value is entered (S-11 to S-14) each get the two-minute grac
   - **Agreed first:** the design is reviewed and agreed before it is built.
 - **Done when:** it is approved on a phone and on a tablet or foldable, in the light and dark themes, and at the largest text size.
 
-### Step 23: MVP release check
+### Step 23: bug reports
 
-- **Builds:** nothing new. The file formats are frozen as version 1 and their fixtures are locked. A release build with code shrinking. Empty and error states on every screen. A manual test script that follows the flow coverage table in the screen map.
+- **Builds:**
+  - **S-18 Report a bug:** the user describes the problem, sees the whole report, and sends it from their email app, addressed to the support address and filled in. Fortuna has no network access, so the report always leaves through an app the user chooses and sees.
+  - **What a report holds:** the user's description, the app's version, the Android version and the phone's model. Never amounts, names, dates of entries, the PIN or the phrase.
+  - **A saved record of crashes:** when the app crashes, it saves where in the code the crash happened: the kind of error and the code locations, without the error's message, which could hold figures. Next time the app opens, it offers to report the crash. The user sees the full text before anything is sent, and can delete the record instead. Only the latest few crashes are kept.
+  - **Where it is offered:** S-15 Settings, and a small link on S-01 Welcome and S-07 Lock, so problems with setup or unlocking can be reported without getting in.
+- **Tests:** a report never holds a figure, a source name, the PIN or the phrase; a crash record keeps code locations and drops messages; the email is addressed and filled in.
+- **Done when:** on a phone, a report can be sent from settings, from the lock screen and from the welcome screen, and a crash forced in a debug build is offered for reporting on the next start.
+
+### Step 24: MVP release check
+
+- **Builds:** nothing new. The file formats are frozen as version 1 and their fixtures are locked. A release build with code shrinking, with its mapping file kept so crash reports can be read. Empty and error states on every screen. A manual test script that follows the flow coverage table in the screen map.
 - **Done when:** every MVP flow in the roadmap passes the manual script on a real phone, with a release build.
 
 ## Flow coverage
@@ -364,6 +375,7 @@ The screens where a value is entered (S-11 to S-14) each get the two-minute grac
 | UF-12 Back up | 12 | 20 |
 | UF-13 Restore from a backup | 12 | 20 |
 | UF-14 Recover from a forgotten PIN | 11 | 20 |
+| UF-18 Report a bug | none | 23 |
 
 ## Decisions to make along the way
 
@@ -374,6 +386,7 @@ The design documents leave these open. Each is listed with the step that needs i
 | How the timeline picks its dates | 08 | Every date on which a value or a rate changed |
 | How many words S-04 asks for | 15 | Three, at random positions |
 | Chart library | 21 | As the technology document says, decided when the charts are built |
+| Support email address for bug reports | 23 | A dedicated address for Fortuna, not a personal one |
 
 Decided since this plan was written:
 
@@ -389,12 +402,13 @@ Decided since this plan was written:
 - **PIN entry:** on the app's own number pad, never the phone's keyboard.
 - **Confirming the phrase:** three words at random positions. A wrong answer leads back to the phrase.
 - **Responsive layout:** every screen, from step 15 on, adapts to the window's width class, so tablets and foldables work well. The technology document has the rules.
+- **Bug reports:** by email, prefilled, through the user's own email app. A saved record of crashes, which the user reviews before sending. Offered in settings and on the welcome and lock screens.
 - **Interrupted setup:** nothing is saved until setup finishes. The store is written first and the lock state last, and the lock state marks that data exists; a store without one is removed on start.
 
 Two notes on working order:
 
-- **Data is disposable until step 20.** Before backup and restore exist, and before the format is frozen in step 23, real history should not be kept only in the app.
-- **The saved format may change until step 23.** After that, any change needs a new format version and a new fixture.
+- **Data is disposable until step 20.** Before backup and restore exist, and before the format is frozen in step 24, real history should not be kept only in the app.
+- **The saved format may change until step 24.** After that, any change needs a new format version and a new fixture.
 
 ## After the MVP
 
