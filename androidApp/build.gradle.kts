@@ -24,6 +24,20 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
+    buildTypes {
+        release {
+            // Shrunk and obfuscated. The mapping file, kept with each build in CI,
+            // turns a crash record's code locations back into names.
+            isMinifyEnabled = true
+            isShrinkResources = true
+            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+            // Decided: until the app is published, release builds are signed with
+            // the debug key, so they install over a debug build and keep its data.
+            // A real upload key replaces this before publishing to Play.
+            signingConfig = signingConfigs.getByName("debug")
+        }
+    }
+
     buildFeatures {
         compose = true
         // BuildConfig.DEBUG: debug builds allow screenshots; release builds never do.

@@ -98,7 +98,8 @@ class RecoverViewModel(private val core: Core, private val crypto: Crypto = Plat
                     }
                     when (result) {
                         // The session is unlocked, and the app moves on; the words are forgotten then.
-                        is RecoveryResult.Success, RecoveryResult.NoLockState, null -> forget()
+                        // Unreadable data: the new PIN is set, and the lock screen says what is wrong once it is used.
+                        is RecoveryResult.Success, is RecoveryResult.DataUnreadable, RecoveryResult.NoLockState, null -> forget()
                         RecoveryResult.WrongPhrase -> mutableStep.value = RecoverStep.Phrase(words, PhraseMessage.WrongPhrase)
                         // The pad only types digits, and OK needs six.
                         is RecoveryResult.InvalidPin -> mutableStep.value = RecoverStep.NewPin(SetupStep.CreatePin(problem = PinMessage.TOO_SHORT))

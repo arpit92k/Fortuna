@@ -36,6 +36,12 @@ enum class LockMessage {
 
     /** This phone's key cannot open the data; only the recovery phrase can. */
     NOT_THIS_DEVICE,
+
+    /** The PIN was right, but the data on this phone is damaged and cannot be read. */
+    DATA_DAMAGED,
+
+    /** The PIN was right, but a newer version of Fortuna wrote the data. */
+    DATA_FROM_NEWER_APP,
 }
 
 /**
@@ -79,6 +85,11 @@ class LockViewModel(private val core: Core) : ViewModel() {
                     is UnlockResult.WrongPin -> it.copy(entered = "", working = false, message = LockMessage.WRONG_PIN)
                     is UnlockResult.MustWait -> it.copy(entered = "", working = false, wait = result.remaining)
                     UnlockResult.NotThisDevice -> it.copy(entered = "", working = false, message = LockMessage.NOT_THIS_DEVICE)
+                    is UnlockResult.DataUnreadable -> it.copy(
+                        entered = "",
+                        working = false,
+                        message = if (result.newerApp) LockMessage.DATA_FROM_NEWER_APP else LockMessage.DATA_DAMAGED,
+                    )
                     // Neither can happen from this pad, which types only digits and needs six.
                     is UnlockResult.InvalidPin, UnlockResult.NoLockState -> it.copy(entered = "", working = false)
                 }

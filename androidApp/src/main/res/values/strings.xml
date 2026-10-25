@@ -51,6 +51,8 @@
     <string name="lock_body">Enter your PIN.</string>
     <string name="lock_wrong_pin">That PIN is not right.</string>
     <string name="lock_not_this_device">This phone can no longer open your data with the PIN. Your recovery phrase will get you back in.</string>
+    <string name="lock_data_damaged">Your PIN is right, but the data on this phone is damaged and cannot be opened. Nothing has been changed. Please report the problem; if you have a backup, it still holds your data.</string>
+    <string name="lock_data_newer">Your PIN is right, but this data was saved by a newer version of Fortuna. Update the app to open it. Nothing has been changed.</string>
     <string name="lock_wait">Try again in %1$s</string>
 
     <!-- Shared -->
