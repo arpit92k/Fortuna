@@ -341,7 +341,7 @@ The screens where a value is entered (S-11 to S-14) each get the two-minute grac
   - **What it says:** what Fortuna does; that everything stays on the phone, with no account and no network; and what losing both the PIN and the recovery phrase means, said plainly without alarming.
   - **How it looks:** the app's mark, a clear order of importance, and the two choices, a new start and a restore, easy to tell apart.
   - **Everywhere:** it follows the responsive rules, so on a wide window the explanation sits beside the choices, and it works with the largest text size and with TalkBack.
-  - **Agreed first:** the design is reviewed and agreed before it is built.
+  - **Agreed first:** the design is reviewed and agreed before it is built. Agreed: a picture of the mark in its rings with three icons, and three rows that explain them; see [visual design](visual-design.md). The restore choice and the bug-report link are added by the steps that bring them.
 - **Done when:** it is approved on a phone and on a tablet or foldable, in the light and dark themes, and at the largest text size.
 
 ### Step 23: bug reports

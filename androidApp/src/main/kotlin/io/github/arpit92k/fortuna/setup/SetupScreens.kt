@@ -30,12 +30,18 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import io.github.arpit92k.fortuna.R
 import io.github.arpit92k.fortuna.core.money.Currency
 import io.github.arpit92k.fortuna.ui.AdaptiveScreen
 import io.github.arpit92k.fortuna.ui.Centred
+import io.github.arpit92k.fortuna.ui.FortunaIcon
+import io.github.arpit92k.fortuna.ui.IconTile
+import io.github.arpit92k.fortuna.ui.LocalSideBySide
 import io.github.arpit92k.fortuna.ui.PinEntry
+import io.github.arpit92k.fortuna.ui.PromiseRow
+import io.github.arpit92k.fortuna.ui.WelcomeHero
 
 /** First-time setup, S-01 to S-05, one step at a time. */
 @Composable
@@ -62,8 +68,9 @@ fun SetupFlow(viewModel: SetupViewModel) {
 }
 
 @Composable
-private fun Heading(text: String, body: String? = null) {
+private fun Heading(text: String, body: String? = null, icon: FortunaIcon? = null) {
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        if (icon != null) IconTile(icon)
         Text(text, style = MaterialTheme.typography.headlineMedium)
         if (body != null) Text(body, style = MaterialTheme.typography.bodyLarge)
     }
@@ -71,16 +78,40 @@ private fun Heading(text: String, body: String? = null) {
 
 // ---- S-01 Welcome ----
 
+/**
+ * What Fortuna is, and the three things to know before starting: the data stays
+ * on the phone, there is no account, and the PIN and recovery phrase are the
+ * only way in. The picture above and the rows below say the same three things.
+ */
 @Composable
 fun WelcomeScreen(onGetStarted: () -> Unit) {
     AdaptiveScreen(
+        hero = { WelcomeHero() },
+        actionAtBottom = true,
         info = {
-            Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                Heading(stringResource(R.string.welcome_title), stringResource(R.string.welcome_body))
-                Text(stringResource(R.string.welcome_no_account), style = MaterialTheme.typography.bodyLarge)
+            // Centred under the picture when stacked, at the start when beside it.
+            val align = if (LocalSideBySide.current) TextAlign.Start else TextAlign.Center
+            Column(verticalArrangement = Arrangement.spacedBy(20.dp)) {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(
+                        stringResource(R.string.welcome_title),
+                        style = MaterialTheme.typography.headlineMedium,
+                        textAlign = align,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                    Text(
+                        stringResource(R.string.welcome_tagline),
+                        style = MaterialTheme.typography.bodyLarge,
+                        textAlign = align,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                }
+                PromiseRow(FortunaIcon.Phone, stringResource(R.string.welcome_phone_title), stringResource(R.string.welcome_phone_body))
+                PromiseRow(FortunaIcon.NoCloud, stringResource(R.string.welcome_account_title), stringResource(R.string.welcome_account_body))
+                PromiseRow(FortunaIcon.Lock, stringResource(R.string.welcome_keys_title), stringResource(R.string.welcome_keys_body))
                 Text(
                     stringResource(R.string.welcome_warning),
-                    style = MaterialTheme.typography.bodyLarge,
+                    style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.error,
                 )
             }
@@ -104,6 +135,7 @@ fun CreatePinScreen(step: SetupStep.CreatePin, onDigit: (Char) -> Unit, onDelete
                 Heading(
                     stringResource(if (step.first == null) R.string.pin_create_title else R.string.pin_repeat_title),
                     stringResource(if (step.first == null) R.string.pin_create_body else R.string.pin_repeat_body),
+                    icon = FortunaIcon.Pin,
                 )
                 when (step.problem) {
                     PinMessage.TOO_SHORT -> Problem(stringResource(R.string.pin_too_short))
@@ -136,7 +168,7 @@ fun Problem(text: String) {
 @Composable
 fun PhraseScreen(step: SetupStep.ShowPhrase, onWrittenDown: () -> Unit) {
     AdaptiveScreen(
-        info = { Heading(stringResource(R.string.phrase_title), stringResource(R.string.phrase_body)) },
+        info = { Heading(stringResource(R.string.phrase_title), stringResource(R.string.phrase_body), icon = FortunaIcon.Phrase) },
         action = {
             Column(verticalArrangement = Arrangement.spacedBy(24.dp)) {
                 // Two columns of six, numbered, so the words are copied in order.
@@ -172,7 +204,7 @@ fun ConfirmPhraseScreen(
     AdaptiveScreen(
         info = {
             Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                Heading(stringResource(R.string.confirm_title), stringResource(R.string.confirm_body))
+                Heading(stringResource(R.string.confirm_title), stringResource(R.string.confirm_body), icon = FortunaIcon.Phrase)
                 if (step.wrong) Problem(stringResource(R.string.confirm_wrong))
             }
         },
@@ -211,7 +243,7 @@ fun ConfirmPhraseScreen(
 fun CurrencyScreen(step: SetupStep.ChooseCurrency, onSearch: (String) -> Unit, onChoose: (Currency) -> Unit) {
     AdaptiveScreen(
         actionScrolls = true,
-        info = { Heading(stringResource(R.string.currency_title), stringResource(R.string.currency_body)) },
+        info = { Heading(stringResource(R.string.currency_title), stringResource(R.string.currency_body), icon = FortunaIcon.Currency) },
         action = {
             Column(Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 OutlinedTextField(

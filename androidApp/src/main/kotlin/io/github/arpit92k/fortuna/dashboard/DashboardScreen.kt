@@ -19,10 +19,10 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -31,8 +31,13 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import io.github.arpit92k.fortuna.R
+import io.github.arpit92k.fortuna.ui.FortunaIcon
+import io.github.arpit92k.fortuna.ui.FortunaIconImage
+import io.github.arpit92k.fortuna.ui.IconTile
 import io.github.arpit92k.fortuna.ui.ReadableWidth
+import io.github.arpit92k.fortuna.ui.RingedMark
 import io.github.arpit92k.fortuna.ui.WidthClass
+import io.github.arpit92k.fortuna.ui.categoryIcon
 import io.github.arpit92k.fortuna.ui.formatDate
 import io.github.arpit92k.fortuna.ui.formatMoney
 
@@ -50,7 +55,9 @@ fun DashboardScreen(ui: DashboardUi?, onAddSource: () -> Unit, onLock: () -> Uni
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(stringResource(R.string.app_name), style = MaterialTheme.typography.titleLarge, modifier = Modifier.weight(1f))
-                TextButton(onClick = onLock, modifier = Modifier.testTag("lock-now")) { Text(stringResource(R.string.dashboard_lock)) }
+                IconButton(onClick = onLock, modifier = Modifier.testTag("lock-now")) {
+                    FortunaIconImage(FortunaIcon.Lock, contentDescription = stringResource(R.string.dashboard_lock))
+                }
             }
         },
         floatingActionButton = {
@@ -88,6 +95,7 @@ private fun EmptyDashboard(onAddSource: () -> Unit) {
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
+            RingedMark(radius = 56.dp)
             Text(stringResource(R.string.dashboard_empty_title), style = MaterialTheme.typography.headlineSmall, textAlign = TextAlign.Center)
             Text(stringResource(R.string.dashboard_empty_body), style = MaterialTheme.typography.bodyLarge, textAlign = TextAlign.Center)
             Button(onClick = onAddSource, modifier = Modifier.testTag("add-first-source")) {
@@ -143,6 +151,7 @@ private fun SourceRowItem(row: SourceRow) {
         horizontalArrangement = Arrangement.spacedBy(16.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
+        categoryIcon(row.category)?.let { IconTile(it, size = 40.dp) }
         Column(Modifier.weight(1f)) {
             Text(row.name, style = MaterialTheme.typography.titleMedium)
             Text(
