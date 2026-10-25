@@ -61,6 +61,8 @@ enum class FortunaIcon {
     // On buttons with no words: the screen's label is read aloud instead.
     Settings,
     Back,
+    Show,
+    Hide,
 
     // The starter categories. Debt, a bill, is drawn in the error colour.
     Cash,
@@ -172,6 +174,17 @@ private fun FortunaIcon.parts(): List<Part> = when (this) {
     FortunaIcon.Settings -> listOf(
         StrokePath("M10.4 5.0 L10.5 2.6 L13.5 2.6 L13.6 5.0 L15.8 5.9 L17.6 4.3 L19.7 6.4 L18.1 8.2 L19.0 10.4 L21.4 10.5 L21.4 13.5 L19.0 13.6 L18.1 15.8 L19.7 17.6 L17.6 19.7 L15.8 18.1 L13.6 19.0 L13.5 21.4 L10.5 21.4 L10.4 19.0 L8.2 18.1 L6.4 19.7 L4.3 17.6 L5.9 15.8 L5.0 13.6 L2.6 13.5 L2.6 10.5 L5.0 10.4 L5.9 8.2 L4.3 6.4 L6.4 4.3 L8.2 5.9 Z"),
         StrokeCircle(12f, 12f, 3f, accent = true),
+    )
+    // An open eye: amounts are shown; tapping hides them.
+    FortunaIcon.Show -> listOf(
+        StrokePath("M2.5 12 C5 7 8.5 5 12 5 C15.5 5 19 7 21.5 12 C19 17 15.5 19 12 19 C8.5 19 5 17 2.5 12 Z"),
+        StrokeCircle(12f, 12f, 3f, accent = true),
+    )
+    // The same eye struck through: amounts are hidden; tapping shows them.
+    FortunaIcon.Hide -> listOf(
+        StrokePath("M2.5 12 C5 7 8.5 5 12 5 C15.5 5 19 7 21.5 12 C19 17 15.5 19 12 19 C8.5 19 5 17 2.5 12 Z"),
+        StrokeCircle(12f, 12f, 3f),
+        StrokePath("M4 4 L20 20", accent = true),
     )
     // Pointing left; mirrored where text runs right to left.
     FortunaIcon.Back -> listOf(

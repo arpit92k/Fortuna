@@ -29,6 +29,7 @@ The line is drawn with one rule. The MVP captures and protects everything that c
 
 - **UF-12 Back up.** Export one encrypted file, on request.
 - **UF-13 Restore from a backup.** On a fresh install, from a backup file and the recovery phrase.
+- **UF-19 Hide amounts.** An eye on the dashboard turns every amount in the app into dots, and the choice is remembered.
 
 ### Support
 

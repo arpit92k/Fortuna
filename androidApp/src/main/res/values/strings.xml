@@ -245,4 +245,10 @@
     <string name="chart_summary">From %1$s to %2$s: %3$s at the start and %4$s now. Lowest %5$s, highest %6$s.</string>
     <string name="dashboard_chart_title">Net worth over time</string>
     <string name="source_chart_title">Value over time</string>
+
+    <!-- Hiding amounts -->
+    <string name="amount_hidden">hidden</string>
+    <string name="dashboard_hide_amounts">Hide amounts</string>
+    <string name="dashboard_show_amounts">Show amounts</string>
+    <string name="chart_summary_hidden">From %1$s to %2$s. Amounts are hidden.</string>
 </resources>

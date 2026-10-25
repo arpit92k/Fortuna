@@ -9,12 +9,14 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Surface
 import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import io.github.arpit92k.fortuna.core.domain.Status
 import io.github.arpit92k.fortuna.core.session.SessionState
+import io.github.arpit92k.fortuna.dashboard.AmountsViewModel
 import io.github.arpit92k.fortuna.dashboard.DashboardScreen
 import io.github.arpit92k.fortuna.dashboard.DashboardViewModel
 import io.github.arpit92k.fortuna.lock.LockScreen
@@ -41,6 +43,7 @@ import io.github.arpit92k.fortuna.source.valueEntrySourceOf
 import io.github.arpit92k.fortuna.source.ValueEntryViewModel
 import io.github.arpit92k.fortuna.source.rateInUse
 import io.github.arpit92k.fortuna.ui.FortunaTheme
+import io.github.arpit92k.fortuna.ui.LocalAmountsHidden
 import io.github.arpit92k.fortuna.ui.WidthClass
 import io.github.arpit92k.fortuna.update.UpdateStartScreen
 import io.github.arpit92k.fortuna.update.UpdateStepScreen
@@ -61,6 +64,7 @@ class Screens(
     val update: UpdateViewModel,
     val currencies: CurrenciesViewModel,
     val backup: BackupViewModel,
+    val amounts: AmountsViewModel,
 )
 
 /**
@@ -94,7 +98,11 @@ fun FortunaApp(core: Core, screens: Screens) {
                         )
                     }
                 }
-                SessionState.Unlocked -> UnlockedApp(core, screens)
+                SessionState.Unlocked -> {
+                    // Hidden or shown everywhere at once, as the dashboard's eye says.
+                    val hidden by screens.amounts.hidden.collectAsState()
+                    CompositionLocalProvider(LocalAmountsHidden provides hidden) { UnlockedApp(core, screens) }
+                }
             }
         }
     }
@@ -134,6 +142,7 @@ private fun UnlockedApp(core: Core, screens: Screens) {
             },
             onSettings = { navigator.open(Destination.Settings) },
             onLock = { core.post { lock() } },
+            onToggleAmounts = screens.amounts::toggle,
             modifier = modifier,
         )
     }

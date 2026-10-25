@@ -28,6 +28,7 @@ There is one kind of user: the owner of the device, tracking their own wealth.
 | [UF-16](#uf-16-change-security-settings) | Change security settings | Rarely | Future |
 | [UF-17](#uf-17-share-a-picture-of-a-screen) | Share a picture of a screen | Occasionally | Future |
 | [UF-18](#uf-18-report-a-bug) | Report a bug | Rarely | MVP |
+| [UF-19](#uf-19-hide-amounts) | Hide amounts | Occasionally | MVP |
 
 The release column shows where each flow falls in the [roadmap](roadmap.md), which also says which parts of a "basic" flow come later.
 
@@ -354,6 +355,21 @@ Rules:
 - Backups made before a recovery phrase change can only be opened with the old phrase. The app says so and recommends a new backup straight away.
 
 ## Sharing
+
+### UF-19 Hide amounts
+
+As a user, I want to hide the amounts on screen with one tap, so that I can open the app where others might see it.
+
+Steps:
+
+1. On the dashboard, the user taps the eye.
+2. Every amount in the app becomes dots, until the user taps the eye again.
+
+Rules:
+
+- It reaches the whole app: the dashboard, source pages, the update and the charts, which keep their shape but lose their figures.
+- Every amount shows as the same dots, whatever its size. Amounts being typed into a form stay visible.
+- The choice is remembered when the app is closed and opened again. It is kept outside the encrypted data, so it never makes a backup out of date.
 
 ### UF-17 Share a picture of a screen
 

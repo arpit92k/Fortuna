@@ -37,7 +37,8 @@ import io.github.arpit92k.fortuna.ui.RateDialog
 import io.github.arpit92k.fortuna.ui.formatRate
 import io.github.arpit92k.fortuna.ui.categoryIcon
 import io.github.arpit92k.fortuna.ui.formatDate
-import io.github.arpit92k.fortuna.ui.formatMoney
+import io.github.arpit92k.fortuna.ui.amount
+import io.github.arpit92k.fortuna.ui.readsHidden
 import kotlinx.datetime.LocalDate
 
 /** S-13 Update: the date, how many accounts are due, and how many are left out and why. */
@@ -161,10 +162,8 @@ fun UpdateStepScreen(
                 )
                 categoryIcon(current.category)?.let { IconTile(it) }
                 Text(current.name, style = MaterialTheme.typography.headlineMedium, modifier = Modifier.testTag("update-source"))
-                Text(
-                    stringResource(R.string.update_step_last, formatMoney(current.lastValue), formatDate(current.lastDate)),
-                    style = MaterialTheme.typography.bodyLarge,
-                )
+                val last = stringResource(R.string.update_step_last, amount(current.lastValue), formatDate(current.lastDate))
+                Text(last, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.readsHidden(last))
             }
         },
         action = {

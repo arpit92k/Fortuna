@@ -72,7 +72,7 @@ Every screen below returns to the one it was opened from, and S-14 returns to th
 
 | Screen | Purpose | Leads to | Flows |
 |---|---|---|---|
-| S-09 Dashboard | Shows current net worth, total assets and total liabilities in the base currency, the net worth timeline, and the list of sources with each value and when it was last updated. | S-10, S-11, S-13, S-15 | UF-10 |
+| S-09 Dashboard | Shows current net worth, total assets and total liabilities in the base currency, the net worth timeline, and the list of sources with each value and when it was last updated. An eye hides every amount in the app. | S-10, S-11, S-13, S-15 | UF-10, UF-19 |
 | S-10 Source | Shows one source: its value over time in its own currency, its snapshots with the change, amount added and growth for each, and totals since the opening balance. | S-12 | UF-11, UF-05, UF-06 |
 | S-11 Add source | Form for name, category, currency, opening value, date and note. | Back to S-09 | UF-03 |
 | S-12 Value entry | Form for value, amount added, date and note. Used to add a new value and to edit an existing one. | Back to S-10 | UF-05, UF-06 |
@@ -129,6 +129,7 @@ Every MVP flow is reachable through these screens.
 | UF-12 Back up | S-17 |
 | UF-13 Restore from a backup | S-01, S-06, S-02 |
 | UF-18 Report a bug | S-18, from S-15, S-01 or S-07 |
+| UF-19 Hide amounts | S-09, and every screen that shows an amount |
 | UF-14 Recover from a forgotten PIN | S-07, S-08, S-02 |
 
 ## Later screens

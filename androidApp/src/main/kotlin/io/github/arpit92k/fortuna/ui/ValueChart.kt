@@ -98,7 +98,13 @@ fun ValueChart(points: List<ChartPoint>, modifier: Modifier = Modifier) {
 
     val line = MaterialTheme.colorScheme.primary
     val text = MaterialTheme.colorScheme.onSurfaceVariant
-    val summary = summaryOf(points)
+    // Hidden amounts keep the line's shape, but lose the figures on the axis and the marker.
+    val hidden = LocalAmountsHidden.current
+    val summary = if (hidden) {
+        stringResource(R.string.chart_summary_hidden, formatDate(points.first().date), formatDate(points.last().date))
+    } else {
+        summaryOf(points)
+    }
 
     ProvideVicoTheme(rememberM3VicoTheme(lineCartesianLayerColors = listOf(line), textColor = text)) {
         val label = rememberAxisLabelComponent(style = TextStyle(color = text, fontSize = 11.sp))
@@ -113,10 +119,14 @@ fun ValueChart(points: List<ChartPoint>, modifier: Modifier = Modifier) {
         )
         val marker = rememberDefaultCartesianMarker(
             label = markerLabel,
-            valueFormatter = remember(byDay) {
+            valueFormatter = remember(byDay, hidden) {
                 DefaultCartesianMarker.ValueFormatter { _, targets ->
                     val point = targets.firstOrNull()?.let { byDay[it.x] }
-                    if (point == null) "" else "${formatDate(point.date)}  ·  ${formatMoney(point.value)}"
+                    when {
+                        point == null -> ""
+                        hidden -> formatDate(point.date)
+                        else -> "${formatDate(point.date)}  ·  ${formatMoney(point.value)}"
+                    }
                 }
             },
             indicator = { color -> ShapeComponent(Fill(color), CircleShape) },
@@ -140,7 +150,9 @@ fun ValueChart(points: List<ChartPoint>, modifier: Modifier = Modifier) {
                 ),
                 startAxis = VerticalAxis.rememberStart(
                     label = label,
-                    valueFormatter = remember(compact) { CartesianValueFormatter { _, value, _ -> compact.format(value) } },
+                    valueFormatter = remember(compact, hidden) {
+                        CartesianValueFormatter { _, value, _ -> if (hidden) "" else compact.format(value) }
+                    },
                 ),
                 bottomAxis = HorizontalAxis.rememberBottom(
                     label = label,

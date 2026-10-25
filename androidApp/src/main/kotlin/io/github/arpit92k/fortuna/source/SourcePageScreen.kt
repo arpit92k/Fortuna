@@ -40,11 +40,14 @@ import io.github.arpit92k.fortuna.ui.ReadableWidth
 import io.github.arpit92k.fortuna.ui.ValueChart
 import io.github.arpit92k.fortuna.ui.categoryIcon
 import io.github.arpit92k.fortuna.ui.formatDate
-import io.github.arpit92k.fortuna.ui.formatMoney
+import io.github.arpit92k.fortuna.ui.AmountText
+import io.github.arpit92k.fortuna.ui.change
+import io.github.arpit92k.fortuna.ui.formatSignedMoney
+import io.github.arpit92k.fortuna.ui.readsHidden
 import kotlinx.datetime.LocalDate
 
 /** A change written with its sign, so growth and losses read at a glance: +£500.00, -£20.00. */
-fun formatChange(money: Money): String = if (money.minorUnits > 0) "+" + formatMoney(money) else formatMoney(money)
+fun formatChange(money: Money): String = formatSignedMoney(money)
 
 /**
  * S-10 Source: the value now, the totals since the opening balance, the value
@@ -156,15 +159,15 @@ private fun Header(ui: SourcePageUi) {
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
-            Text(formatMoney(ui.value), style = MaterialTheme.typography.headlineMedium, modifier = Modifier.testTag("source-value"))
+            AmountText(ui.value, style = MaterialTheme.typography.headlineMedium, modifier = Modifier.testTag("source-value"))
             Row(horizontalArrangement = Arrangement.spacedBy(24.dp)) {
                 Column(Modifier.weight(1f)) {
                     Text(stringResource(if (ui.liability) R.string.source_total_borrowed else R.string.source_total_added), style = MaterialTheme.typography.labelMedium)
-                    Text(formatChange(ui.totalAdded), style = MaterialTheme.typography.titleMedium, modifier = Modifier.testTag("total-added"))
+                    AmountText(ui.totalAdded, signed = true, style = MaterialTheme.typography.titleMedium, modifier = Modifier.testTag("total-added"))
                 }
                 Column(Modifier.weight(1f)) {
                     Text(stringResource(if (ui.liability) R.string.source_total_interest else R.string.source_total_growth), style = MaterialTheme.typography.labelMedium)
-                    Text(formatChange(ui.totalGrowth), style = MaterialTheme.typography.titleMedium, modifier = Modifier.testTag("total-growth"))
+                    AmountText(ui.totalGrowth, signed = true, style = MaterialTheme.typography.titleMedium, modifier = Modifier.testTag("total-growth"))
                 }
             }
             ui.note?.let { Text(it, style = MaterialTheme.typography.bodyMedium) }
@@ -180,7 +183,7 @@ private fun HistoryItem(row: HistoryRow, liability: Boolean, latest: Boolean, ca
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(formatDate(row.date), style = MaterialTheme.typography.titleSmall, modifier = Modifier.weight(1f))
-            Text(formatMoney(row.value), style = MaterialTheme.typography.titleMedium)
+            AmountText(row.value, style = MaterialTheme.typography.titleMedium)
         }
         if (row.opening) {
             Text(stringResource(R.string.source_opening), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -188,14 +191,16 @@ private fun HistoryItem(row: HistoryRow, liability: Boolean, latest: Boolean, ca
             val added = row.added
             val growth = row.growth
             if (added != null && growth != null) {
+                val parts = stringResource(
+                    if (liability) R.string.source_row_liability else R.string.source_row_asset,
+                    change(added),
+                    change(growth),
+                )
                 Text(
-                    stringResource(
-                        if (liability) R.string.source_row_liability else R.string.source_row_asset,
-                        formatChange(added),
-                        formatChange(growth),
-                    ),
+                    parts,
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.readsHidden(parts),
                 )
             }
         }

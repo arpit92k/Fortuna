@@ -48,8 +48,9 @@ There are four stages:
 | 20 | Recovery, backup and restore | S-08, S-17, S-06 | App |
 | 21 | Charts | Timeline on S-09, history on S-10 | App |
 | 22 | Welcome screen | A reworked S-01, agreed before it is built | App |
-| 23 | Bug reports | S-18, a saved record of crashes, links from S-01, S-07 and S-15 | App |
-| 24 | MVP release check | Frozen file format, release build | App |
+| 23 | Hide amounts | An eye on S-09 that hides every amount in the app | App |
+| 24 | Bug reports | S-18, a saved record of crashes, links from S-01, S-07 and S-15 | App |
+| 25 | MVP release check | Frozen file format, release build | App |
 
 Screen numbers refer to the [screen map](screen-map.md).
 
@@ -344,7 +345,16 @@ The screens where a value is entered (S-11 to S-14) each get the two-minute grac
   - **Agreed first:** the design is reviewed and agreed before it is built. Agreed: a picture of the mark in its rings with three icons, and three rows that explain them; see [visual design](visual-design.md). The restore choice and the bug-report link are added by the steps that bring them.
 - **Done when:** it is approved on a phone and on a tablet or foldable, in the light and dark themes, and at the largest text size.
 
-### Step 23: bug reports
+### Step 23: hide amounts
+
+- **Builds:** an eye button in the S-09 top bar that hides every amount in the app, for when someone might see the screen (UF-19).
+  - **Decided: the whole app.** Hidden on the dashboard means hidden on the source pages, the update screens and the charts too, so opening a source never shows its figures.
+  - **What changes:** every amount becomes the same six dots, whatever its size. Charts keep their shape but lose the figures on their axis and in the marker. TalkBack says "hidden" for each. Amounts being typed into a form stay visible; rates, dates and names are not amounts and stay too.
+  - **Remembered:** the choice is kept on the phone between launches, outside the encrypted data, so turning it on or off never makes a backup out of date.
+- **Tests:** the choice is remembered; with amounts hidden, no amount is shown anywhere on the dashboard and TalkBack hears "hidden"; the eye hides and shows again.
+- **Done when:** on a phone, amounts can be hidden from the dashboard, stay hidden on every screen and after the app is closed and opened again, and come back with the same button.
+
+### Step 24: bug reports
 
 - **Builds:**
   - **S-18 Report a bug:** the user describes the problem, sees the whole report, and sends it from their email app, addressed to the support address and filled in. Fortuna has no network access, so the report always leaves through an app the user chooses and sees.
@@ -354,7 +364,7 @@ The screens where a value is entered (S-11 to S-14) each get the two-minute grac
 - **Tests:** a report never holds a figure, a source name, the PIN or the phrase; a crash record keeps code locations and drops messages; the email is addressed and filled in.
 - **Done when:** on a phone, a report can be sent from settings, from the lock screen and from the welcome screen, and a crash forced in a debug build is offered for reporting on the next start.
 
-### Step 24: MVP release check
+### Step 25: MVP release check
 
 - **Builds:** nothing new. The file formats are frozen as version 1 and their fixtures are locked. A release build with code shrinking, with its mapping file kept so crash reports can be read. Empty and error states on every screen. A manual test script that follows the flow coverage table in the screen map.
 - **Done when:** every MVP flow in the roadmap passes the manual script on a real phone, with a release build.
@@ -375,7 +385,8 @@ The screens where a value is entered (S-11 to S-14) each get the two-minute grac
 | UF-12 Back up | 12 | 20 |
 | UF-13 Restore from a backup | 12 | 20 |
 | UF-14 Recover from a forgotten PIN | 11 | 20 |
-| UF-18 Report a bug | none | 23 |
+| UF-18 Report a bug | none | 24 |
+| UF-19 Hide amounts | none | 23 |
 
 ## Decisions to make along the way
 
@@ -386,7 +397,7 @@ The design documents leave these open. Each is listed with the step that needs i
 | How the timeline picks its dates | 08 | Every date on which a value or a rate changed |
 | How many words S-04 asks for | 15 | Three, at random positions |
 | Chart library | 21 | As the technology document says, decided when the charts are built |
-| Support email address for bug reports | 23 | A dedicated address for Fortuna, not a personal one |
+| Support email address for bug reports | 24 | A dedicated address for Fortuna, not a personal one |
 
 Decided since this plan was written:
 
@@ -410,8 +421,8 @@ Decided since this plan was written:
 
 Two notes on working order:
 
-- **Data is disposable until step 20.** Before backup and restore exist, and before the format is frozen in step 24, real history should not be kept only in the app.
-- **The saved format may change until step 24.** After that, any change needs a new format version and a new fixture.
+- **Data is disposable until step 20.** Before backup and restore exist, and before the format is frozen in step 25, real history should not be kept only in the app.
+- **The saved format may change until step 25.** After that, any change needs a new format version and a new fixture.
 
 ## After the MVP
 
