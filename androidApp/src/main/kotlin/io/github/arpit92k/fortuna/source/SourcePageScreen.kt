@@ -34,7 +34,9 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import io.github.arpit92k.fortuna.R
 import io.github.arpit92k.fortuna.core.money.Money
+import io.github.arpit92k.fortuna.ui.IconTile
 import io.github.arpit92k.fortuna.ui.ReadableWidth
+import io.github.arpit92k.fortuna.ui.categoryIcon
 import io.github.arpit92k.fortuna.ui.formatDate
 import io.github.arpit92k.fortuna.ui.formatMoney
 import kotlinx.datetime.LocalDate
@@ -131,6 +133,8 @@ private const val DELETE_SOURCE = "source"
 private fun Header(ui: SourcePageUi) {
     Card(Modifier.fillMaxWidth()) {
         Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            // As on the dashboard: the category's picture, if it has one.
+            categoryIcon(ui.category)?.let { IconTile(it) }
             Text(ui.name, style = MaterialTheme.typography.headlineSmall)
             Text(
                 stringResource(if (ui.liability) R.string.source_kind_liability else R.string.source_kind_asset, ui.category),
