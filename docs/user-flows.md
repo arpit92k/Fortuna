@@ -27,6 +27,7 @@ There is one kind of user: the owner of the device, tracking their own wealth.
 | [UF-15](#uf-15-import-history-from-a-spreadsheet) | Import history from a spreadsheet | Once or twice | Future |
 | [UF-16](#uf-16-change-security-settings) | Change security settings | Rarely | Future |
 | [UF-17](#uf-17-share-a-picture-of-a-screen) | Share a picture of a screen | Occasionally | Future |
+| [UF-18](#uf-18-report-a-bug) | Report a bug | Rarely | MVP |
 
 The release column shows where each flow falls in the [roadmap](roadmap.md), which also says which parts of a "basic" flow come later.
 
@@ -370,3 +371,23 @@ Rules:
 - Dates, source names and category names stay. The preview shows exactly what will be shared, so the user sees anything they would rather not post before sending.
 - The app makes the picture itself, so sharing works although the app blocks ordinary screenshots. The picture holds only what the preview shows, never the app's data.
 - The picture goes to the app the user picks; Fortuna itself still never uses the network. It is a temporary file, removed afterwards.
+
+## Support
+
+### UF-18 Report a bug
+
+As a user, I want to tell the developer when something goes wrong, so that it gets fixed, without giving away my financial data.
+
+Steps:
+
+1. From settings, or from the welcome or lock screen, the user chooses to report a bug. After a crash, the app offers this itself the next time it opens.
+2. The user describes the problem.
+3. The app shows the whole report: the description, the app's version, the Android version, the phone's model and, after a crash, where in the code it happened.
+4. The user sends it from their email app, which opens with the report addressed and filled in.
+
+Rules:
+
+- A report never holds amounts, source or category names, dates of entries, the PIN or the recovery phrase.
+- Fortuna itself never uses the network. The report leaves through the user's email app, and nothing is sent until the user sends it there.
+- A crash record keeps only the kind of error and the code locations, not the error's message, which could hold figures. The user can delete it instead of reporting it. Only the latest few are kept.
+- Reporting from the welcome or lock screen needs no PIN, so problems with setup or unlocking can be reported.

@@ -30,6 +30,10 @@ The line is drawn with one rule. The MVP captures and protects everything that c
 - **UF-12 Back up.** Export one encrypted file, on request.
 - **UF-13 Restore from a backup.** On a fresh install, from a backup file and the recovery phrase.
 
+### Support
+
+- **UF-18 Report a bug.** A prefilled email with the user's description and app and device details, and a saved record of crashes that the user reviews before sending. Offered in settings and on the welcome and lock screens.
+
 ### MVP simplifications
 
 These keep the MVP small. Each is lifted by an item in the future plans.

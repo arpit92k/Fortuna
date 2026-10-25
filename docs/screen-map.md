@@ -65,6 +65,7 @@ flowchart TD
     upd2 -- "next source" --> upd2
     settings --> rates["S-16 Currencies and rates"]
     settings --> backup["S-17 Backup"]
+    settings --> report["S-18 Report a bug"]
 ```
 
 Every screen below returns to the one it was opened from, and S-14 returns to the dashboard after the last source.
@@ -77,9 +78,10 @@ Every screen below returns to the one it was opened from, and S-14 returns to th
 | S-12 Value entry | Form for value, amount added, date and note. Used to add a new value and to edit an existing one. | Back to S-10 | UF-05, UF-06 |
 | S-13 Update: date and rates | Starts a periodic update. The user confirms the date and, for each foreign currency, keeps the last rate or enters a new one. Says how many sources the update leaves out. | S-14 | UF-04, UF-09 |
 | S-14 Update: source step | One source at a time, the one updated longest ago first. Shows the last value and date. The user enters a new value and amount added, or skips. | The next source, then S-09 | UF-04 |
-| S-15 Settings | Entry point for currencies and rates and for backup. | S-16, S-17 | |
+| S-15 Settings | Entry point for currencies and rates, backup, and reporting a bug. | S-16, S-17, S-18 | |
 | S-16 Currencies and rates | Lists the currencies in use with the rates entered for each. The user adds, corrects or deletes a rate. | Back to S-15 | UF-09 |
 | S-17 Backup | Explains that the file can only be opened with the recovery phrase, and exports it to a location the user picks. | Back to S-15 | UF-12 |
+| S-18 Report a bug | The user describes the problem and sees the whole report, including any saved crash, then sends it from their email app. Also reached from S-01 and S-07, without unlocking, and offered on start after a crash. | The email app, then back | UF-18 |
 
 Notes:
 
@@ -107,6 +109,7 @@ These appear over a screen and are not destinations of their own.
 | Rate entry | S-11, S-13, S-16 | Enter or correct an exchange rate for a date, either way round |
 | Date picker | S-11, S-12, S-13 | Choose a date |
 | System file picker | S-06, S-17 | Choose the backup file to open, or where to save it |
+| Email app | S-18 | Send the bug report, addressed and filled in |
 
 ## Flow coverage
 
@@ -125,6 +128,7 @@ Every MVP flow is reachable through these screens.
 | UF-11 View a source, basic | S-10 |
 | UF-12 Back up | S-17 |
 | UF-13 Restore from a backup | S-01, S-06, S-02 |
+| UF-18 Report a bug | S-18, from S-15, S-01 or S-07 |
 | UF-14 Recover from a forgotten PIN | S-07, S-08, S-02 |
 
 ## Later screens
