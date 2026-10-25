@@ -57,6 +57,7 @@ fun DashboardScreen(
     onAddSource: () -> Unit,
     onOpen: (SourceId) -> Unit,
     onUpdate: () -> Unit,
+    onSettings: () -> Unit,
     onLock: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -73,6 +74,9 @@ fun DashboardScreen(
                         ButtonIcon(FortunaIcon.Update)
                         Text(stringResource(R.string.dashboard_update))
                     }
+                }
+                TextButton(onClick = onSettings, modifier = Modifier.testTag("open-settings")) {
+                    Text(stringResource(R.string.dashboard_settings))
                 }
                 IconButton(onClick = onLock, modifier = Modifier.testTag("lock-now")) {
                     FortunaIconImage(FortunaIcon.Lock, contentDescription = stringResource(R.string.dashboard_lock))
@@ -185,6 +189,15 @@ private fun SourceRowItem(row: SourceRow, onClick: () -> Unit) {
         }
         Column(horizontalAlignment = Alignment.End) {
             Text(formatMoney(row.value), style = MaterialTheme.typography.titleMedium)
+            // A foreign source shows its base-currency value too, so the list can be checked against the totals.
+            row.valueInBase?.let {
+                Text(
+                    formatMoney(it),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.testTag("value-in-base-${row.id.value}"),
+                )
+            }
             if (row.liability) {
                 Text(
                     stringResource(R.string.dashboard_owed),

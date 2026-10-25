@@ -1,0 +1,224 @@
+package io.github.arpit92k.fortuna.settings
+
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawingPadding
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.material3.Card
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.dp
+import io.github.arpit92k.fortuna.R
+import io.github.arpit92k.fortuna.core.money.Currency
+import io.github.arpit92k.fortuna.core.rates.Rate
+import io.github.arpit92k.fortuna.setup.Problem
+import io.github.arpit92k.fortuna.source.ConfirmDialog
+import io.github.arpit92k.fortuna.ui.FortunaIcon
+import io.github.arpit92k.fortuna.ui.IconTile
+import io.github.arpit92k.fortuna.ui.RateDialog
+import io.github.arpit92k.fortuna.ui.ReadableWidth
+import io.github.arpit92k.fortuna.ui.formatDate
+import io.github.arpit92k.fortuna.ui.formatRate
+import kotlinx.datetime.LocalDate
+
+/** A page of the unlocked app with a back button and a readable width. */
+@Composable
+private fun Page(title: String, onBack: () -> Unit, tag: String, content: @Composable () -> Unit) {
+    Box(Modifier.fillMaxSize().safeDrawingPadding(), contentAlignment = Alignment.TopCenter) {
+        Column(Modifier.widthIn(max = ReadableWidth).fillMaxWidth().padding(horizontal = 16.dp).testTag(tag)) {
+            TextButton(onClick = onBack) { Text(stringResource(R.string.source_back)) }
+            Text(title, style = MaterialTheme.typography.headlineMedium, modifier = Modifier.padding(horizontal = 8.dp, vertical = 8.dp))
+            content()
+        }
+    }
+}
+
+/** S-15 Settings. Backup and bug reports join it in later steps. */
+@Composable
+fun SettingsScreen(onCurrencies: () -> Unit, onBack: () -> Unit) {
+    Page(stringResource(R.string.settings_title), onBack, "settings") {
+        Row(
+            Modifier.fillMaxWidth().clickable(onClick = onCurrencies).padding(8.dp, 16.dp).testTag("settings-currencies"),
+            horizontalArrangement = Arrangement.spacedBy(16.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            IconTile(FortunaIcon.Currency, size = 40.dp)
+            Column {
+                Text(stringResource(R.string.settings_currencies), style = MaterialTheme.typography.titleMedium)
+                Text(
+                    stringResource(R.string.settings_currencies_body),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+        }
+        HorizontalDivider()
+    }
+}
+
+/** Which rate dialog or confirmation is open on S-16. */
+private sealed interface Editing {
+    data class Add(val currency: String) : Editing
+
+    data class Change(val currency: String, val date: String) : Editing
+
+    data class Delete(val currency: String, val date: String) : Editing
+}
+
+/**
+ * S-16 Currencies and rates: each foreign currency in use, the accounts in it,
+ * and its rates newest first. A rate can be added for any date up to today,
+ * corrected, or deleted after asking, unless an account's opening value needs it.
+ */
+@Composable
+fun CurrenciesScreen(
+    ui: CurrenciesUi?,
+    onSave: (Currency, LocalDate?, Rate) -> Unit,
+    onDelete: (Currency, LocalDate) -> Unit,
+    onClearProblem: () -> Unit,
+    onBack: () -> Unit,
+) {
+    // Kept as plain text so it survives rotation; looked up again against the current figures.
+    var editingKey by rememberSaveable { mutableStateOf<String?>(null) }
+    val editing = editingKey?.let(::decode)
+    Page(stringResource(R.string.currencies_title), onBack, "currencies") {
+        if (ui == null) return@Page
+        ui.problem?.let { problem ->
+            Box(Modifier.padding(8.dp)) { Problem(problemText(problem)) }
+        }
+        if (ui.currencies.isEmpty()) {
+            Text(
+                stringResource(R.string.currencies_none, ui.base.code),
+                style = MaterialTheme.typography.bodyLarge,
+                modifier = Modifier.padding(8.dp).testTag("currencies-none"),
+            )
+            return@Page
+        }
+        LazyColumn(contentPadding = PaddingValues(bottom = 24.dp)) {
+            for (entry in ui.currencies) {
+                item(key = entry.currency.code) {
+                    Card(Modifier.fillMaxWidth().padding(vertical = 8.dp).testTag("currency-${entry.currency.code}")) {
+                        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                            Text("${entry.currency.code} · ${entry.currency.name}", style = MaterialTheme.typography.titleMedium)
+                            if (entry.usedBy.isNotEmpty()) {
+                                Text(
+                                    stringResource(R.string.currencies_used_by, entry.usedBy.joinToString(", ")),
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                            }
+                            TextButton(
+                                onClick = { onClearProblem(); editingKey = encode(Editing.Add(entry.currency.code)) },
+                                modifier = Modifier.testTag("rate-add-${entry.currency.code}"),
+                            ) { Text(stringResource(R.string.currencies_add_rate)) }
+                        }
+                    }
+                }
+                items(entry.rates, key = { "${entry.currency.code}-${it.date}" }) { dated ->
+                    Row(
+                        Modifier.fillMaxWidth().padding(horizontal = 8.dp).testTag("rate-${entry.currency.code}-${dated.date}"),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Column(Modifier.weight(1f).padding(vertical = 8.dp)) {
+                            Text(formatRate(dated.value), style = MaterialTheme.typography.bodyLarge)
+                            Text(formatDate(dated.date), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
+                        TextButton(onClick = { onClearProblem(); editingKey = encode(Editing.Change(entry.currency.code, dated.date.toString())) }) {
+                            Text(stringResource(R.string.currencies_change))
+                        }
+                        TextButton(
+                            onClick = { onClearProblem(); editingKey = encode(Editing.Delete(entry.currency.code, dated.date.toString())) },
+                            modifier = Modifier.testTag("rate-delete-${entry.currency.code}-${dated.date}"),
+                        ) { Text(stringResource(R.string.source_delete)) }
+                    }
+                    HorizontalDivider()
+                }
+            }
+        }
+    }
+
+    if (ui == null || editing == null) return
+    val close = { editingKey = null }
+    when (editing) {
+        is Editing.Add -> {
+            val currency = Currency.forCode(editing.currency) ?: return
+            RateDialog(
+                title = stringResource(R.string.currencies_add_title, currency.code),
+                foreign = currency,
+                base = ui.base,
+                date = null,
+                pickDate = true,
+                initial = ui.currencies.firstOrNull { it.currency == currency }?.rates?.firstOrNull()?.value,
+                onConfirm = { rate, date -> onSave(currency, date, rate); close() },
+                onDismiss = close,
+            )
+        }
+        is Editing.Change -> {
+            val currency = Currency.forCode(editing.currency) ?: return
+            val date = LocalDate.parse(editing.date)
+            RateDialog(
+                title = stringResource(R.string.currencies_change_title, currency.code),
+                foreign = currency,
+                base = ui.base,
+                date = date,
+                initial = ui.currencies.firstOrNull { it.currency == currency }?.rates?.firstOrNull { it.date == date }?.value,
+                onConfirm = { rate, _ -> onSave(currency, date, rate); close() },
+                onDismiss = close,
+            )
+        }
+        is Editing.Delete -> {
+            val currency = Currency.forCode(editing.currency) ?: return
+            val date = LocalDate.parse(editing.date)
+            ConfirmDialog(
+                title = stringResource(R.string.currencies_delete_title),
+                text = stringResource(R.string.currencies_delete_text, currency.code, formatDate(date)),
+                confirm = stringResource(R.string.source_delete),
+                onConfirm = { onDelete(currency, date); close() },
+                onDismiss = close,
+            )
+        }
+    }
+}
+
+@Composable
+private fun problemText(problem: RateActionProblem): String = when (problem) {
+    is RateActionProblem.NeededBy -> stringResource(R.string.currencies_problem_needed, problem.source, formatDate(problem.date))
+    RateActionProblem.InFuture -> stringResource(R.string.add_source_problem_future)
+    RateActionProblem.NotSaved -> stringResource(R.string.add_source_problem_not_saved)
+}
+
+private fun encode(editing: Editing): String = when (editing) {
+    is Editing.Add -> "add|${editing.currency}"
+    is Editing.Change -> "change|${editing.currency}|${editing.date}"
+    is Editing.Delete -> "delete|${editing.currency}|${editing.date}"
+}
+
+private fun decode(key: String): Editing? {
+    val parts = key.split('|')
+    return when (parts.firstOrNull()) {
+        "add" -> Editing.Add(parts[1])
+        "change" -> Editing.Change(parts[1], parts[2])
+        "delete" -> Editing.Delete(parts[1], parts[2])
+        else -> null
+    }
+}

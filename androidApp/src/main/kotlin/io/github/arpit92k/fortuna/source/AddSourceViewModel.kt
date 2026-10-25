@@ -3,10 +3,13 @@ package io.github.arpit92k.fortuna.source
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import io.github.arpit92k.fortuna.Core
+import io.github.arpit92k.fortuna.core.dated.Dated
 import io.github.arpit92k.fortuna.core.domain.CategoryId
+import io.github.arpit92k.fortuna.core.domain.Dataset
 import io.github.arpit92k.fortuna.core.money.AmountProblem
 import io.github.arpit92k.fortuna.core.money.Currency
 import io.github.arpit92k.fortuna.core.money.MoneyParseResult
+import io.github.arpit92k.fortuna.core.rates.Rate
 import io.github.arpit92k.fortuna.core.recording.RecordingError
 import io.github.arpit92k.fortuna.core.recording.RecordingResult
 import io.github.arpit92k.fortuna.core.recording.addSource
@@ -27,9 +30,21 @@ data class AddSourceForm(
     /** Null means today. */
     val date: LocalDate? = null,
     val note: String = "",
+    /** Null means the base currency. */
+    val currency: Currency? = null,
+    /** For a foreign currency with no rate on or before the date: the rate the user entered. */
+    val rate: Rate? = null,
     val problem: AddSourceProblem? = null,
     val saving: Boolean = false,
 )
+
+/**
+ * The rate a foreign [currency] would use on [date]: the latest on or before
+ * it. Null for the base currency, or when the currency has no such rate yet,
+ * in which case the form asks for one.
+ */
+fun rateInUse(data: Dataset, currency: Currency, date: LocalDate): Dated<Rate>? =
+    if (currency == data.baseCurrency) null else data.rates[currency]?.latestOnOrBefore(date)
 
 /** Why a source could not be added, as the form shows it. */
 enum class AddSourceProblem {
@@ -41,6 +56,9 @@ enum class AddSourceProblem {
     TOO_MANY_DECIMAL_PLACES,
     AMOUNT_TOO_LARGE,
     DATE_IN_FUTURE,
+
+    /** A foreign currency with no rate on or before the date needs one. */
+    RATE_NEEDED,
 
     /** Anything the form does not expect; the core refused the change and nothing was saved. */
     NOT_SAVED,
@@ -61,7 +79,12 @@ class AddSourceViewModel(private val core: Core, private val locale: () -> Local
 
     fun amount(text: String) = edit { it.copy(amount = text) }
 
-    fun date(date: LocalDate?) = edit { it.copy(date = date) }
+    fun date(date: LocalDate?) = edit { it.copy(date = date, rate = null) }
+
+    /** Chooses the currency; null is the base currency. A rate entered for another currency is dropped. */
+    fun currency(currency: Currency?) = edit { if (it.currency == currency) it else it.copy(currency = currency, rate = null) }
+
+    fun rate(rate: Rate?) = edit { it.copy(rate = rate) }
 
     fun note(text: String) = edit { it.copy(note = text) }
 
@@ -83,7 +106,8 @@ class AddSourceViewModel(private val core: Core, private val locale: () -> Local
             mutableForm.value = form.copy(problem = problem)
             return
         }
-        val money = when (val parsed = parseAmount(form.amount, baseCurrency, locale())) {
+        val currency = form.currency ?: baseCurrency
+        val money = when (val parsed = parseAmount(form.amount, currency, locale())) {
             is MoneyParseResult.Success -> parsed.money
             is MoneyParseResult.Failure -> {
                 mutableForm.value = form.copy(problem = parsed.problem.asFormProblem())
@@ -94,7 +118,8 @@ class AddSourceViewModel(private val core: Core, private val locale: () -> Local
         viewModelScope.launch {
             val result = core.run {
                 record { data, today ->
-                    data.addSource(form.name, form.categoryId!!, form.date ?: today, money, today, note = form.note)
+                    val rate = form.rate.takeIf { currency != baseCurrency }
+                    data.addSource(form.name, form.categoryId!!, form.date ?: today, money, today, note = form.note, rate = rate)
                 }
             }
             when (result) {
@@ -124,5 +149,6 @@ private fun RecordingError.asFormProblem(): AddSourceProblem = when (this) {
     is RecordingError.NameInUse -> AddSourceProblem.NAME_IN_USE
     is RecordingError.DateInFuture -> AddSourceProblem.DATE_IN_FUTURE
     is RecordingError.NoSuchCategory, is RecordingError.CategoryArchived -> AddSourceProblem.NO_CATEGORY
+    is RecordingError.RateNeeded -> AddSourceProblem.RATE_NEEDED
     else -> AddSourceProblem.NOT_SAVED
 }

@@ -9,9 +9,15 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Button
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
@@ -20,9 +26,11 @@ import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import io.github.arpit92k.fortuna.R
+import io.github.arpit92k.fortuna.core.dated.Dated
 import io.github.arpit92k.fortuna.core.domain.Category
 import io.github.arpit92k.fortuna.core.domain.CategoryKind
 import io.github.arpit92k.fortuna.core.money.Currency
+import io.github.arpit92k.fortuna.core.rates.Rate
 import io.github.arpit92k.fortuna.setup.Problem
 import io.github.arpit92k.fortuna.ui.AdaptiveScreen
 import io.github.arpit92k.fortuna.ui.FortunaIcon
@@ -30,24 +38,41 @@ import io.github.arpit92k.fortuna.ui.FortunaIconImage
 import io.github.arpit92k.fortuna.ui.IconTile
 import io.github.arpit92k.fortuna.ui.categoryIcon
 import io.github.arpit92k.fortuna.ui.formatDate
+import io.github.arpit92k.fortuna.ui.CurrencyPickerDialog
 import io.github.arpit92k.fortuna.ui.DateButton
+import io.github.arpit92k.fortuna.ui.RateDialog
+import io.github.arpit92k.fortuna.ui.formatRate
 import kotlinx.datetime.LocalDate
 
-/** S-11 Add source, in the base currency for now. */
+/**
+ * S-11 Add source. The currency is the base currency unless another is
+ * chosen. A foreign currency with no rate on or before the date asks for one;
+ * otherwise the screen says which rate converts it.
+ *
+ * @param rateInUse the rate the chosen currency would use on the chosen date, if it has one.
+ */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun AddSourceScreen(
     form: AddSourceForm,
     categories: List<Category>,
-    currency: Currency,
+    base: Currency,
+    rateInUse: Dated<Rate>?,
+    today: LocalDate,
     onName: (String) -> Unit,
     onCategory: (Category) -> Unit,
+    onCurrency: (Currency?) -> Unit,
     onAmount: (String) -> Unit,
     onDate: (LocalDate?) -> Unit,
+    onRate: (Rate?) -> Unit,
     onNote: (String) -> Unit,
     onSave: () -> Unit,
 ) {
     val chosen = categories.firstOrNull { it.id == form.categoryId }
+    val currency = form.currency ?: base
+    val foreign = currency != base
+    var pickingCurrency by rememberSaveable { mutableStateOf(false) }
+    var enteringRate by rememberSaveable { mutableStateOf(false) }
 
     AdaptiveScreen(
         info = {
@@ -97,6 +122,14 @@ fun AddSourceScreen(
                     )
                 }
 
+                OutlinedButton(
+                    onClick = { pickingCurrency = true },
+                    enabled = !form.saving,
+                    modifier = Modifier.fillMaxWidth().testTag("source-currency"),
+                ) {
+                    Text(stringResource(R.string.add_source_currency, currency.code, currency.name))
+                }
+
                 OutlinedTextField(
                     value = form.amount,
                     onValueChange = onAmount,
@@ -117,6 +150,28 @@ fun AddSourceScreen(
                     modifier = Modifier.testTag("source-date"),
                 )
 
+                if (foreign) {
+                    val rate = form.rate
+                    when {
+                        rateInUse != null -> Text(
+                            stringResource(R.string.add_source_rate_in_use, formatRate(rateInUse.value), formatDate(rateInUse.date)),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.testTag("source-rate-in-use"),
+                        )
+                        rate != null -> TextButton(onClick = { enteringRate = true }, modifier = Modifier.testTag("source-rate")) {
+                            Text(stringResource(R.string.add_source_rate_entered, formatRate(rate)))
+                        }
+                        else -> OutlinedButton(
+                            onClick = { enteringRate = true },
+                            enabled = !form.saving,
+                            modifier = Modifier.fillMaxWidth().testTag("source-rate"),
+                        ) {
+                            Text(stringResource(R.string.add_source_rate_needed, formatDate(form.date ?: today)))
+                        }
+                    }
+                }
+
                 OutlinedTextField(
                     value = form.note,
                     onValueChange = onNote,
@@ -134,6 +189,31 @@ fun AddSourceScreen(
             }
         },
     )
+
+    if (pickingCurrency) {
+        CurrencyPickerDialog(
+            suggested = base,
+            onChoose = {
+                onCurrency(it.takeIf { c -> c != base })
+                pickingCurrency = false
+            },
+            onDismiss = { pickingCurrency = false },
+        )
+    }
+    if (enteringRate && foreign) {
+        RateDialog(
+            title = stringResource(R.string.add_source_rate_title, currency.code),
+            foreign = currency,
+            base = base,
+            date = form.date ?: today,
+            initial = form.rate,
+            onConfirm = { rate, _ ->
+                onRate(rate)
+                enteringRate = false
+            },
+            onDismiss = { enteringRate = false },
+        )
+    }
 }
 
 private fun AddSourceProblem.message(): Int = when (this) {
@@ -145,5 +225,6 @@ private fun AddSourceProblem.message(): Int = when (this) {
     AddSourceProblem.TOO_MANY_DECIMAL_PLACES -> R.string.add_source_problem_decimal_places
     AddSourceProblem.AMOUNT_TOO_LARGE -> R.string.add_source_problem_too_large
     AddSourceProblem.DATE_IN_FUTURE -> R.string.add_source_problem_future
+    AddSourceProblem.RATE_NEEDED -> R.string.add_source_problem_rate_needed
     AddSourceProblem.NOT_SAVED -> R.string.add_source_problem_not_saved
 }

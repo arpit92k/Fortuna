@@ -36,6 +36,8 @@ data class SourceRow(
     val liability: Boolean,
     /** In the source's own currency, as its statement shows. */
     val value: Money,
+    /** For a source in a foreign currency, the same value in the base currency at the latest rate. */
+    val valueInBase: Money? = null,
     val lastUpdated: LocalDate,
 )
 
@@ -49,6 +51,7 @@ fun dashboardOf(data: Dataset, today: LocalDate): DashboardUi {
             category = data.category(summary.source.categoryId)?.name.orEmpty(),
             liability = summary.kind == CategoryKind.LIABILITY,
             value = summary.value,
+            valueInBase = summary.valueInBase,
             lastUpdated = summary.lastUpdated,
         )
     }

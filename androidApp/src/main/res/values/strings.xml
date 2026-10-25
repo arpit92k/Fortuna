@@ -60,6 +60,7 @@
     <!-- S-09 Dashboard -->
     <string name="dashboard_lock">Lock</string>
     <string name="dashboard_update">Update</string>
+    <string name="dashboard_settings">Settings</string>
     <string name="dashboard_net_worth">Net worth</string>
     <string name="dashboard_assets">Assets</string>
     <string name="dashboard_liabilities">Liabilities</string>
@@ -91,6 +92,12 @@
     <string name="add_source_problem_decimal_places">That has more decimal places than the currency uses.</string>
     <string name="add_source_problem_too_large">That amount is too large.</string>
     <string name="add_source_problem_future">The date cannot be in the future.</string>
+    <string name="add_source_currency">Currency: %1$s · %2$s</string>
+    <string name="add_source_rate_in_use">Converted at %1$s, the rate from %2$s.</string>
+    <string name="add_source_rate_needed">Enter the exchange rate on %1$s</string>
+    <string name="add_source_rate_entered">Rate: %1$s · Change</string>
+    <string name="add_source_rate_title">Exchange rate for %1$s</string>
+    <string name="add_source_problem_rate_needed">This currency needs an exchange rate on or before the date.</string>
     <string name="add_source_problem_not_saved">That could not be saved. Nothing was changed.</string>
 
     <!-- S-10 Source -->
@@ -152,4 +159,41 @@
     <string name="update_step_last">Last value %1$s on %2$s</string>
     <string name="update_skip">Skip</string>
     <string name="update_save">Save and next</string>
+
+    <!-- Rate entry and the currency list -->
+    <string name="rate_date">Rate on %1$s</string>
+    <string name="rate_date_today">Rate on today\'s date</string>
+    <string name="rate_swap">Enter it as 1 %1$s = … %2$s instead</string>
+    <string name="rate_save">Save</string>
+    <string name="rate_problem_empty">Enter the rate.</string>
+    <string name="rate_problem_not_a_number">That is not a number.</string>
+    <string name="rate_problem_not_positive">A rate must be more than zero.</string>
+    <string name="rate_problem_too_long">That rate has too many digits.</string>
+    <string name="currency_pick_title">Currency</string>
+
+    <!-- The update's rates -->
+    <string name="update_rates">Exchange rates</string>
+    <string name="update_rate_title">New rate for %1$s</string>
+    <string name="update_rate_new">New rate</string>
+    <string name="update_rate_today">Entered for this date</string>
+    <string name="update_rate_none">No rate yet</string>
+    <plurals name="update_rate_age">
+        <item quantity="one">%1$d day old</item>
+        <item quantity="other">%1$d days old</item>
+    </plurals>
+
+    <!-- S-15 Settings and S-16 Currencies and rates -->
+    <string name="settings_title">Settings</string>
+    <string name="settings_currencies">Currencies and rates</string>
+    <string name="settings_currencies_body">The exchange rates for accounts in other currencies.</string>
+    <string name="currencies_title">Currencies and rates</string>
+    <string name="currencies_none">All your accounts are in %1$s. Choose another currency when adding an account, and its rates appear here.</string>
+    <string name="currencies_used_by">Used by %1$s</string>
+    <string name="currencies_add_rate">Add a rate</string>
+    <string name="currencies_add_title">New rate for %1$s</string>
+    <string name="currencies_change">Change</string>
+    <string name="currencies_change_title">Correct the rate for %1$s</string>
+    <string name="currencies_delete_title">Delete this rate?</string>
+    <string name="currencies_delete_text">The %1$s rate for %2$s will be removed, and totals use the rate before it.</string>
+    <string name="currencies_problem_needed">This rate is needed: it is the only one on or before the opening value of %1$s on %2$s.</string>
 </resources>
