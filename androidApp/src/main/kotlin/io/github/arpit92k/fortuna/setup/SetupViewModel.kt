@@ -6,6 +6,7 @@ import io.github.arpit92k.fortuna.Core
 import io.github.arpit92k.fortuna.core.keys.MIN_PIN_LENGTH
 import io.github.arpit92k.fortuna.core.keys.SetupResult
 import io.github.arpit92k.fortuna.core.money.Currency
+import io.github.arpit92k.fortuna.core.session.SessionState
 import io.github.arpit92k.fortuna.ui.typed
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -74,10 +75,15 @@ class SetupViewModel(
     private val suggestedCurrency: Currency?,
     private val random: Random = Random.Default,
 ) : ViewModel() {
-    private val mutableStep = MutableStateFlow<SetupStep>(SetupStep.Welcome)
+    // A setup already under way in the core, with its phrase. Android may close
+    // the screen while the app is in the background and keep the app itself;
+    // the new screen then picks up the same words rather than starting again.
+    private val resumed = (core.state.value as? SessionState.SettingUp)?.phrase?.words
+
+    private val mutableStep = MutableStateFlow<SetupStep>(resumed?.let { SetupStep.ShowPhrase(it) } ?: SetupStep.Welcome)
     val step: StateFlow<SetupStep> = mutableStep.asStateFlow()
 
-    private var words: List<String> = emptyList()
+    private var words: List<String> = resumed ?: emptyList()
 
     fun getStarted() {
         mutableStep.value = SetupStep.CreatePin()
