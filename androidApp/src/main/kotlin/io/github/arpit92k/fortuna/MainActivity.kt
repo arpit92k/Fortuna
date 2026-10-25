@@ -14,6 +14,7 @@ import io.github.arpit92k.fortuna.setup.SetupViewModel
 import io.github.arpit92k.fortuna.source.AddSourceViewModel
 import io.github.arpit92k.fortuna.source.SourcePageViewModel
 import io.github.arpit92k.fortuna.source.ValueEntryViewModel
+import io.github.arpit92k.fortuna.update.UpdateViewModel
 import java.util.Locale
 
 class MainActivity : ComponentActivity() {
@@ -37,6 +38,7 @@ class MainActivity : ComponentActivity() {
                 addSource = viewModel { AddSourceViewModel(core) },
                 sourcePage = viewModel { SourcePageViewModel(core) },
                 valueEntry = viewModel { ValueEntryViewModel(core) },
+                update = viewModel { UpdateViewModel(core) },
             )
             FortunaApp(core, screens)
         }

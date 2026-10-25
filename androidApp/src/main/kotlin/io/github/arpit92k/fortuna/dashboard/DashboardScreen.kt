@@ -24,6 +24,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -49,7 +50,14 @@ import io.github.arpit92k.fortuna.ui.formatMoney
  * list scrolls under them, kept to a comfortable width.
  */
 @Composable
-fun DashboardScreen(ui: DashboardUi?, onAddSource: () -> Unit, onOpen: (SourceId) -> Unit, onLock: () -> Unit, modifier: Modifier = Modifier) {
+fun DashboardScreen(
+    ui: DashboardUi?,
+    onAddSource: () -> Unit,
+    onOpen: (SourceId) -> Unit,
+    onUpdate: () -> Unit,
+    onLock: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
     Scaffold(
         modifier = modifier,
         topBar = {
@@ -58,6 +66,11 @@ fun DashboardScreen(ui: DashboardUi?, onAddSource: () -> Unit, onOpen: (SourceId
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(stringResource(R.string.app_name), style = MaterialTheme.typography.titleLarge, modifier = Modifier.weight(1f))
+                if (ui != null && !ui.empty) {
+                    TextButton(onClick = onUpdate, modifier = Modifier.testTag("start-update")) {
+                        Text(stringResource(R.string.dashboard_update))
+                    }
+                }
                 IconButton(onClick = onLock, modifier = Modifier.testTag("lock-now")) {
                     FortunaIconImage(FortunaIcon.Lock, contentDescription = stringResource(R.string.dashboard_lock))
                 }

@@ -21,11 +21,17 @@ sealed interface Destination {
 
     /** S-12: a new value for a source, or with [editing], a correction to the value on that date. */
     data class ValueEntry(val id: SourceId, val editing: LocalDate? = null) : Destination
+
+    /** S-13, the start of a periodic update. */
+    data object Update : Destination
+
+    /** S-14, one source at a time. */
+    data object UpdateStep : Destination
 }
 
 /** Whether the user is entering a value on [destination], which earns the two-minute grace period. */
 fun entersValue(destination: Destination): Boolean =
-    destination is Destination.AddSource || destination is Destination.ValueEntry
+    destination is Destination.AddSource || destination is Destination.ValueEntry || destination is Destination.UpdateStep
 
 /**
  * Where the user is in the unlocked app: a stack of screens, the dashboard at

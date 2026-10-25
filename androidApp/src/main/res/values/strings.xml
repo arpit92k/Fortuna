@@ -59,6 +59,7 @@
 
     <!-- S-09 Dashboard -->
     <string name="dashboard_lock">Lock</string>
+    <string name="dashboard_update">Update</string>
     <string name="dashboard_net_worth">Net worth</string>
     <string name="dashboard_assets">Assets</string>
     <string name="dashboard_liabilities">Liabilities</string>
@@ -131,4 +132,24 @@
     <string name="value_replace_text">There is already a value for %1$s. The new figures will replace it.</string>
     <string name="value_replace">Replace</string>
     <string name="value_problem_before_latest">A new value cannot be dated before the latest one.</string>
+
+    <!-- S-13 and S-14 Update -->
+    <string name="update_title">Update your accounts</string>
+    <string name="update_body">Bring every account up to date in one go, the one updated longest ago first. Each value is saved as you enter it, so you can stop part-way and carry on later.</string>
+    <string name="update_date_today">Update as of today</string>
+    <string name="update_date">Update as of %1$s</string>
+    <plurals name="update_due">
+        <item quantity="one">%1$d account to update</item>
+        <item quantity="other">%1$d accounts to update</item>
+    </plurals>
+    <plurals name="update_left_out">
+        <item quantity="one">%1$d account already has a value on or after this date, so it is left out.</item>
+        <item quantity="other">%1$d accounts already have a value on or after this date, so they are left out.</item>
+    </plurals>
+    <string name="update_nothing_due">Every account already has a value on or after this date.</string>
+    <string name="update_start">Start</string>
+    <string name="update_step_progress">%1$d of %2$d · as of %3$s</string>
+    <string name="update_step_last">Last value %1$s on %2$s</string>
+    <string name="update_skip">Skip</string>
+    <string name="update_save">Save and next</string>
 </resources>

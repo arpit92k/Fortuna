@@ -129,7 +129,7 @@ fun ValueEntryScreen(
     }
 }
 
-private fun ValueEntryProblem.message(): Int = when (this) {
+fun ValueEntryProblem.message(): Int = when (this) {
     ValueEntryProblem.NO_VALUE -> R.string.add_source_problem_no_amount
     ValueEntryProblem.NOT_AN_AMOUNT -> R.string.add_source_problem_not_an_amount
     ValueEntryProblem.TOO_MANY_DECIMAL_PLACES -> R.string.add_source_problem_decimal_places

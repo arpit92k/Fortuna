@@ -31,6 +31,9 @@ import io.github.arpit92k.fortuna.source.valueEntrySourceOf
 import io.github.arpit92k.fortuna.source.ValueEntryViewModel
 import io.github.arpit92k.fortuna.ui.FortunaTheme
 import io.github.arpit92k.fortuna.ui.WidthClass
+import io.github.arpit92k.fortuna.update.UpdateStartScreen
+import io.github.arpit92k.fortuna.update.UpdateStepScreen
+import io.github.arpit92k.fortuna.update.UpdateViewModel
 import kotlinx.datetime.toKotlinLocalDate
 
 /** The app's view models, each made once for the activity. */
@@ -42,6 +45,7 @@ class Screens(
     val addSource: AddSourceViewModel,
     val sourcePage: SourcePageViewModel,
     val valueEntry: ValueEntryViewModel,
+    val update: UpdateViewModel,
 )
 
 /**
@@ -97,6 +101,10 @@ private fun UnlockedApp(core: Core, screens: Screens) {
             ui = ui,
             onAddSource = { navigator.open(Destination.AddSource) },
             onOpen = { navigator.open(Destination.Source(it)) },
+            onUpdate = {
+                screens.update.prepare()
+                navigator.open(Destination.Update)
+            },
             onLock = { core.post { lock() } },
             modifier = modifier,
         )
@@ -144,6 +152,35 @@ private fun UnlockedApp(core: Core, screens: Screens) {
                 page(Modifier)
             }
         }
+        Destination.Update -> {
+            val ui by screens.update.ui.collectAsState()
+            UpdateStartScreen(
+                ui = ui,
+                onDate = screens.update::date,
+                onStart = {
+                    screens.update.start()
+                    navigator.open(Destination.UpdateStep)
+                },
+            )
+        }
+        Destination.UpdateStep -> {
+            val ui by screens.update.ui.collectAsState()
+            // After the last source, back to the dashboard.
+            LaunchedEffect(ui.started, ui.current == null, ui.plan != null) {
+                if (ui.started && ui.plan != null && ui.current == null) {
+                    screens.update.finish()
+                    navigator.reset()
+                }
+            }
+            UpdateStepScreen(
+                ui = ui,
+                onValue = screens.update::value,
+                onAdded = screens.update::added,
+                onNote = screens.update::note,
+                onSave = screens.update::save,
+                onSkip = screens.update::skip,
+            )
+        }
         is Destination.ValueEntry -> {
             val data = dataset ?: return
             val source = valueEntrySourceOf(data, current.id, java.time.LocalDate.now().toKotlinLocalDate()) ?: return
@@ -174,6 +211,9 @@ private fun leave(current: Destination, screens: Screens) {
     when (current) {
         Destination.AddSource -> screens.addSource.discard()
         is Destination.ValueEntry -> screens.valueEntry.discard()
+        // Leaving the walk keeps the date; what was entered is already saved.
+        Destination.UpdateStep -> screens.update.stop()
+        Destination.Update -> screens.update.finish()
         else -> {}
     }
     screens.navigator.back()
