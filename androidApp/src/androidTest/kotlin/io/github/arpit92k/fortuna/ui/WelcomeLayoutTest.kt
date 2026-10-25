@@ -7,7 +7,13 @@ import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.test.SemanticsMatcher
+import androidx.compose.ui.test.assert
+import androidx.compose.ui.test.performScrollTo
+import androidx.compose.ui.unit.Density
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.getBoundsInRoot
 import androidx.compose.ui.test.junit4.createComposeRule
@@ -20,6 +26,8 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import kotlin.math.abs
+import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 /**
@@ -40,15 +48,32 @@ class WelcomeLayoutTest {
     /** The bottom of the safe area: from Android 15 the app draws under the gesture bar, so the frame includes it. */
     private var bottomInset: Dp = 0.dp
 
-    private fun showWelcomeAt(width: Dp, height: Dp) {
+    /** [fontScale] 2 is the largest text size Android offers. */
+    private fun showWelcomeAt(width: Dp, height: Dp, fontScale: Float = 1f) {
         compose.setContent {
-            FortunaTheme {
-                bottomInset = with(LocalDensity.current) { WindowInsets.safeDrawing.getBottom(this).toDp() }
-                // Anchored at the top left, so a box larger than the emulator's screen is not shifted.
-                Box(Modifier.wrapContentSize(Alignment.TopStart, unbounded = true).requiredSize(width, height).testTag(FRAME)) {
-                    WelcomeScreen(onGetStarted = {}, onRestore = {})
+            val density = LocalDensity.current
+            CompositionLocalProvider(LocalDensity provides Density(density.density, fontScale)) {
+                FortunaTheme {
+                    bottomInset = with(LocalDensity.current) { WindowInsets.safeDrawing.getBottom(this).toDp() }
+                    // Anchored at the top left, so a box larger than the emulator's screen is not shifted.
+                    Box(Modifier.wrapContentSize(Alignment.TopStart, unbounded = true).requiredSize(width, height).testTag(FRAME)) {
+                        WelcomeScreen(onGetStarted = {}, onRestore = {})
+                    }
                 }
             }
+        }
+    }
+
+    /** Every part is within the width of the window, and can be scrolled to. */
+    private fun assertEverythingReachable() {
+        val frame = compose.onNodeWithTag(FRAME).getBoundsInRoot()
+        for (tag in listOf("welcome-title", "promise-phone", "promise-account", "promise-keys", "welcome-warning", GET_STARTED, RESTORE)) {
+            val node = compose.onNodeWithTag(tag)
+            val bounds = node.getBoundsInRoot()
+            assertTrue(bounds.left >= frame.left && bounds.right <= frame.right, "$tag runs off the side")
+            // Measured against the frame, which may be larger than the emulator's own screen.
+            val scrolled = node.performScrollTo().getBoundsInRoot()
+            assertTrue(scrolled.top >= frame.top && scrolled.bottom <= frame.bottom, "$tag cannot be scrolled into view")
         }
     }
 
@@ -104,5 +129,31 @@ class WelcomeLayoutTest {
         val restore = compose.onNodeWithTag(RESTORE).getBoundsInRoot()
         assertTrue(restore.top >= button.bottom, "a restore comes after a new start")
         assertTrue(abs((restore.right - hero.right).value) <= 1f, "the restore button is as wide as the picture")
+    }
+
+    @Test
+    fun atTheLargestTextSizeEverythingCanBeReachedOnAPhone() {
+        showWelcomeAt(411.dp, 891.dp, fontScale = 2f)
+        assertEverythingReachable()
+    }
+
+    @Test
+    fun atTheLargestTextSizeEverythingCanBeReachedOnATablet() {
+        showWelcomeAt(1280.dp, 800.dp, fontScale = 2f)
+        assertEverythingReachable()
+    }
+
+    // TalkBack: the title is a heading, each row is read as one item, and the picture is skipped.
+    @Test
+    fun screenReadersHearTheWordsNotThePicture() {
+        showWelcomeAt(411.dp, 891.dp)
+        compose.onNodeWithTag("welcome-title").assert(SemanticsMatcher.keyIsDefined(SemanticsProperties.Heading))
+        for (tag in listOf("promise-phone", "promise-account", "promise-keys")) {
+            val texts = compose.onNodeWithTag(tag).fetchSemanticsNode().config[SemanticsProperties.Text]
+            assertEquals(2, texts.size, "$tag is read as its title and its line together")
+        }
+        val hero = compose.onNodeWithTag(WELCOME_HERO).fetchSemanticsNode()
+        assertTrue(hero.children.isEmpty(), "nothing inside the picture is read")
+        assertFalse(SemanticsProperties.ContentDescription in hero.config)
     }
 }

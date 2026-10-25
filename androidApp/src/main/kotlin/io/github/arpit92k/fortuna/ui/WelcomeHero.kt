@@ -20,6 +20,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 
 // Decided: the welcome picture and its three rows say the same three things,
@@ -40,6 +42,8 @@ fun WelcomeHero(modifier: Modifier = Modifier) {
             .height(160.dp)
             .clip(RoundedCornerShape(24.dp))
             .background(MaterialTheme.colorScheme.surfaceVariant)
+            // Only a picture: TalkBack skips it, since the rows below say the same in words.
+            .clearAndSetSemantics {}
             .testTag(WELCOME_HERO),
         contentAlignment = Alignment.Center,
     ) {
@@ -74,7 +78,12 @@ private fun OrbitBadge(icon: FortunaIcon, modifier: Modifier = Modifier) {
 @Composable
 fun PromiseRow(icon: FortunaIcon, title: String, body: String, modifier: Modifier = Modifier) {
     val accent = MaterialTheme.colorScheme.primary
-    Row(modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp), verticalAlignment = Alignment.CenterVertically) {
+    // Read by TalkBack as one item: the title, then the line under it.
+    Row(
+        modifier.fillMaxWidth().semantics(mergeDescendants = true) {},
+        horizontalArrangement = Arrangement.spacedBy(16.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
         Box(
             Modifier.size(44.dp).clip(CircleShape).background(accent.copy(alpha = 0.16f)),
             contentAlignment = Alignment.Center,
