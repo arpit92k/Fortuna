@@ -25,6 +25,7 @@
     <!-- S-03 Recovery phrase -->
     <string name="phrase_title">Your recovery phrase</string>
     <string name="phrase_body">Write these twelve words down on paper, in order, and keep them somewhere safe. They are the only way back in if you forget your PIN. This is the only time they are shown.</string>
+    <string name="phrase_stay">You can switch to another app and come back to these same words. But if Fortuna is closed before setup finishes, nothing is kept: you will start again and get new words.</string>
     <string name="phrase_written_down">I have written them down</string>
 
     <!-- S-04 Confirm phrase -->
