@@ -6,7 +6,7 @@ package io.github.arpit92k.fortuna.report
 // nothing here is taken from the user's data.
 
 /** Decided: a dedicated address for Fortuna, not a personal one. */
-const val SUPPORT_EMAIL = "fortuna.support@example.com"
+const val SUPPORT_EMAIL = "support.fortuna@gmail.com"
 
 /** The app and phone a report comes from. */
 data class DeviceInfo(val appVersion: String, val androidVersion: String, val model: String)
