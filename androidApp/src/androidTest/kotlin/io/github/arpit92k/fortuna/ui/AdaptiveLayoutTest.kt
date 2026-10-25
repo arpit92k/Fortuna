@@ -65,6 +65,15 @@ class AdaptiveLayoutTest {
         assertTrue(abs((padMiddle - frameMiddle).value) <= 1f, "the pad's middle is at $padMiddle, the screen's at $frameMiddle")
     }
 
+    // Within reach of the thumbs, with only the screen's margin below it.
+    @Test
+    fun onAPhoneThePadIsAtTheBottom() {
+        showLockAt(411.dp, 891.dp)
+        val frame = compose.onNodeWithTag(FRAME).getBoundsInRoot()
+        val pad = compose.onNodeWithTag(PIN_PAD).getBoundsInRoot()
+        assertTrue(frame.bottom - pad.bottom <= 48.dp, "the pad ends ${frame.bottom - pad.bottom} above the bottom")
+    }
+
     @Test
     fun onAnUnfoldedFoldableTheScreenKeepsAReadableWidth() {
         showLockAt(673.dp, 841.dp)

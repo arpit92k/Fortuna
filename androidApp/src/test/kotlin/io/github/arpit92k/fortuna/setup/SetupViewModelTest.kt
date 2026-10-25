@@ -54,9 +54,9 @@ class SetupViewModelTest {
         advanceUntilIdle()
     }
 
-    private fun answerCorrectly(words: List<String>) {
-        val confirm = assertIs<SetupStep.ConfirmPhrase>(setup.step.value)
-        for (position in confirm.positions) setup.answer(position, words[position - 1])
+    private fun answerCorrectly(words: List<String>, viewModel: SetupViewModel = setup) {
+        val confirm = assertIs<SetupStep.ConfirmPhrase>(viewModel.step.value)
+        for (position in confirm.positions) viewModel.answer(position, words[position - 1])
     }
 
     @Test
@@ -86,6 +86,22 @@ class SetupViewModelTest {
 
         assertEquals(SessionState.Unlocked, core.state.value)
         assertEquals(pounds, core.dataset.value!!.baseCurrency)
+    }
+
+    // Android may close the screen in the background while the app keeps running.
+    @Test
+    fun aNewScreenReturnsToTheSameWords() = runTest(dispatcher) {
+        choosePin()
+        setup.phraseWrittenDown()
+        val words = core.run { (state.value as SessionState.SettingUp).phrase.words }
+
+        val again = SetupViewModel(core, suggestedCurrency = pounds, random = Random(7))
+        assertEquals(SetupStep.ShowPhrase(words), again.step.value, "back to the same list of words")
+        again.phraseWrittenDown()
+        answerCorrectly(words, again)
+        again.confirmPhrase()
+        advanceUntilIdle()
+        assertIs<SetupStep.ChooseCurrency>(again.step.value)
     }
 
     @Test
