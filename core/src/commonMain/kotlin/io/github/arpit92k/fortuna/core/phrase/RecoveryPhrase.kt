@@ -39,6 +39,9 @@ class RecoveryPhrase private constructor(
         /** How many bytes of secret a phrase stands for. */
         const val SECRET_SIZE: Int = 16
 
+        /** The 2048 words a phrase is made from, in order, for suggesting words as the user types one. */
+        val wordList: List<String> get() = bip39EnglishWords
+
         private const val BITS_PER_WORD = 11
         private const val CHECKSUM_BITS = 4
 

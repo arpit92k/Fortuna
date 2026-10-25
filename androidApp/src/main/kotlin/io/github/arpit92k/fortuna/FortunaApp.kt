@@ -1,6 +1,8 @@
 package io.github.arpit92k.fortuna
 
 import androidx.activity.compose.BackHandler
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -17,12 +19,17 @@ import io.github.arpit92k.fortuna.dashboard.DashboardScreen
 import io.github.arpit92k.fortuna.dashboard.DashboardViewModel
 import io.github.arpit92k.fortuna.lock.LockScreen
 import io.github.arpit92k.fortuna.lock.LockViewModel
+import io.github.arpit92k.fortuna.lock.RecoverFlow
+import io.github.arpit92k.fortuna.lock.RecoverViewModel
 import io.github.arpit92k.fortuna.navigation.Destination
 import io.github.arpit92k.fortuna.navigation.Navigator
 import io.github.arpit92k.fortuna.navigation.entersValue
+import io.github.arpit92k.fortuna.settings.BackupScreen
+import io.github.arpit92k.fortuna.settings.BackupViewModel
 import io.github.arpit92k.fortuna.settings.CurrenciesScreen
 import io.github.arpit92k.fortuna.settings.CurrenciesViewModel
 import io.github.arpit92k.fortuna.settings.SettingsScreen
+import io.github.arpit92k.fortuna.setup.RestoreViewModel
 import io.github.arpit92k.fortuna.setup.SetupFlow
 import io.github.arpit92k.fortuna.setup.SetupViewModel
 import io.github.arpit92k.fortuna.source.AddSourceScreen
@@ -43,7 +50,9 @@ import kotlinx.datetime.toKotlinLocalDate
 /** The app's view models, each made once for the activity. */
 class Screens(
     val setup: SetupViewModel,
+    val restore: RestoreViewModel,
     val lock: LockViewModel,
+    val recover: RecoverViewModel,
     val navigator: Navigator,
     val dashboard: DashboardViewModel,
     val addSource: AddSourceViewModel,
@@ -51,11 +60,13 @@ class Screens(
     val valueEntry: ValueEntryViewModel,
     val update: UpdateViewModel,
     val currencies: CurrenciesViewModel,
+    val backup: BackupViewModel,
 )
 
 /**
- * The whole app: setup when there is no data, the lock screen while locked,
- * and the app itself once unlocked.
+ * The whole app: setup or a restore when there is no data, the lock screen or
+ * the way in with the recovery phrase while locked, and the app itself once
+ * unlocked.
  *
  * The lock screen goes over whatever was open. Where the user was, and anything
  * typed, live in view models that outlive the lock, so unlocking returns the
@@ -67,10 +78,21 @@ fun FortunaApp(core: Core, screens: Screens) {
     FortunaTheme {
         Surface(Modifier.fillMaxSize()) {
             when (state) {
-                SessionState.NoData, is SessionState.SettingUp -> SetupFlow(screens.setup)
+                SessionState.NoData, is SessionState.SettingUp -> SetupFlow(screens.setup, screens.restore)
                 is SessionState.Locked -> {
-                    val ui by screens.lock.ui.collectAsState()
-                    LockScreen(ui, onDigit = screens.lock::digit, onDelete = screens.lock::deleteDigit, onOk = screens.lock::ok)
+                    val recovering by screens.recover.step.collectAsState()
+                    if (recovering != null) {
+                        RecoverFlow(screens.recover)
+                    } else {
+                        val ui by screens.lock.ui.collectAsState()
+                        LockScreen(
+                            ui,
+                            onDigit = screens.lock::digit,
+                            onDelete = screens.lock::deleteDigit,
+                            onOk = screens.lock::ok,
+                            onForgotPin = screens.recover::begin,
+                        )
+                    }
                 }
                 SessionState.Unlocked -> UnlockedApp(core, screens)
             }
@@ -197,8 +219,24 @@ private fun UnlockedApp(core: Core, screens: Screens) {
         }
         Destination.Settings -> SettingsScreen(
             onCurrencies = { navigator.open(Destination.Currencies) },
+            onBackup = { navigator.open(Destination.Backup) },
             onBack = { leave(current, screens) },
         )
+        Destination.Backup -> {
+            val ui by screens.backup.ui.collectAsState()
+            // The system picker: the user chooses where the file goes, and the app may write only there.
+            val pick = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument(BACKUP_TYPE)) { uri ->
+                screens.backup.save(uri?.toString())
+            }
+            BackupScreen(
+                ui = ui,
+                onSave = {
+                    screens.backup.clearMessage()
+                    pick.launch(screens.backup.suggestedName(java.time.LocalDate.now().toKotlinLocalDate()))
+                },
+                onBack = { leave(current, screens) },
+            )
+        }
         Destination.Currencies -> {
             val ui by screens.currencies.ui.collectAsState()
             CurrenciesScreen(
@@ -234,6 +272,9 @@ private fun UnlockedApp(core: Core, screens: Screens) {
     }
 }
 
+/** A backup is not a type the phone knows, so it is saved as plain bytes. */
+private const val BACKUP_TYPE = "application/octet-stream"
+
 /** Leaves [current], forgetting anything typed on a form left without saving. */
 private fun leave(current: Destination, screens: Screens) {
     when (current) {
@@ -243,6 +284,7 @@ private fun leave(current: Destination, screens: Screens) {
         Destination.UpdateStep -> screens.update.stop()
         Destination.Update -> screens.update.finish()
         Destination.Currencies -> screens.currencies.clearProblem()
+        Destination.Backup -> screens.backup.clearMessage()
         else -> {}
     }
     screens.navigator.back()

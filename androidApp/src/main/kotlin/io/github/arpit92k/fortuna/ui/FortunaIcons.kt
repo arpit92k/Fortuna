@@ -51,6 +51,8 @@ enum class FortunaIcon {
     Phrase,
     Currency,
     Add,
+    Backup,
+    Restore,
 
     // On buttons, beside the words.
     Plus,
@@ -146,6 +148,16 @@ private fun FortunaIcon.parts(): List<Part> = when (this) {
     FortunaIcon.Add -> listOf(
         StrokeRect(3.5f, 3.5f, 17f, 17f, 4f),
         StrokePath("M12 8 V16 M8 12 H16", accent = true),
+    )
+    // A tray, with an arrow going down into it: the data put somewhere safe.
+    FortunaIcon.Backup -> listOf(
+        StrokePath("M4 14 V19 a1.5 1.5 0 0 0 1.5 1.5 H18.5 a1.5 1.5 0 0 0 1.5 -1.5 V14"),
+        StrokePath("M12 3.5 V14 M8 10 L12 14 L16 10", accent = true),
+    )
+    // The same tray, with the arrow coming back up out of it.
+    FortunaIcon.Restore -> listOf(
+        StrokePath("M4 14 V19 a1.5 1.5 0 0 0 1.5 1.5 H18.5 a1.5 1.5 0 0 0 1.5 -1.5 V14"),
+        StrokePath("M12 15 V3.5 M8 7.5 L12 3.5 L16 7.5", accent = true),
     )
     FortunaIcon.Plus -> listOf(
         StrokePath("M12 5 V19 M5 12 H19"),

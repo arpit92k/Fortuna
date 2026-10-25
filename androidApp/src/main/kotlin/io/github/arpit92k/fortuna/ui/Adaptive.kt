@@ -84,6 +84,10 @@ val HeroWidth = 360.dp
  *
  * A screen whose action scrolls starts its info at the top, on the same line
  * as the action; any other screen centres each side.
+ *
+ * With [onBack], the page has a back arrow at its top. A [bottomBar] stays
+ * at the bottom of the window, outside the scrolling, and so just above the
+ * keyboard while one is open.
  */
 @Composable
 fun AdaptiveScreen(
@@ -93,8 +97,32 @@ fun AdaptiveScreen(
     actionScrolls: Boolean = false,
     actionAtBottom: Boolean = false,
     hero: (@Composable () -> Unit)? = null,
+    onBack: (() -> Unit)? = null,
+    bottomBar: (@Composable () -> Unit)? = null,
 ) {
-    BoxWithConstraints(modifier.fillMaxSize().safeDrawingPadding()) {
+    if (onBack == null && bottomBar == null) {
+        Sides(info, action, modifier.fillMaxSize().safeDrawingPadding(), actionScrolls, actionAtBottom, hero)
+    } else {
+        Column(modifier.fillMaxSize().safeDrawingPadding()) {
+            // The back arrow sits above both sides, at the start of the window.
+            if (onBack != null) BackButton(onBack, Modifier.padding(start = 4.dp, top = 4.dp))
+            Sides(info, action, Modifier.fillMaxWidth().weight(1f), actionScrolls, actionAtBottom, hero)
+            // Below the content, so it stays in view just above the keyboard.
+            bottomBar?.invoke()
+        }
+    }
+}
+
+@Composable
+private fun Sides(
+    info: @Composable () -> Unit,
+    action: @Composable () -> Unit,
+    modifier: Modifier,
+    actionScrolls: Boolean,
+    actionAtBottom: Boolean,
+    hero: (@Composable () -> Unit)?,
+) {
+    BoxWithConstraints(modifier) {
         val wide = sideBySide(maxWidth, maxHeight)
         CompositionLocalProvider(LocalSideBySide provides wide) {
             if (wide) {

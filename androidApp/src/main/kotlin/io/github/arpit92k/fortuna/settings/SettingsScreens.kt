@@ -10,11 +10,16 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
 import androidx.compose.material3.Card
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -32,8 +37,10 @@ import androidx.compose.ui.unit.dp
 import io.github.arpit92k.fortuna.R
 import io.github.arpit92k.fortuna.core.money.Currency
 import io.github.arpit92k.fortuna.core.rates.Rate
+import io.github.arpit92k.fortuna.setup.Problem
 import io.github.arpit92k.fortuna.source.ConfirmDialog
 import io.github.arpit92k.fortuna.ui.BackButton
+import io.github.arpit92k.fortuna.ui.ButtonIcon
 import io.github.arpit92k.fortuna.ui.FortunaIcon
 import io.github.arpit92k.fortuna.ui.IconTile
 import io.github.arpit92k.fortuna.ui.RateDialog
@@ -54,26 +61,91 @@ private fun Page(title: String, onBack: () -> Unit, tag: String, content: @Compo
     }
 }
 
-/** S-15 Settings. Backup and bug reports join it in later steps. */
+/** S-15 Settings. Bug reports join it in a later step. */
 @Composable
-fun SettingsScreen(onCurrencies: () -> Unit, onBack: () -> Unit) {
+fun SettingsScreen(onCurrencies: () -> Unit, onBackup: () -> Unit, onBack: () -> Unit) {
     Page(stringResource(R.string.settings_title), onBack, "settings") {
-        Row(
-            Modifier.fillMaxWidth().clickable(onClick = onCurrencies).padding(8.dp, 16.dp).testTag("settings-currencies"),
-            horizontalArrangement = Arrangement.spacedBy(16.dp),
-            verticalAlignment = Alignment.CenterVertically,
+        SettingsItem(
+            FortunaIcon.Currency,
+            stringResource(R.string.settings_currencies),
+            stringResource(R.string.settings_currencies_body),
+            onCurrencies,
+            "settings-currencies",
+        )
+        HorizontalDivider()
+        SettingsItem(
+            FortunaIcon.Backup,
+            stringResource(R.string.settings_backup),
+            stringResource(R.string.settings_backup_body),
+            onBackup,
+            "settings-backup",
+        )
+        HorizontalDivider()
+    }
+}
+
+@Composable
+private fun SettingsItem(icon: FortunaIcon, title: String, body: String, onClick: () -> Unit, tag: String) {
+    Row(
+        Modifier.fillMaxWidth().clickable(onClick = onClick).padding(8.dp, 16.dp).testTag(tag),
+        horizontalArrangement = Arrangement.spacedBy(16.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        IconTile(icon, size = 40.dp)
+        Column {
+            Text(title, style = MaterialTheme.typography.titleMedium)
+            Text(body, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+    }
+}
+
+/**
+ * S-17 Backup: what the file is and who can open it, when the last one was
+ * made and whether it holds everything, and a way to save a new one where the
+ * user picks.
+ */
+@Composable
+fun BackupScreen(ui: BackupUi, onSave: () -> Unit, onBack: () -> Unit) {
+    Page(stringResource(R.string.backup_title), onBack, "backup") {
+        Column(
+            Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(horizontal = 8.dp, vertical = 8.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
-            IconTile(FortunaIcon.Currency, size = 40.dp)
-            Column {
-                Text(stringResource(R.string.settings_currencies), style = MaterialTheme.typography.titleMedium)
-                Text(
-                    stringResource(R.string.settings_currencies_body),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+            IconTile(FortunaIcon.Backup)
+            Text(stringResource(R.string.backup_body), style = MaterialTheme.typography.bodyLarge)
+            val last = ui.lastBackup
+            Text(
+                when {
+                    last == null -> stringResource(R.string.backup_never)
+                    ui.upToDate -> stringResource(R.string.backup_last_up_to_date, formatDate(last))
+                    else -> stringResource(R.string.backup_last_changed, formatDate(last))
+                },
+                style = MaterialTheme.typography.titleMedium,
+                modifier = Modifier.testTag("backup-status"),
+            )
+            when (ui.message) {
+                BackupMessage.SAVED -> Text(
+                    stringResource(R.string.backup_saved),
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.testTag("backup-saved"),
                 )
+                BackupMessage.NOT_SAVED -> Problem(stringResource(R.string.backup_not_saved))
+                BackupMessage.CHANGED_WHILE_SAVING -> Problem(stringResource(R.string.backup_changed_while_saving))
+                null -> {}
+            }
+            if (ui.saving) {
+                Row(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
+                    CircularProgressIndicator(Modifier.size(24.dp))
+                    Text(stringResource(R.string.backup_saving), style = MaterialTheme.typography.bodyLarge)
+                }
+            } else {
+                Button(onClick = onSave, modifier = Modifier.fillMaxWidth().testTag("backup-save")) {
+                    ButtonIcon(FortunaIcon.Backup)
+                    Text(stringResource(R.string.backup_save))
+                }
             }
         }
-        HorizontalDivider()
     }
 }
 

@@ -69,3 +69,38 @@ class TestPhone {
         return Core(session, dispatcher)
     }
 }
+
+/** Files the user picks, held in memory and named by their address. */
+class FakeDocumentFiles : io.github.arpit92k.fortuna.platform.DocumentFiles {
+    val saved = mutableMapOf<String, ByteArray>()
+
+    /** Addresses that fail, as a place that cannot be written or a file that cannot be read. */
+    val failing = mutableSetOf<String>()
+
+    override fun write(location: String, bytes: ByteArray) {
+        if (location in failing) throw java.io.IOException("Cannot write $location")
+        saved[location] = bytes.copyOf()
+    }
+
+    override fun read(location: String, maxBytes: Int): ByteArray {
+        if (location in failing) throw java.io.IOException("Cannot read $location")
+        val bytes = saved[location] ?: throw java.io.FileNotFoundException(location)
+        if (bytes.size > maxBytes) throw io.github.arpit92k.fortuna.platform.FileTooLargeException()
+        return bytes.copyOf()
+    }
+}
+
+/**
+ * Sets this phone up with [pin] and a pounds base, leaving it locked as on the
+ * next start, and returns the recovery phrase's words.
+ */
+fun TestPhone.setUpLocked(pin: String = "246810"): List<String> {
+    val session = session()
+    val setup = session.beginSetup(pin) as io.github.arpit92k.fortuna.core.keys.SetupResult.Ready
+    val words = setup.setup.phrase.words
+    session.finishSetup(io.github.arpit92k.fortuna.core.money.Currency.forCode("GBP")!!)
+    return words
+}
+
+/** A phrase that is valid, but not any phone's: the first word eleven times, then "about". */
+val someoneElsesPhrase: List<String> = List(11) { "abandon" } + "about"

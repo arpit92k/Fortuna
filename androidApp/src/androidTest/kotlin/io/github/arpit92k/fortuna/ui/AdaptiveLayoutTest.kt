@@ -48,7 +48,7 @@ class AdaptiveLayoutTest {
                 bottomInset = with(LocalDensity.current) { WindowInsets.safeDrawing.getBottom(this).toDp() }
                 // Anchored at the top left, so a box larger than the emulator's screen is not shifted.
                 Box(Modifier.wrapContentSize(Alignment.TopStart, unbounded = true).requiredSize(width, height).testTag(FRAME)) {
-                    LockScreen(ui, onDigit = {}, onDelete = {}, onOk = {})
+                    LockScreen(ui, onDigit = {}, onDelete = {}, onOk = {}, onForgotPin = {})
                 }
             }
         }

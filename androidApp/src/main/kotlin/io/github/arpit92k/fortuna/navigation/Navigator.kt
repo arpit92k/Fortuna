@@ -8,7 +8,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.datetime.LocalDate
 
-/** The screens of the unlocked app. Settings and the update arrive in later steps. */
+/** The screens of the unlocked app. */
 sealed interface Destination {
     /** S-09. */
     data object Dashboard : Destination
@@ -33,11 +33,21 @@ sealed interface Destination {
 
     /** S-16. */
     data object Currencies : Destination
+
+    /** S-17. */
+    data object Backup : Destination
 }
 
-/** Whether the user is entering a value on [destination], which earns the two-minute grace period. */
+/**
+ * Whether the user is entering a value on [destination], which earns the
+ * two-minute grace period. Saving a backup counts too: the system's file
+ * picker takes the user out of the app while they choose where it goes.
+ */
 fun entersValue(destination: Destination): Boolean =
-    destination is Destination.AddSource || destination is Destination.ValueEntry || destination is Destination.UpdateStep
+    destination is Destination.AddSource ||
+        destination is Destination.ValueEntry ||
+        destination is Destination.UpdateStep ||
+        destination is Destination.Backup
 
 /**
  * Where the user is in the unlocked app: a stack of screens, the dashboard at
