@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
@@ -31,7 +32,6 @@ import androidx.compose.ui.unit.dp
 import io.github.arpit92k.fortuna.R
 import io.github.arpit92k.fortuna.core.money.Currency
 import io.github.arpit92k.fortuna.core.rates.Rate
-import io.github.arpit92k.fortuna.setup.Problem
 import io.github.arpit92k.fortuna.source.ConfirmDialog
 import io.github.arpit92k.fortuna.ui.FortunaIcon
 import io.github.arpit92k.fortuna.ui.IconTile
@@ -103,9 +103,6 @@ fun CurrenciesScreen(
     val editing = editingKey?.let(::decode)
     Page(stringResource(R.string.currencies_title), onBack, "currencies") {
         if (ui == null) return@Page
-        ui.problem?.let { problem ->
-            Box(Modifier.padding(8.dp)) { Problem(problemText(problem)) }
-        }
         if (ui.currencies.isEmpty()) {
             Text(
                 stringResource(R.string.currencies_none, ui.base.code),
@@ -155,6 +152,21 @@ fun CurrenciesScreen(
                 }
             }
         }
+    }
+
+    // A rate that could not be saved or deleted is explained in a pop-up.
+    ui?.problem?.let { problem ->
+        AlertDialog(
+            onDismissRequest = onClearProblem,
+            title = { Text(stringResource(R.string.currencies_problem_title)) },
+            text = { Text(problemText(problem)) },
+            confirmButton = {
+                TextButton(onClick = onClearProblem, modifier = Modifier.testTag("rate-problem-ok")) {
+                    Text(stringResource(R.string.date_ok))
+                }
+            },
+            modifier = Modifier.testTag("rate-problem"),
+        )
     }
 
     if (ui == null || editing == null) return

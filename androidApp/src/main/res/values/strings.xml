@@ -195,5 +195,6 @@
     <string name="currencies_change_title">Correct the rate for %1$s</string>
     <string name="currencies_delete_title">Delete this rate?</string>
     <string name="currencies_delete_text">The %1$s rate for %2$s will be removed, and totals use the rate before it.</string>
+    <string name="currencies_problem_title">This rate cannot be changed</string>
     <string name="currencies_problem_needed">This rate is needed: it is the only one on or before the opening value of %1$s on %2$s.</string>
 </resources>
