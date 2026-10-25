@@ -397,7 +397,7 @@ The design documents leave these open. Each is listed with the step that needs i
 | How the timeline picks its dates | 08 | Every date on which a value or a rate changed |
 | How many words S-04 asks for | 15 | Three, at random positions |
 | Chart library | 21 | As the technology document says, decided when the charts are built |
-| Support email address for bug reports | 24 | A dedicated address for Fortuna, not a personal one |
+| Support email address for bug reports | 24 | Decided: support.fortuna@gmail.com, a dedicated address for Fortuna |
 
 Decided since this plan was written:
 

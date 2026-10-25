@@ -11,6 +11,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import io.github.arpit92k.fortuna.R
+import io.github.arpit92k.fortuna.report.ReportProblemLink
 import io.github.arpit92k.fortuna.setup.Problem
 import io.github.arpit92k.fortuna.ui.AdaptiveScreen
 import io.github.arpit92k.fortuna.ui.FortunaIcon
@@ -20,7 +21,14 @@ import kotlin.time.Duration.Companion.hours
 
 /** S-07 Lock: the PIN, the wait after wrong ones, and the way in with the recovery phrase. */
 @Composable
-fun LockScreen(ui: LockUi, onDigit: (Char) -> Unit, onDelete: () -> Unit, onOk: () -> Unit, onForgotPin: () -> Unit) {
+fun LockScreen(
+    ui: LockUi,
+    onDigit: (Char) -> Unit,
+    onDelete: () -> Unit,
+    onOk: () -> Unit,
+    onForgotPin: () -> Unit,
+    onReport: () -> Unit = {},
+) {
     AdaptiveScreen(
         actionAtBottom = true,
         info = {
@@ -47,6 +55,8 @@ fun LockScreen(ui: LockUi, onDigit: (Char) -> Unit, onDelete: () -> Unit, onOk: 
                 TextButton(onClick = onForgotPin, modifier = Modifier.testTag("forgot-pin")) {
                     Text(stringResource(R.string.lock_forgot_pin))
                 }
+                // A problem with unlocking can be reported without getting in.
+                ReportProblemLink(onReport)
             }
         },
         action = {

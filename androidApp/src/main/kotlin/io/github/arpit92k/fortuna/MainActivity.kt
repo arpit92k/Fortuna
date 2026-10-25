@@ -13,6 +13,8 @@ import io.github.arpit92k.fortuna.lock.LockViewModel
 import io.github.arpit92k.fortuna.lock.RecoverViewModel
 import io.github.arpit92k.fortuna.platform.AndroidDisplayPreferences
 import io.github.arpit92k.fortuna.platform.AndroidDocumentFiles
+import io.github.arpit92k.fortuna.platform.deviceInfo
+import io.github.arpit92k.fortuna.report.BugReportViewModel
 import io.github.arpit92k.fortuna.navigation.Navigator
 import io.github.arpit92k.fortuna.settings.BackupViewModel
 import io.github.arpit92k.fortuna.settings.CurrenciesViewModel
@@ -54,6 +56,7 @@ class MainActivity : ComponentActivity() {
                 currencies = viewModel { CurrenciesViewModel(core) },
                 backup = viewModel { BackupViewModel(core, files) },
                 amounts = viewModel { AmountsViewModel(display) },
+                report = viewModel { BugReportViewModel((application as FortunaApplication).crashes, deviceInfo()) },
             )
             FortunaApp(core, screens)
         }

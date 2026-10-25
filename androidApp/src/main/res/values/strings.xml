@@ -251,4 +251,22 @@
     <string name="dashboard_hide_amounts">Hide amounts</string>
     <string name="dashboard_show_amounts">Show amounts</string>
     <string name="chart_summary_hidden">From %1$s to %2$s. Amounts are hidden.</string>
+
+    <!-- S-18 Report a bug -->
+    <string name="report_link">Report a problem</string>
+    <string name="settings_report">Report a problem</string>
+    <string name="settings_report_body">Tell us what went wrong, from your email app.</string>
+    <string name="report_title">Report a problem</string>
+    <string name="report_body">Say what happened. Your email app opens with this report filled in, and nothing is sent until you send it there. A report never includes your amounts, accounts, PIN or recovery phrase.</string>
+    <string name="report_description">What happened?</string>
+    <string name="report_preview">The report</string>
+    <string name="report_send">Open in email app</string>
+    <string name="report_delete_crashes">Delete the crash record instead</string>
+    <string name="report_no_email_app">There is no email app on this phone. Copy the report and send it to %1$s another way.</string>
+    <string name="report_copy">Copy the report</string>
+    <string name="crash_offer_title">Fortuna closed unexpectedly</string>
+    <string name="crash_offer_body">A record of where in the app it happened was saved, without any of your data. Would you like to report it?</string>
+    <string name="crash_offer_report">Report</string>
+    <string name="crash_offer_delete">Delete</string>
+    <string name="crash_offer_not_now">Not now</string>
 </resources>
