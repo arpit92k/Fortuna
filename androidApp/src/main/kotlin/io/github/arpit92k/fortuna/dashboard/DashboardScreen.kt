@@ -21,6 +21,7 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -33,6 +34,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import io.github.arpit92k.fortuna.R
+import io.github.arpit92k.fortuna.ui.ButtonIcon
 import io.github.arpit92k.fortuna.ui.FortunaIcon
 import io.github.arpit92k.fortuna.ui.FortunaIconImage
 import io.github.arpit92k.fortuna.ui.IconTile
@@ -68,6 +70,7 @@ fun DashboardScreen(
                 Text(stringResource(R.string.app_name), style = MaterialTheme.typography.titleLarge, modifier = Modifier.weight(1f))
                 if (ui != null && !ui.empty) {
                     TextButton(onClick = onUpdate, modifier = Modifier.testTag("start-update")) {
+                        ButtonIcon(FortunaIcon.Update)
                         Text(stringResource(R.string.dashboard_update))
                     }
                 }
@@ -78,9 +81,12 @@ fun DashboardScreen(
         },
         floatingActionButton = {
             if (ui != null && !ui.empty) {
-                ExtendedFloatingActionButton(onClick = onAddSource, modifier = Modifier.testTag("add-source")) {
-                    Text(stringResource(R.string.dashboard_add_source))
-                }
+                ExtendedFloatingActionButton(
+                    onClick = onAddSource,
+                    icon = { FortunaIconImage(FortunaIcon.Plus, line = LocalContentColor.current, accent = LocalContentColor.current) },
+                    text = { Text(stringResource(R.string.dashboard_add_source)) },
+                    modifier = Modifier.testTag("add-source"),
+                )
             }
         },
     ) { padding ->
@@ -115,6 +121,7 @@ private fun EmptyDashboard(onAddSource: () -> Unit) {
             Text(stringResource(R.string.dashboard_empty_title), style = MaterialTheme.typography.headlineSmall, textAlign = TextAlign.Center)
             Text(stringResource(R.string.dashboard_empty_body), style = MaterialTheme.typography.bodyLarge, textAlign = TextAlign.Center)
             Button(onClick = onAddSource, modifier = Modifier.testTag("add-first-source")) {
+                ButtonIcon(FortunaIcon.Plus)
                 Text(stringResource(R.string.dashboard_add_first))
             }
         }
