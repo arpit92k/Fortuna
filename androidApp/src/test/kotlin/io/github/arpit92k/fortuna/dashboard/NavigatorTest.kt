@@ -27,6 +27,7 @@ class NavigatorTest {
     fun onlyScreensWhereAValueIsEnteredEarnTheLongerGrace() {
         assertTrue(entersValue(Destination.AddSource))
         assertTrue(entersValue(Destination.ValueEntry(SourceId(6))))
+        assertTrue(entersValue(Destination.Backup), "the file picker takes the user out of the app")
         assertFalse(entersValue(Destination.Dashboard))
         assertFalse(entersValue(Destination.Source(SourceId(6))))
     }

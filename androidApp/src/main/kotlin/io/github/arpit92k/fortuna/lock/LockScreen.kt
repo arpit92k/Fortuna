@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
@@ -15,10 +16,11 @@ import io.github.arpit92k.fortuna.ui.AdaptiveScreen
 import io.github.arpit92k.fortuna.ui.FortunaIcon
 import io.github.arpit92k.fortuna.ui.IconTile
 import io.github.arpit92k.fortuna.ui.PinEntry
+import kotlin.time.Duration.Companion.hours
 
-/** S-07 Lock: the PIN, and the wait after wrong ones. */
+/** S-07 Lock: the PIN, the wait after wrong ones, and the way in with the recovery phrase. */
 @Composable
-fun LockScreen(ui: LockUi, onDigit: (Char) -> Unit, onDelete: () -> Unit, onOk: () -> Unit) {
+fun LockScreen(ui: LockUi, onDigit: (Char) -> Unit, onDelete: () -> Unit, onOk: () -> Unit, onForgotPin: () -> Unit) {
     AdaptiveScreen(
         actionAtBottom = true,
         info = {
@@ -37,6 +39,13 @@ fun LockScreen(ui: LockUi, onDigit: (Char) -> Unit, onDelete: () -> Unit, onOk: 
                         style = MaterialTheme.typography.titleMedium,
                         modifier = Modifier.testTag("lock-wait"),
                     )
+                }
+                // Once the waits reach an hour, the phrase is the quicker way in.
+                if (ui.wait >= 1.hours) {
+                    Text(stringResource(R.string.lock_phrase_quicker), style = MaterialTheme.typography.bodyLarge)
+                }
+                TextButton(onClick = onForgotPin, modifier = Modifier.testTag("forgot-pin")) {
+                    Text(stringResource(R.string.lock_forgot_pin))
                 }
             }
         },

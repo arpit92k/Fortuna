@@ -31,6 +31,7 @@ class WelcomeLayoutTest {
     private companion object {
         const val FRAME = "frame"
         const val GET_STARTED = "get-started"
+        const val RESTORE = "restore"
     }
 
     @get:Rule
@@ -45,23 +46,25 @@ class WelcomeLayoutTest {
                 bottomInset = with(LocalDensity.current) { WindowInsets.safeDrawing.getBottom(this).toDp() }
                 // Anchored at the top left, so a box larger than the emulator's screen is not shifted.
                 Box(Modifier.wrapContentSize(Alignment.TopStart, unbounded = true).requiredSize(width, height).testTag(FRAME)) {
-                    WelcomeScreen(onGetStarted = {})
+                    WelcomeScreen(onGetStarted = {}, onRestore = {})
                 }
             }
         }
     }
 
     @Test
-    fun onAPhoneThePictureIsAtTheTopAndTheButtonAtTheBottom() {
+    fun onAPhoneThePictureIsAtTheTopAndTheButtonsAtTheBottom() {
         showWelcomeAt(411.dp, 891.dp)
         compose.onNodeWithTag(STACKED).assertExists()
         val frame = compose.onNodeWithTag(FRAME).getBoundsInRoot()
         val hero = compose.onNodeWithTag(WELCOME_HERO).getBoundsInRoot()
         val button = compose.onNodeWithTag(GET_STARTED).getBoundsInRoot()
+        val restore = compose.onNodeWithTag(RESTORE).getBoundsInRoot()
         assertTrue(hero.top < frame.top + 96.dp, "the picture starts ${hero.top - frame.top} below the top")
-        val gap = frame.bottom - bottomInset - button.bottom
-        assertTrue(gap <= 48.dp, "the button ends $gap above the bottom of the safe area")
-        assertTrue(button.top > hero.bottom, "the button is below the picture")
+        val gap = frame.bottom - bottomInset - restore.bottom
+        assertTrue(gap <= 48.dp, "the buttons end $gap above the bottom of the safe area")
+        assertTrue(button.top > hero.bottom, "the buttons are below the picture")
+        assertTrue(restore.top >= button.bottom, "a restore comes after a new start")
     }
 
     @Test
@@ -98,5 +101,8 @@ class WelcomeLayoutTest {
         assertTrue(button.top >= hero.bottom, "the button is below the picture")
         assertTrue(abs((button.left - hero.left).value) <= 1f, "the button starts where the picture does")
         assertTrue(abs((button.right - hero.right).value) <= 1f, "the button ends where the picture does")
+        val restore = compose.onNodeWithTag(RESTORE).getBoundsInRoot()
+        assertTrue(restore.top >= button.bottom, "a restore comes after a new start")
+        assertTrue(abs((restore.right - hero.right).value) <= 1f, "the restore button is as wide as the picture")
     }
 }

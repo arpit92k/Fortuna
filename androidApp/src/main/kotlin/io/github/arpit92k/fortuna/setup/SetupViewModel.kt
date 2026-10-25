@@ -62,6 +62,32 @@ sealed interface SetupStep {
 
 enum class PinMessage { TOO_SHORT, DID_NOT_MATCH }
 
+/** What OK on the pad for a new PIN leads to: the pad again, or the PIN chosen. */
+sealed interface NewPinOk {
+    /** The first entry made, to be typed again, or a problem with it. */
+    data class Again(val pad: SetupStep.CreatePin) : NewPinOk
+
+    /** Typed twice, the same both times. */
+    data class Chosen(val pin: String) : NewPinOk
+}
+
+/**
+ * OK on the pad for a new PIN, as in setup, recovery and restore: the PIN is
+ * typed twice, and must be six digits or more.
+ */
+fun SetupStep.CreatePin.ok(): NewPinOk = when {
+    entered.length < MIN_PIN_LENGTH -> NewPinOk.Again(copy(problem = PinMessage.TOO_SHORT))
+    first == null -> NewPinOk.Again(SetupStep.CreatePin(first = entered))
+    first != entered -> NewPinOk.Again(SetupStep.CreatePin(problem = PinMessage.DID_NOT_MATCH))
+    else -> NewPinOk.Chosen(entered)
+}
+
+/** A digit typed on the pad for a new PIN. */
+fun SetupStep.CreatePin.withDigit(digit: Char): SetupStep.CreatePin = copy(entered = typed(entered, digit), problem = null)
+
+/** The last digit taken off the pad for a new PIN. */
+fun SetupStep.CreatePin.withoutDigit(): SetupStep.CreatePin = copy(entered = entered.dropLast(1))
+
 /**
  * Runs first-time setup. Nothing is saved until the base currency is chosen:
  * leaving the phrase screens abandons the setup, and the next one gets a new
@@ -91,21 +117,19 @@ class SetupViewModel(
 
     // ---- S-02 Create PIN ----
 
-    fun digit(digit: Char) = updatePin { it.copy(entered = typed(it.entered, digit), problem = null) }
+    fun digit(digit: Char) = updatePin { it.withDigit(digit) }
 
-    fun deleteDigit() = updatePin { it.copy(entered = it.entered.dropLast(1)) }
+    fun deleteDigit() = updatePin { it.withoutDigit() }
 
     fun pinOk() {
         val pin = mutableStep.value as? SetupStep.CreatePin ?: return
         if (pin.working) return
-        when {
-            pin.entered.length < MIN_PIN_LENGTH -> mutableStep.value = pin.copy(problem = PinMessage.TOO_SHORT)
-            pin.first == null -> mutableStep.value = SetupStep.CreatePin(first = pin.entered)
-            pin.first != pin.entered -> mutableStep.value = SetupStep.CreatePin(problem = PinMessage.DID_NOT_MATCH)
-            else -> {
+        when (val ok = pin.ok()) {
+            is NewPinOk.Again -> mutableStep.value = ok.pad
+            is NewPinOk.Chosen -> {
                 mutableStep.value = pin.copy(working = true)
                 viewModelScope.launch {
-                    when (val result = core.run { beginSetup(pin.entered) }) {
+                    when (val result = core.run { beginSetup(ok.pin) }) {
                         is SetupResult.Ready -> {
                             words = result.setup.phrase.words
                             mutableStep.value = SetupStep.ShowPhrase(words)

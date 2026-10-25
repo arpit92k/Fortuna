@@ -84,6 +84,8 @@ val HeroWidth = 360.dp
  *
  * A screen whose action scrolls starts its info at the top, on the same line
  * as the action; any other screen centres each side.
+ *
+ * With [onBack], the page has a back arrow at its top.
  */
 @Composable
 fun AdaptiveScreen(
@@ -93,8 +95,29 @@ fun AdaptiveScreen(
     actionScrolls: Boolean = false,
     actionAtBottom: Boolean = false,
     hero: (@Composable () -> Unit)? = null,
+    onBack: (() -> Unit)? = null,
 ) {
-    BoxWithConstraints(modifier.fillMaxSize().safeDrawingPadding()) {
+    if (onBack == null) {
+        Sides(info, action, modifier.fillMaxSize().safeDrawingPadding(), actionScrolls, actionAtBottom, hero)
+    } else {
+        // The back arrow sits above both sides, at the start of the window.
+        Column(modifier.fillMaxSize().safeDrawingPadding()) {
+            BackButton(onBack, Modifier.padding(start = 4.dp, top = 4.dp))
+            Sides(info, action, Modifier.fillMaxWidth().weight(1f), actionScrolls, actionAtBottom, hero)
+        }
+    }
+}
+
+@Composable
+private fun Sides(
+    info: @Composable () -> Unit,
+    action: @Composable () -> Unit,
+    modifier: Modifier,
+    actionScrolls: Boolean,
+    actionAtBottom: Boolean,
+    hero: (@Composable () -> Unit)?,
+) {
+    BoxWithConstraints(modifier) {
         val wide = sideBySide(maxWidth, maxHeight)
         CompositionLocalProvider(LocalSideBySide provides wide) {
             if (wide) {

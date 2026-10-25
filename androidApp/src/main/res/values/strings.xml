@@ -197,4 +197,46 @@
     <string name="currencies_delete_text">The %1$s rate for %2$s will be removed, and totals use the rate before it.</string>
     <string name="currencies_problem_title">This rate cannot be changed</string>
     <string name="currencies_problem_needed">This rate is needed: it is the only one on or before the opening value of %1$s on %2$s.</string>
+
+    <!-- The twelve-word entry, on S-06 and S-08 -->
+    <string name="phrase_entry_missing">Word %1$d is missing.</string>
+    <string name="phrase_entry_unknown">Word %1$d is not one of the recovery phrase words. Check its spelling.</string>
+    <string name="phrase_entry_not_a_phrase">These words are not a recovery phrase. One of them may be wrong, or two may be the wrong way round.</string>
+    <string name="phrase_entry_wrong">This is not the recovery phrase for this data. Check the words against the ones you wrote down.</string>
+    <string name="phrase_entry_continue">Continue</string>
+
+    <!-- S-07 and S-08: back in with the phrase -->
+    <string name="lock_forgot_pin">Forgot your PIN?</string>
+    <string name="lock_phrase_quicker">Your recovery phrase is the quicker way in.</string>
+    <string name="recover_title">Enter your recovery phrase</string>
+    <string name="recover_body">The twelve words you wrote down when you set up Fortuna, in order. You can paste them all into the first box.</string>
+    <string name="recover_pin_title">Choose a new PIN</string>
+    <string name="recover_pin_body">Your old PIN will stop working. Use six digits or more.</string>
+
+    <!-- S-01 and S-06: restore -->
+    <string name="welcome_restore">Restore from a backup</string>
+    <string name="restore_title">Restore from a backup</string>
+    <string name="restore_body">Choose the backup file you saved from Fortuna. You will need the recovery phrase that was in use when it was made.</string>
+    <string name="restore_choose">Choose backup file</string>
+    <string name="restore_reading">Reading the file…</string>
+    <string name="restore_cannot_read">That file could not be read. Try choosing it again.</string>
+    <string name="restore_not_a_backup">That file is not a Fortuna backup.</string>
+    <string name="restore_damaged">That backup is damaged and cannot be opened. If you have another copy, try that one.</string>
+    <string name="restore_from_newer_app">That backup was made by a newer version of Fortuna. Update the app, then try again.</string>
+    <string name="restore_phrase_title">Enter the recovery phrase</string>
+    <string name="restore_phrase_body">The twelve words that were in use when the backup was made, in order. You can paste them all into the first box.</string>
+
+    <!-- S-17 Backup -->
+    <string name="settings_backup">Backup</string>
+    <string name="settings_backup_body">Save a copy of everything to a place you choose.</string>
+    <string name="backup_title">Backup</string>
+    <string name="backup_body">The backup is one file holding everything in Fortuna. It is encrypted: only your recovery phrase opens it, so it is safe to keep on a computer or in your own cloud storage. Fortuna never sends it anywhere itself.</string>
+    <string name="backup_never">You have not made a backup yet.</string>
+    <string name="backup_last_up_to_date">Last backup: %1$s. It holds everything.</string>
+    <string name="backup_last_changed">Last backup: %1$s. You have made changes since.</string>
+    <string name="backup_save">Save a backup</string>
+    <string name="backup_saving">Saving the backup…</string>
+    <string name="backup_saved">The backup is saved.</string>
+    <string name="backup_not_saved">The backup could not be saved there. Try choosing another place.</string>
+    <string name="backup_changed_while_saving">The backup is saved, but something changed while it was saving. Save another to include it.</string>
 </resources>

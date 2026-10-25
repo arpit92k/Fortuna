@@ -16,6 +16,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -35,6 +36,7 @@ import androidx.compose.ui.unit.dp
 import io.github.arpit92k.fortuna.R
 import io.github.arpit92k.fortuna.core.money.Currency
 import io.github.arpit92k.fortuna.ui.AdaptiveScreen
+import io.github.arpit92k.fortuna.ui.ButtonIcon
 import io.github.arpit92k.fortuna.ui.Centred
 import io.github.arpit92k.fortuna.ui.FortunaIcon
 import io.github.arpit92k.fortuna.ui.IconTile
@@ -43,13 +45,18 @@ import io.github.arpit92k.fortuna.ui.PinEntry
 import io.github.arpit92k.fortuna.ui.PromiseRow
 import io.github.arpit92k.fortuna.ui.WelcomeHero
 
-/** First-time setup, S-01 to S-05, one step at a time. */
+/** First-time setup, S-01 to S-05, one step at a time; or a restore, S-06, from S-01. */
 @Composable
-fun SetupFlow(viewModel: SetupViewModel) {
+fun SetupFlow(viewModel: SetupViewModel, restore: RestoreViewModel) {
     val step by viewModel.step.collectAsState()
+    val restoring by restore.step.collectAsState()
+    if (restoring != null) {
+        RestoreFlow(restore)
+        return
+    }
     BackHandler(enabled = step != SetupStep.Welcome) { viewModel.back() }
     when (val current = step) {
-        SetupStep.Welcome -> WelcomeScreen(onGetStarted = viewModel::getStarted)
+        SetupStep.Welcome -> WelcomeScreen(onGetStarted = viewModel::getStarted, onRestore = restore::begin)
         is SetupStep.CreatePin -> CreatePinScreen(
             current,
             onDigit = viewModel::digit,
@@ -84,7 +91,7 @@ private fun Heading(text: String, body: String? = null, icon: FortunaIcon? = nul
  * only way in. The picture above and the rows below say the same three things.
  */
 @Composable
-fun WelcomeScreen(onGetStarted: () -> Unit) {
+fun WelcomeScreen(onGetStarted: () -> Unit, onRestore: () -> Unit) {
     AdaptiveScreen(
         hero = { WelcomeHero() },
         actionAtBottom = true,
@@ -117,8 +124,15 @@ fun WelcomeScreen(onGetStarted: () -> Unit) {
             }
         },
         action = {
-            Button(onClick = onGetStarted, modifier = Modifier.fillMaxWidth().testTag("get-started")) {
-                Text(stringResource(R.string.welcome_start))
+            // A new start first and filled; a restore below it, plainly the other way in.
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Button(onClick = onGetStarted, modifier = Modifier.fillMaxWidth().testTag("get-started")) {
+                    Text(stringResource(R.string.welcome_start))
+                }
+                OutlinedButton(onClick = onRestore, modifier = Modifier.fillMaxWidth().testTag("restore")) {
+                    ButtonIcon(FortunaIcon.Restore)
+                    Text(stringResource(R.string.welcome_restore))
+                }
             }
         },
     )
@@ -126,15 +140,29 @@ fun WelcomeScreen(onGetStarted: () -> Unit) {
 
 // ---- S-02 Create PIN ----
 
+/**
+ * The pad for a new PIN, typed twice: in setup, and again after recovering
+ * with the phrase or restoring a backup, which pass their own [title] and
+ * [body] for the first entry and a way [onBack].
+ */
 @Composable
-fun CreatePinScreen(step: SetupStep.CreatePin, onDigit: (Char) -> Unit, onDelete: () -> Unit, onOk: () -> Unit) {
+fun CreatePinScreen(
+    step: SetupStep.CreatePin,
+    onDigit: (Char) -> Unit,
+    onDelete: () -> Unit,
+    onOk: () -> Unit,
+    title: String = stringResource(R.string.pin_create_title),
+    body: String = stringResource(R.string.pin_create_body),
+    onBack: (() -> Unit)? = null,
+) {
     AdaptiveScreen(
         actionAtBottom = true,
+        onBack = onBack,
         info = {
             Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
                 Heading(
-                    stringResource(if (step.first == null) R.string.pin_create_title else R.string.pin_repeat_title),
-                    stringResource(if (step.first == null) R.string.pin_create_body else R.string.pin_repeat_body),
+                    if (step.first == null) title else stringResource(R.string.pin_repeat_title),
+                    if (step.first == null) body else stringResource(R.string.pin_repeat_body),
                     icon = FortunaIcon.Pin,
                 )
                 when (step.problem) {

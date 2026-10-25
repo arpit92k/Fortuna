@@ -137,4 +137,11 @@ class RecoveryPhraseTest {
             crypto.sha256(file).toHexString(),
         )
     }
+
+    @Test
+    fun theWordListIsOfferedInOrderForSuggestions() {
+        assertEquals(2048, RecoveryPhrase.wordList.size)
+        assertEquals("abandon", RecoveryPhrase.wordList.first())
+        assertEquals("zoo", RecoveryPhrase.wordList.last())
+    }
 }

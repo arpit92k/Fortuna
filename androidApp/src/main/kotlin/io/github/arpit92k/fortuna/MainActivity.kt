@@ -9,8 +9,12 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import io.github.arpit92k.fortuna.core.money.Currency
 import io.github.arpit92k.fortuna.dashboard.DashboardViewModel
 import io.github.arpit92k.fortuna.lock.LockViewModel
+import io.github.arpit92k.fortuna.lock.RecoverViewModel
+import io.github.arpit92k.fortuna.platform.AndroidDocumentFiles
 import io.github.arpit92k.fortuna.navigation.Navigator
+import io.github.arpit92k.fortuna.settings.BackupViewModel
 import io.github.arpit92k.fortuna.settings.CurrenciesViewModel
+import io.github.arpit92k.fortuna.setup.RestoreViewModel
 import io.github.arpit92k.fortuna.setup.SetupViewModel
 import io.github.arpit92k.fortuna.source.AddSourceViewModel
 import io.github.arpit92k.fortuna.source.SourcePageViewModel
@@ -29,11 +33,14 @@ class MainActivity : ComponentActivity() {
         }
         enableEdgeToEdge()
         val core = (application as FortunaApplication).core
+        val files = AndroidDocumentFiles(this)
         setContent {
             // Scoped to the activity, so folding, unfolding and rotating keep what was typed.
             val screens = Screens(
                 setup = viewModel { SetupViewModel(core, suggestedCurrency = regionCurrency()) },
+                restore = viewModel { RestoreViewModel(core, files) },
                 lock = viewModel { LockViewModel(core) },
+                recover = viewModel { RecoverViewModel(core) },
                 navigator = viewModel { Navigator() },
                 dashboard = viewModel { DashboardViewModel(core) },
                 addSource = viewModel { AddSourceViewModel(core) },
@@ -41,6 +48,7 @@ class MainActivity : ComponentActivity() {
                 valueEntry = viewModel { ValueEntryViewModel(core) },
                 update = viewModel { UpdateViewModel(core) },
                 currencies = viewModel { CurrenciesViewModel(core) },
+                backup = viewModel { BackupViewModel(core, files) },
             )
             FortunaApp(core, screens)
         }
