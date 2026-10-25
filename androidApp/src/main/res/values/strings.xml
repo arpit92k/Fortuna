@@ -48,9 +48,40 @@
     <string name="lock_not_this_device">This phone can no longer open your data with the PIN. Your recovery phrase will get you back in.</string>
     <string name="lock_wait">Try again in %1$s</string>
 
-    <!-- The placeholder dashboard, until step 16 -->
-    <string name="home_title">You are in</string>
-    <string name="home_body">Your dashboard arrives in the next version.</string>
-    <string name="home_base_currency">Main currency: %1$s</string>
-    <string name="home_lock_now">Lock now</string>
+    <!-- S-09 Dashboard -->
+    <string name="dashboard_lock">Lock</string>
+    <string name="dashboard_net_worth">Net worth</string>
+    <string name="dashboard_assets">Assets</string>
+    <string name="dashboard_liabilities">Liabilities</string>
+    <string name="dashboard_sources">Your accounts</string>
+    <string name="dashboard_source_detail">%1$s · Updated %2$s</string>
+    <string name="dashboard_owed">Owed</string>
+    <string name="dashboard_add_source">Add</string>
+    <string name="dashboard_empty_title">Add your first account</string>
+    <string name="dashboard_empty_body">Add the accounts, investments, property and debts you want to track. Your net worth is worked out from them.</string>
+    <string name="dashboard_add_first">Add an account</string>
+
+    <!-- S-11 Add source -->
+    <string name="add_source_title">Add an account</string>
+    <string name="add_source_body">Anything that holds value or that you owe: a bank account, a pension, a property, a loan. Start with its value on a date; you update it from then on.</string>
+    <string name="add_source_name">Name</string>
+    <string name="add_source_category">Category</string>
+    <string name="add_source_is_asset">This counts as something you own.</string>
+    <string name="add_source_is_liability">This counts as something you owe. Enter what you owe as a positive amount.</string>
+    <string name="add_source_amount">Value (%1$s)</string>
+    <string name="add_source_date_today">Value as of today</string>
+    <string name="add_source_date">Value as of %1$s</string>
+    <string name="add_source_date_ok">OK</string>
+    <string name="add_source_date_cancel">Cancel</string>
+    <string name="add_source_note">Note (optional)</string>
+    <string name="add_source_save">Add</string>
+    <string name="add_source_problem_no_name">Give it a name.</string>
+    <string name="add_source_problem_name_in_use">You already have one with that name.</string>
+    <string name="add_source_problem_no_category">Choose a category.</string>
+    <string name="add_source_problem_no_amount">Enter its value.</string>
+    <string name="add_source_problem_not_an_amount">That is not an amount.</string>
+    <string name="add_source_problem_decimal_places">That has more decimal places than the currency uses.</string>
+    <string name="add_source_problem_too_large">That amount is too large.</string>
+    <string name="add_source_problem_future">The date cannot be in the future.</string>
+    <string name="add_source_problem_not_saved">That could not be saved. Nothing was changed.</string>
 </resources>

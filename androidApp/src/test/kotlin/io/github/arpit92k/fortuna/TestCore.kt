@@ -59,4 +59,13 @@ class TestPhone {
 
     /** The app starting, as the interface sees it. */
     fun start(dispatcher: CoroutineDispatcher): Core = Core(session(), dispatcher)
+
+    /** Set up with a pounds base and unlocked, as just after setup. */
+    fun unlocked(dispatcher: CoroutineDispatcher): Core {
+        val session = session()
+        val setup = (session.beginSetup("246810") as io.github.arpit92k.fortuna.core.keys.SetupResult.Ready)
+        check(setup.setup.phrase.words.size == 12)
+        session.finishSetup(io.github.arpit92k.fortuna.core.money.Currency.forCode("GBP")!!)
+        return Core(session, dispatcher)
+    }
 }
