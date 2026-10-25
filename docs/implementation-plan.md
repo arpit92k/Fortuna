@@ -402,6 +402,7 @@ Decided since this plan was written:
 - **PIN entry:** on the app's own number pad, never the phone's keyboard.
 - **Confirming the phrase:** three words at random positions. A wrong answer leads back to the phrase.
 - **Responsive layout:** every screen, from step 15 on, adapts to the window's width class, so tablets and foldables work well. The technology document has the rules.
+- **Amounts on screen:** in the phone's regional format, with each currency's own decimal places.
 - **Bug reports:** by email, prefilled, through the user's own email app. A saved record of crashes, which the user reviews before sending. Offered in settings and on the welcome and lock screens.
 - **Interrupted setup:** nothing is saved until setup finishes. The store is written first and the lock state last, and the lock state marks that data exists; a store without one is removed on start.
 

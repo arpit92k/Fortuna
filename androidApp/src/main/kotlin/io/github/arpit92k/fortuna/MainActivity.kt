@@ -7,8 +7,11 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.lifecycle.viewmodel.compose.viewModel
 import io.github.arpit92k.fortuna.core.money.Currency
+import io.github.arpit92k.fortuna.dashboard.DashboardViewModel
 import io.github.arpit92k.fortuna.lock.LockViewModel
+import io.github.arpit92k.fortuna.navigation.Navigator
 import io.github.arpit92k.fortuna.setup.SetupViewModel
+import io.github.arpit92k.fortuna.source.AddSourceViewModel
 import java.util.Locale
 
 class MainActivity : ComponentActivity() {
@@ -24,9 +27,14 @@ class MainActivity : ComponentActivity() {
         val core = (application as FortunaApplication).core
         setContent {
             // Scoped to the activity, so folding, unfolding and rotating keep what was typed.
-            val setup = viewModel { SetupViewModel(core, suggestedCurrency = regionCurrency()) }
-            val lock = viewModel { LockViewModel(core) }
-            FortunaApp(core, setup, lock)
+            val screens = Screens(
+                setup = viewModel { SetupViewModel(core, suggestedCurrency = regionCurrency()) },
+                lock = viewModel { LockViewModel(core) },
+                navigator = viewModel { Navigator() },
+                dashboard = viewModel { DashboardViewModel(core) },
+                addSource = viewModel { AddSourceViewModel(core) },
+            )
+            FortunaApp(core, screens)
         }
     }
 }
