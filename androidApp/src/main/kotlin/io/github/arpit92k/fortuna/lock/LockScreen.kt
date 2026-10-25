@@ -12,6 +12,8 @@ import androidx.compose.ui.unit.dp
 import io.github.arpit92k.fortuna.R
 import io.github.arpit92k.fortuna.setup.Problem
 import io.github.arpit92k.fortuna.ui.AdaptiveScreen
+import io.github.arpit92k.fortuna.ui.FortunaIcon
+import io.github.arpit92k.fortuna.ui.IconTile
 import io.github.arpit92k.fortuna.ui.PinEntry
 
 /** S-07 Lock: the PIN, and the wait after wrong ones. */
@@ -21,6 +23,7 @@ fun LockScreen(ui: LockUi, onDigit: (Char) -> Unit, onDelete: () -> Unit, onOk: 
         actionAtBottom = true,
         info = {
             Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                IconTile(FortunaIcon.Lock)
                 Text(stringResource(R.string.lock_title), style = MaterialTheme.typography.headlineMedium)
                 Text(stringResource(R.string.lock_body), style = MaterialTheme.typography.bodyLarge)
                 when (ui.message) {

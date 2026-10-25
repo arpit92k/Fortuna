@@ -4,8 +4,13 @@
 
     <!-- S-01 Welcome -->
     <string name="welcome_title">Welcome to Fortuna</string>
-    <string name="welcome_body">Fortuna tracks what you own and what you owe, and how it changes over time. Everything stays on this phone.</string>
-    <string name="welcome_no_account">There is no account and nothing is sent anywhere. A PIN protects your data, and a recovery phrase gets you back in if you forget the PIN.</string>
+    <string name="welcome_tagline">Fortuna tracks what you own and what you owe, and how it changes over time.</string>
+    <string name="welcome_phone_title">Stays on this phone</string>
+    <string name="welcome_phone_body">Your data is never sent anywhere.</string>
+    <string name="welcome_account_title">No account</string>
+    <string name="welcome_account_body">There is nothing to sign up for, and no network access.</string>
+    <string name="welcome_keys_title">PIN and recovery phrase</string>
+    <string name="welcome_keys_body">The PIN protects your data. The phrase gets you back in if you forget it.</string>
     <string name="welcome_warning">If you lose both your PIN and your recovery phrase, nobody can recover your data.</string>
     <string name="welcome_start">Get started</string>
 

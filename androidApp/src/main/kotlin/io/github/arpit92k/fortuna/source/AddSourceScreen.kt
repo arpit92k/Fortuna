@@ -36,6 +36,10 @@ import io.github.arpit92k.fortuna.core.domain.CategoryKind
 import io.github.arpit92k.fortuna.core.money.Currency
 import io.github.arpit92k.fortuna.setup.Problem
 import io.github.arpit92k.fortuna.ui.AdaptiveScreen
+import io.github.arpit92k.fortuna.ui.FortunaIcon
+import io.github.arpit92k.fortuna.ui.FortunaIconImage
+import io.github.arpit92k.fortuna.ui.IconTile
+import io.github.arpit92k.fortuna.ui.categoryIcon
 import io.github.arpit92k.fortuna.ui.formatDate
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.toJavaLocalDate
@@ -63,6 +67,7 @@ fun AddSourceScreen(
     AdaptiveScreen(
         info = {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                IconTile(FortunaIcon.Add)
                 Text(stringResource(R.string.add_source_title), style = MaterialTheme.typography.headlineMedium)
                 Text(stringResource(R.string.add_source_body), style = MaterialTheme.typography.bodyLarge)
             }
@@ -82,11 +87,17 @@ fun AddSourceScreen(
                 Text(stringResource(R.string.add_source_category), style = MaterialTheme.typography.labelLarge)
                 FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     for (category in categories) {
+                        val icon = categoryIcon(category.name)
                         FilterChip(
                             selected = category.id == form.categoryId,
                             onClick = { onCategory(category) },
                             enabled = !form.saving,
                             label = { Text(category.name) },
+                            leadingIcon = if (icon != null) {
+                                { FortunaIconImage(icon, size = 18.dp) }
+                            } else {
+                                null
+                            },
                             modifier = Modifier.testTag("category-${category.id.value}"),
                         )
                     }

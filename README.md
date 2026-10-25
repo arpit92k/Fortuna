@@ -7,6 +7,7 @@ An offline, on-device wealth tracker.
 - [Roadmap](docs/roadmap.md)
 - [Technology choices](docs/technology.md)
 - [Screen map](docs/screen-map.md)
+- [Visual design](docs/visual-design.md)
 - [Implementation plan](docs/implementation-plan.md)
 
 ## Project layout
