@@ -150,12 +150,11 @@ private fun FortunaIcon.parts(): List<Part> = when (this) {
     FortunaIcon.Plus -> listOf(
         StrokePath("M12 5 V19 M5 12 H19"),
     )
-    // Two arrows chasing each other: going round again.
+    // An arrow going back round a clock: a new reading, dated.
     FortunaIcon.Update -> listOf(
-        StrokePath("M20 11 A8.1 8.1 0 0 0 4.5 9"),
-        StrokePath("M4 5 V9 H8"),
-        StrokePath("M4 13 A8.1 8.1 0 0 0 19.5 15"),
-        StrokePath("M20 19 V15 H16"),
+        StrokePath("M4.05 11 A8 8 0 1 1 4.55 15"),
+        StrokePath("M4.05 20 V15 H9.05"),
+        StrokePath("M12 8 V12 L14 14", accent = true),
     )
     // A cogwheel with a lit hub.
     FortunaIcon.Settings -> listOf(
