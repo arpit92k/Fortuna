@@ -1,0 +1,54 @@
+package io.github.arpit92k.fortuna.ui
+
+import io.github.arpit92k.fortuna.core.domain.Dataset
+import io.github.arpit92k.fortuna.core.insights.timeline
+import io.github.arpit92k.fortuna.core.money.Money
+import kotlinx.datetime.LocalDate
+import kotlin.math.abs
+import kotlin.math.pow
+
+// The figures behind the charts, worked out from the core's insights. Kept
+// apart from the drawing, so they can be checked without a screen.
+
+/** One point of a chart: a value on a date. */
+data class ChartPoint(val date: LocalDate, val value: Money) {
+    /** The value in whole units of its currency, as the chart draws it: 1234.56 for £1,234.56. */
+    val amount: Double get() = value.minorUnits / 10.0.pow(value.currency.decimalPlaces)
+}
+
+/**
+ * Net worth from the first value recorded up to [today]. The core gives a
+ * point on every date a value or a rate was recorded, and on the two ends;
+ * nothing changes between them, so these points draw the whole line.
+ * Empty when nothing has been recorded.
+ */
+fun netWorthPoints(data: Dataset, today: LocalDate): List<ChartPoint> {
+    val first = data.sources.flatMap { source -> source.snapshots.map { it.date } }.minOrNull() ?: return emptyList()
+    if (first > today) return emptyList()
+    return data.timeline(first, today).map { ChartPoint(it.date, it.total) }
+}
+
+/**
+ * A source's values, oldest first, carried on to [today]: the latest value
+ * still holds until a newer one is recorded, as on the net worth chart.
+ */
+fun sourcePoints(values: List<ChartPoint>, today: LocalDate): List<ChartPoint> {
+    val latest = values.lastOrNull() ?: return emptyList()
+    return if (latest.date < today) values + ChartPoint(today, latest.value) else values
+}
+
+/**
+ * The range the chart's vertical axis shows for [amounts]: the lowest to the
+ * highest, with a margin so the line does not touch the edges. Where every
+ * amount is on one side of zero, the margin stops at zero rather than
+ * crossing it. A flat line gets a margin of a tenth of its value.
+ */
+fun chartRange(amounts: List<Double>): ClosedFloatingPointRange<Double> {
+    require(amounts.isNotEmpty()) { "A chart needs at least one amount" }
+    val low = amounts.min()
+    val high = amounts.max()
+    val margin = if (high > low) (high - low) * 0.15 else maxOf(abs(high) * 0.1, 1.0)
+    val bottom = (low - margin).let { if (low >= 0 && it < 0) 0.0 else it }
+    val top = (high + margin).let { if (high <= 0 && it > 0) 0.0 else it }
+    return bottom..top
+}

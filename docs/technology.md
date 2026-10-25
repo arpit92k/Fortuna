@@ -20,7 +20,7 @@ Library status below is as of October 2026. Sources are listed at the end.
 | Money and rates | Integer minor units and exact whole-number arithmetic, behind our own types | Floating point (rejected) |
 | Files | Okio | `kotlinx-io` |
 | Android interface | Jetpack Compose | Compose Multiplatform from the start |
-| Charts | Koalaplot or Vico, decided when the dashboard is built | Hand-drawn on a Compose canvas |
+| Charts | Vico | Hand-drawn on a Compose canvas |
 | Tests | `kotlin.test` in the shared core | Kotest |
 | Build and checks | Gradle with Kotlin DSL, GitHub Actions | None |
 
@@ -166,7 +166,7 @@ The file header (format version, salts, key derivation settings) is authenticate
 - **PIN entry.** The PIN is typed on the app's own number pad, never the phone's keyboard, so no keyboard app sees it. Each key press gives a light haptic tick through the system's own key-tap feedback, which is felt only on a phone with a vibration motor and while touch feedback is on in the phone's settings.
 - **Calls to the core.** The interface makes every call to the session on one background thread of its own, in order, so the screens never wait on slow work such as deriving the PIN's key.
 - **Reuse later.** Compose Multiplatform is stable on Android, iOS and desktop, and is in beta on the web. It runs the same Compose code, so the Android interface can be moved to it when a second platform is added. Until then, plain Jetpack Compose keeps the project simpler.
-- **Charts.** The net worth timeline and source history need a line chart. Koalaplot and Vico both work with Compose and both publish for Android, iOS, desktop and web. Koalaplot is still before version 1.0. The choice is made when the dashboard is built, and the chart sits behind one composable so it can be swapped.
+- **Charts.** The net worth timeline and source history need a line chart. Vico was chosen in step 21: it works with Compose, publishes for Android, iOS, desktop and web, is past version 1.0 and actively maintained, and gives axes, a press-to-read marker and theming from Material 3. Koalaplot was the other candidate, still before version 1.0. The chart sits behind one composable, `ValueChart`, so it can be swapped.
 
 ## Android specifics
 

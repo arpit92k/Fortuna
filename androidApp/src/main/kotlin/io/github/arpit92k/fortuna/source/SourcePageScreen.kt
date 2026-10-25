@@ -37,6 +37,7 @@ import io.github.arpit92k.fortuna.core.money.Money
 import io.github.arpit92k.fortuna.ui.BackButton
 import io.github.arpit92k.fortuna.ui.IconTile
 import io.github.arpit92k.fortuna.ui.ReadableWidth
+import io.github.arpit92k.fortuna.ui.ValueChart
 import io.github.arpit92k.fortuna.ui.categoryIcon
 import io.github.arpit92k.fortuna.ui.formatDate
 import io.github.arpit92k.fortuna.ui.formatMoney
@@ -46,10 +47,10 @@ import kotlinx.datetime.LocalDate
 fun formatChange(money: Money): String = if (money.minorUnits > 0) "+" + formatMoney(money) else formatMoney(money)
 
 /**
- * S-10 Source: the value now, the totals since the opening balance, and every
- * value with what changed. Each value can be corrected; the latest can be
- * deleted, and a source with only its opening value can be deleted outright.
- * Deleting asks first.
+ * S-10 Source: the value now, the totals since the opening balance, the value
+ * over time, and every value with what changed. Each value can be corrected;
+ * the latest can be deleted, and a source with only its opening value can be
+ * deleted outright. Deleting asks first.
  */
 @Composable
 fun SourcePageScreen(
@@ -78,6 +79,19 @@ fun SourcePageScreen(
                 }
             }
             item { Header(ui) }
+            item {
+                Card(Modifier.fillMaxWidth().padding(top = 16.dp).testTag("source-chart")) {
+                    Column(Modifier.padding(start = 12.dp, end = 16.dp, top = 16.dp, bottom = 12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Text(
+                            stringResource(R.string.source_chart_title),
+                            style = MaterialTheme.typography.labelLarge,
+                            modifier = Modifier.padding(start = 8.dp),
+                        )
+                        // In the source's own currency, as its statements show it.
+                        ValueChart(ui.chart)
+                    }
+                }
+            }
             item {
                 Row(Modifier.padding(vertical = 16.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                     Button(onClick = onAddValue, modifier = Modifier.testTag("add-value")) { Text(stringResource(R.string.source_add_value)) }

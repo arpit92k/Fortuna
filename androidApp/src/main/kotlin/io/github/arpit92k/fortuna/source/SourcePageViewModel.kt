@@ -17,7 +17,10 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
+import io.github.arpit92k.fortuna.ui.ChartPoint
+import io.github.arpit92k.fortuna.ui.sourcePoints
 import kotlinx.datetime.LocalDate
+import kotlinx.datetime.toKotlinLocalDate
 
 /** S-10: one source and its history, in its own currency. */
 data class SourcePageUi(
@@ -31,6 +34,8 @@ data class SourcePageUi(
     val entries: List<HistoryRow>,
     val totalAdded: Money,
     val totalGrowth: Money,
+    /** The value over time, oldest first, carried on to today. */
+    val chart: List<ChartPoint> = emptyList(),
 ) {
     /** The latest value can be deleted unless it is the only one. */
     val canDeleteLatest: Boolean get() = entries.size > 1
@@ -50,8 +55,8 @@ data class HistoryRow(
     val opening: Boolean,
 )
 
-/** The source page's figures, from the core's insights. Null if the source is gone. */
-fun sourcePageOf(data: Dataset, id: SourceId): SourcePageUi? {
+/** The source page's figures on [today], from the core's insights. Null if the source is gone. */
+fun sourcePageOf(data: Dataset, id: SourceId, today: LocalDate): SourcePageUi? {
     val source = data.source(id) ?: return null
     val history = data.history(id)
     val rows = history.entries.mapIndexed { index, entry ->
@@ -67,11 +72,15 @@ fun sourcePageOf(data: Dataset, id: SourceId): SourcePageUi? {
         entries = rows.reversed(),
         totalAdded = history.totalAdded,
         totalGrowth = history.totalGrowth,
+        chart = sourcePoints(history.entries.map { ChartPoint(it.date, it.value) }, today),
     )
 }
 
 /** Follows the open dataset and the source being shown. */
-class SourcePageViewModel(private val core: Core) : ViewModel() {
+class SourcePageViewModel(
+    private val core: Core,
+    private val today: () -> LocalDate = { java.time.LocalDate.now().toKotlinLocalDate() },
+) : ViewModel() {
     private val shown = MutableStateFlow<SourceId?>(null)
     private val mutableUi = MutableStateFlow<SourcePageUi?>(null)
     val ui: StateFlow<SourcePageUi?> = mutableUi.asStateFlow()
@@ -80,7 +89,7 @@ class SourcePageViewModel(private val core: Core) : ViewModel() {
         viewModelScope.launch {
             combine(core.state, core.dataset, shown) { state, data, id -> Triple(state == SessionState.Unlocked, data, id) }
                 .collect { (open, data, id) ->
-                    mutableUi.value = if (open && data != null && id != null) sourcePageOf(data, id) else null
+                    mutableUi.value = if (open && data != null && id != null) sourcePageOf(data, id, today()) else null
                 }
         }
     }
