@@ -48,7 +48,8 @@ import io.github.arpit92k.fortuna.ui.RingedMark
 import io.github.arpit92k.fortuna.ui.WidthClass
 import io.github.arpit92k.fortuna.ui.categoryIcon
 import io.github.arpit92k.fortuna.ui.formatDate
-import io.github.arpit92k.fortuna.ui.formatMoney
+import io.github.arpit92k.fortuna.ui.LocalAmountsHidden
+import io.github.arpit92k.fortuna.ui.AmountText
 
 /**
  * S-09 Dashboard: net worth, total assets and total liabilities, net worth
@@ -64,8 +65,10 @@ fun DashboardScreen(
     onUpdate: () -> Unit,
     onSettings: () -> Unit,
     onLock: () -> Unit,
+    onToggleAmounts: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val hidden = LocalAmountsHidden.current
     Scaffold(
         modifier = modifier,
         topBar = {
@@ -78,6 +81,15 @@ fun DashboardScreen(
                     TextButton(onClick = onUpdate, modifier = Modifier.testTag("start-update")) {
                         ButtonIcon(FortunaIcon.Update)
                         Text(stringResource(R.string.dashboard_update))
+                    }
+                }
+                if (ui != null && !ui.empty) {
+                    // Hides every amount in the app, for when someone might see the screen.
+                    IconButton(onClick = onToggleAmounts, modifier = Modifier.testTag("toggle-amounts")) {
+                        FortunaIconImage(
+                            if (hidden) FortunaIcon.Hide else FortunaIcon.Show,
+                            contentDescription = stringResource(if (hidden) R.string.dashboard_show_amounts else R.string.dashboard_hide_amounts),
+                        )
                     }
                 }
                 IconButton(onClick = onSettings, modifier = Modifier.testTag("open-settings")) {
@@ -149,15 +161,15 @@ private fun Totals(ui: DashboardUi, modifier: Modifier = Modifier) {
     Card(modifier.testTag("totals")) {
         Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Text(stringResource(R.string.dashboard_net_worth), style = MaterialTheme.typography.labelLarge)
-            Text(formatMoney(ui.netWorth), style = MaterialTheme.typography.headlineMedium, modifier = Modifier.testTag("net-worth"))
+            AmountText(ui.netWorth, style = MaterialTheme.typography.headlineMedium, modifier = Modifier.testTag("net-worth"))
             Row(horizontalArrangement = Arrangement.spacedBy(24.dp)) {
                 Column(Modifier.weight(1f)) {
                     Text(stringResource(R.string.dashboard_assets), style = MaterialTheme.typography.labelMedium)
-                    Text(formatMoney(ui.assets), style = MaterialTheme.typography.titleMedium, modifier = Modifier.testTag("assets"))
+                    AmountText(ui.assets, style = MaterialTheme.typography.titleMedium, modifier = Modifier.testTag("assets"))
                 }
                 Column(Modifier.weight(1f)) {
                     Text(stringResource(R.string.dashboard_liabilities), style = MaterialTheme.typography.labelMedium)
-                    Text(formatMoney(ui.liabilities), style = MaterialTheme.typography.titleMedium, modifier = Modifier.testTag("liabilities"))
+                    AmountText(ui.liabilities, style = MaterialTheme.typography.titleMedium, modifier = Modifier.testTag("liabilities"))
                 }
             }
         }
@@ -217,11 +229,11 @@ private fun SourceRowItem(row: SourceRow, onClick: () -> Unit) {
             )
         }
         Column(horizontalAlignment = Alignment.End) {
-            Text(formatMoney(row.value), style = MaterialTheme.typography.titleMedium)
+            AmountText(row.value, style = MaterialTheme.typography.titleMedium)
             // A foreign source shows its base-currency value too, so the list can be checked against the totals.
             row.valueInBase?.let {
-                Text(
-                    formatMoney(it),
+                AmountText(
+                    it,
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.testTag("value-in-base-${row.id.value}"),
