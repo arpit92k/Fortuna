@@ -72,7 +72,7 @@ A port is an interface the core defines and each platform implements. These are 
 | App lifecycle | Tells the core when the app leaves the foreground | `ProcessLifecycleOwner` |
 | Clock | Supplies today's date, the time since the device started, and which start-up this is | System clock, `SystemClock.elapsedRealtime` and the boot count |
 
-Screen privacy (hiding figures in the app switcher) is handled in the Android interface with `FLAG_SECURE`, not through a port, because the core never draws anything. It applies to release builds; debug builds leave it off, so screens can be captured during development.
+Screen privacy (hiding figures in the app switcher) is handled in the Android interface with `FLAG_SECURE`, not through a port, because the core never draws anything. It applies to release builds; debug builds leave it off, so screens can be captured during development. One screen lifts it even in a release build: S-03, which shows the recovery phrase, so the user can keep the words as a screenshot if they choose.
 
 ## Shared code: Kotlin Multiplatform
 

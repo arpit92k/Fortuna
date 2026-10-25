@@ -25,9 +25,10 @@ import java.util.Locale
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        // In the released app, figures and the recovery phrase never appear in
-        // the app switcher or in screenshots and screen recordings. Debug builds
-        // allow them, so the screens can be captured while the app is developed.
+        // In the released app, figures never appear in the app switcher or in
+        // screenshots and screen recordings. Debug builds allow them, so the
+        // screens can be captured while the app is developed. The recovery
+        // phrase screen lifts this itself, so its words can be kept as a picture.
         if (!BuildConfig.DEBUG) {
             window.setFlags(WindowManager.LayoutParams.FLAG_SECURE, WindowManager.LayoutParams.FLAG_SECURE)
         }

@@ -38,6 +38,7 @@ import androidx.compose.ui.unit.dp
 import io.github.arpit92k.fortuna.R
 import io.github.arpit92k.fortuna.core.money.Currency
 import io.github.arpit92k.fortuna.ui.AdaptiveScreen
+import io.github.arpit92k.fortuna.ui.AllowScreenshots
 import io.github.arpit92k.fortuna.ui.ButtonIcon
 import io.github.arpit92k.fortuna.ui.Centred
 import io.github.arpit92k.fortuna.ui.FortunaIcon
@@ -199,6 +200,8 @@ fun Problem(text: String) {
 
 @Composable
 fun PhraseScreen(step: SetupStep.ShowPhrase, onWrittenDown: () -> Unit) {
+    // The words may be kept as a screenshot, even where the rest of the app blocks them.
+    AllowScreenshots()
     AdaptiveScreen(
         info = { Heading(stringResource(R.string.phrase_title), stringResource(R.string.phrase_body), icon = FortunaIcon.Phrase) },
         action = {
