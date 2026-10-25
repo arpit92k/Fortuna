@@ -3,8 +3,12 @@ package io.github.arpit92k.fortuna.ui
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.RowScope
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
@@ -47,6 +51,10 @@ enum class FortunaIcon {
     Phrase,
     Currency,
     Add,
+
+    // On buttons, beside the words.
+    Plus,
+    Update,
 
     // The starter categories. Debt, a bill, is drawn in the error colour.
     Cash,
@@ -135,6 +143,16 @@ private fun FortunaIcon.parts(): List<Part> = when (this) {
         StrokeRect(3.5f, 3.5f, 17f, 17f, 4f),
         StrokePath("M12 8 V16 M8 12 H16", accent = true),
     )
+    FortunaIcon.Plus -> listOf(
+        StrokePath("M12 5 V19 M5 12 H19"),
+    )
+    // Two arrows chasing each other: going round again.
+    FortunaIcon.Update -> listOf(
+        StrokePath("M20 11 A8.1 8.1 0 0 0 4.5 9"),
+        StrokePath("M4 5 V9 H8"),
+        StrokePath("M4 13 A8.1 8.1 0 0 0 19.5 15"),
+        StrokePath("M20 19 V15 H16"),
+    )
     FortunaIcon.Cash -> listOf(
         StrokeRect(2.5f, 6f, 19f, 12f, 2f),
         StrokeCircle(12f, 12f, 2.8f, accent = true),
@@ -184,6 +202,17 @@ fun FortunaIconImage(
             for (part in parts) part.render(this, if (part.accent) accent else line, stroke)
         }
     }
+}
+
+/**
+ * [icon] in the colour of the button it sits in, at the start of its label,
+ * followed by the gap Material leaves before the words.
+ */
+@Composable
+fun RowScope.ButtonIcon(icon: FortunaIcon) {
+    val tint = LocalContentColor.current
+    FortunaIconImage(icon, size = 18.dp, line = tint, accent = tint)
+    Spacer(Modifier.size(ButtonDefaults.IconSpacing))
 }
 
 /** [icon] on a rounded tile, as at the top of a screen. */

@@ -14,6 +14,7 @@ How the app looks: its colour, its icons and its welcome picture. Layout rules f
 - **Drawn in code** (`FortunaIcons.kt`), not loaded from a library or from image files. Each icon is a few strokes on a 24 by 24 grid, in one line colour with one accent, and takes both from the theme, so one definition serves both themes.
 - **Starter categories:** cash (a note), investments (a rising line), property (a house), pension (an umbrella), debt (a bill). Debt is drawn in the error colour. A category without a picture simply shows none.
 - **Screens:** lock, PIN (the keys of a pad), recovery phrase (a page of words), currency (two arrows, one each way), add account.
+- **Buttons:** a plus before "Add" and two chasing arrows before "Update", in the button's own colour, with the words kept.
 - **Presentation:** a small rounded tile above a screen's title; a tile beside each account on the dashboard.
 - **The mark** is the launcher icon's shield and F, with the F's middle arm in the accent colour. Inside two thin rings it is the picture on the welcome screen and the empty dashboard.
 
