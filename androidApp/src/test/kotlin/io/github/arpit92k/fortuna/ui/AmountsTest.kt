@@ -17,6 +17,7 @@ class AmountsTest {
     private val pounds = Currency.forCode("GBP")!!
     private val yen = Currency.forCode("JPY")!!
     private val dinars = Currency.forCode("KWD")!!
+    private val dollars = Currency.forCode("USD")!!
 
     // Decided: the phone's regional format.
     @Test
@@ -59,7 +60,6 @@ class AmountsTest {
     // A rate is typed either way round and kept as typed, in the region's format.
     @Test
     fun ratesAreReadAndWrittenTheWayTheRegionWritesThem() {
-        val dollars = Currency.forCode("USD")!!
         val uk = assertIs<RateParseResult.Success>(parseRate("0.80", dollars, pounds, Locale.UK)).rate
         assertEquals("1 USD = 0.80 GBP", formatRate(uk, Locale.UK))
         val german = assertIs<RateParseResult.Success>(parseRate("1,25", pounds, dollars, Locale.GERMANY)).rate
