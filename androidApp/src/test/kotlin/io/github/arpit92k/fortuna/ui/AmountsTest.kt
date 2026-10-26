@@ -66,6 +66,21 @@ class AmountsTest {
         assertEquals("1 GBP = 1,25 USD", formatRate(german, Locale.GERMANY))
         assertEquals("1.25", german.toDecimalText())
         assertEquals(RateProblem.EMPTY, assertIs<RateParseResult.Failure>(parseRate(" ", dollars, pounds, Locale.UK)).problem)
+        assertEquals(RateProblem.NOT_A_NUMBER, assertIs<RateParseResult.Failure>(parseRate(".", dollars, pounds, Locale.UK)).problem)
         assertEquals(RateProblem.NOT_POSITIVE, assertIs<RateParseResult.Failure>(parseRate("0", dollars, pounds, Locale.UK)).problem)
+    }
+
+    // ".7" is how many people type 0.7.
+    @Test
+    fun aLeadingOrTrailingPointIsFilledIn() {
+        val rate = assertIs<RateParseResult.Success>(parseRate(".7", dollars, pounds, Locale.UK)).rate
+        assertEquals("1 USD = 0.7 GBP", formatRate(rate, Locale.UK))
+        val german = assertIs<RateParseResult.Success>(parseRate(",7", dollars, pounds, Locale.GERMANY)).rate
+        assertEquals("1 USD = 0,7 GBP", formatRate(german, Locale.GERMANY))
+        assertEquals("1 USD = 7 GBP", formatRate(assertIs<RateParseResult.Success>(parseRate("7.", dollars, pounds, Locale.UK)).rate, Locale.UK))
+
+        assertEquals(Money(50, pounds), assertIs<MoneyParseResult.Success>(parseAmount(".50", pounds, Locale.UK)).money)
+        assertEquals(Money(-50, pounds), assertIs<MoneyParseResult.Success>(parseAmount("-.5", pounds, Locale.UK)).money)
+        assertEquals(Money(1_200, pounds), assertIs<MoneyParseResult.Success>(parseAmount("12.", pounds, Locale.UK)).money)
     }
 }
