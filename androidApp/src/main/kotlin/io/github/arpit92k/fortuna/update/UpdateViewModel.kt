@@ -217,6 +217,10 @@ class UpdateViewModel(private val core: Core, private val locale: () -> Locale =
         }
     }
 
+    /** Whether something has been typed for the current source and not yet saved, so leaving asks first. */
+    val hasInput: Boolean
+        get() = mutableUi.value.let { ui -> ui.started && listOf(ui.form.value, ui.form.added, ui.form.note).any { it.isNotBlank() } }
+
     /**
      * Leaves the walk for S-13, keeping the date. What was entered is saved;
      * starting again with the same date continues with the sources not yet done.

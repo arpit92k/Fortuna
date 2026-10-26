@@ -26,6 +26,7 @@ import org.junit.Before
 import org.junit.Test
 import java.util.Locale
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertIs
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
@@ -217,5 +218,22 @@ class UpdateViewModelTest {
     fun theUpdateStepEarnsTheLongerGrace() {
         assertTrue(entersValue(Destination.UpdateStep))
         assertTrue(!entersValue(Destination.Update))
+    }
+
+    // Leaving with something typed and not saved asks first; once saved, nothing is lost.
+    @Test
+    fun typedButUnsavedInputIsNoticed() = runTest(dispatcher) {
+        setUp()
+        prepare(april)
+        assertFalse(update.hasInput, "not started")
+        update.start()
+        assertFalse(update.hasInput, "nothing typed")
+        update.note("  ")
+        assertFalse(update.hasInput, "spaces are nothing")
+        update.value("1,000")
+        assertTrue(update.hasInput)
+        update.save()
+        advanceUntilIdle()
+        assertFalse(update.hasInput, "saved")
     }
 }

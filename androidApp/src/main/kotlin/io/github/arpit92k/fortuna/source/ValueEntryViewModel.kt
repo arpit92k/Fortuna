@@ -90,6 +90,13 @@ class ValueEntryViewModel(private val core: Core, private val locale: () -> Loca
      * Prepares the form for a new value for [source], or a correction of its
      * value on [editing]. Does nothing if the form is already for that entry.
      */
+    /** The form as it opened, to tell whether anything has changed since. */
+    private var opened = ValueEntryForm()
+
+    /** Whether anything has been entered or changed, so leaving asks first. */
+    val hasChanges: Boolean
+        get() = mutableForm.value.copy(problem = null, saving = false, confirmReplace = false) != opened
+
     fun open(source: ValueEntrySource, editing: LocalDate?, existing: Pair<Money, Money>?, note: String?) {
         if (openFor == source.id to editing) return
         openFor = source.id to editing
@@ -104,12 +111,14 @@ class ValueEntryViewModel(private val core: Core, private val locale: () -> Loca
         } else {
             ValueEntryForm()
         }
+        opened = mutableForm.value
     }
 
     /** Clears the form, when the user leaves it without saving. */
     fun discard() {
         openFor = null
         mutableForm.value = ValueEntryForm()
+        opened = ValueEntryForm()
     }
 
     fun value(text: String) = edit { it.copy(value = text) }
