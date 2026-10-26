@@ -44,7 +44,8 @@ private val countriesByCurrency: Map<String, List<String>> by lazy {
  * The style amounts in [currency] are written in, given the [phone]'s own
  * locale: the phone's own, where its country uses the currency; otherwise
  * the currency's country, in the phone's language if the phone knows that
- * pair, and in English if not.
+ * pair, or in English. Failing both, the phone's own style, so the digits
+ * are always ones the user reads.
  */
 fun currencyLocale(currency: Currency, phone: Locale = Locale.getDefault()): Locale {
     val countries = countriesByCurrency[currency.code].orEmpty()
@@ -59,7 +60,8 @@ fun currencyLocale(currency: Currency, phone: Locale = Locale.getDefault()): Loc
         country == null -> phone
         Locale(phone.language, country) in availableLocales -> Locale(phone.language, country)
         Locale("en", country) in availableLocales -> Locale("en", country)
-        else -> availableLocales.firstOrNull { it.country == country } ?: phone
+        // Never a style in another script, such as Arabic digits for dinars on an English phone.
+        else -> phone
     }
 }
 

@@ -45,6 +45,9 @@ class AmountsTest {
     fun eachCurrencyKeepsItsOwnDecimalPlaces() {
         assertTrue(formatMoney(Money(2_500, yen), Locale.UK).endsWith("2,500"))
         assertTrue(formatMoney(Money(2_500_125, dinars), Locale.UK).endsWith("2,500.125"))
+        // Kuwait writes in Arabic, so an English phone keeps its own digits rather than switching script.
+        val dinarsStyle = formatMoney(Money(2_500_125, dinars), Locale.UK)
+        assertTrue(dinarsStyle.none { it in '\u0660'..'\u0669' }, dinarsStyle)
     }
 
     @Test
