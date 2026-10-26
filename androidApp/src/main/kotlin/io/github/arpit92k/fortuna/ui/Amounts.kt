@@ -16,12 +16,58 @@ import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
 import java.util.Locale
 
-// Decided: amounts are shown in the phone's regional format, such as £2,500.00
-// in the UK or 2.500,00 € in Germany. The core keeps exact amounts; this is
+// Decided: each amount is written the way its own currency's country writes
+// it: pounds as in Britain (£100,000.00), rupees as in India (₹1,00,000.00),
+// dollars as in the US. Euros, shared by many countries, follow the phone's
+// language where it is one of theirs (100.000,00 € in German), and Ireland's
+// style otherwise. Amounts are typed in the same style as they are shown.
+// Dates stay in the phone's own style. The core keeps exact amounts; this is
 // only how they are written. BigDecimal keeps the conversion exact.
 
-/** [money] as the phone's region writes amounts, with the currency's own decimal places. */
-fun formatMoney(money: Money, locale: Locale = Locale.getDefault()): String {
+/** Where a currency is used by more than one country, the one whose style it takes. */
+private val homeCountries = mapOf(
+    "USD" to "US", "GBP" to "GB", "EUR" to "IE", "CHF" to "CH", "AUD" to "AU", "NZD" to "NZ",
+    "INR" to "IN", "XOF" to "SN", "XAF" to "CM", "XCD" to "AG", "DKK" to "DK", "NOK" to "NO",
+    "ZAR" to "ZA", "ILS" to "IL", "MAD" to "MA",
+)
+
+private val availableLocales: Set<Locale> by lazy { Locale.getAvailableLocales().toSet() }
+
+/** The countries that use [code] as their currency, as the phone knows them. */
+private val countriesByCurrency: Map<String, List<String>> by lazy {
+    Locale.getISOCountries().groupBy { country ->
+        runCatching { java.util.Currency.getInstance(Locale("", country))?.currencyCode }.getOrNull()
+    }.filterKeys { it != null }.mapKeys { it.key!! }
+}
+
+/**
+ * The style amounts in [currency] are written in, given the [phone]'s own
+ * locale: the phone's own, where its country uses the currency; otherwise
+ * the currency's country, in the phone's language if the phone knows that
+ * pair, or in English. Failing both, the phone's own style, so the digits
+ * are always ones the user reads.
+ */
+fun currencyLocale(currency: Currency, phone: Locale = Locale.getDefault()): Locale {
+    val countries = countriesByCurrency[currency.code].orEmpty()
+    if (phone.country in countries) return phone
+    val home = homeCountries[currency.code]
+    // The phone's language in a country of the currency: German phones write euros as Germany does.
+    val inLanguage = countries.map { Locale(phone.language, it) }.filter { it in availableLocales }
+    inLanguage.firstOrNull { it.country == home }?.let { return it }
+    if (currency.code == "EUR") inLanguage.firstOrNull()?.let { return it }
+    val country = home ?: countries.firstOrNull { Locale("en", it) in availableLocales } ?: countries.firstOrNull()
+    return when {
+        country == null -> phone
+        Locale(phone.language, country) in availableLocales -> Locale(phone.language, country)
+        Locale("en", country) in availableLocales -> Locale("en", country)
+        // Never a style in another script, such as Arabic digits for dinars on an English phone.
+        else -> phone
+    }
+}
+
+/** [money] as its currency's country writes amounts, with the currency's own decimal places. */
+fun formatMoney(money: Money, phone: Locale = Locale.getDefault()): String {
+    val locale = currencyLocale(money.currency, phone)
     val places = money.currency.decimalPlaces
     val amount = BigDecimal.valueOf(money.minorUnits, places)
     val system = runCatching { java.util.Currency.getInstance(money.currency.code) }.getOrNull()
@@ -35,12 +81,12 @@ fun formatMoney(money: Money, locale: Locale = Locale.getDefault()): String {
 }
 
 /**
- * Reads an amount typed the way the phone's region writes numbers: the
- * region's decimal separator, with any grouping separators and spaces
- * ignored. "2,500.50" in the UK and "2.500,50" in Germany are both 2500.50.
+ * Reads an amount typed the way [formatMoney] shows that currency: its
+ * decimal separator, with any grouping separators and spaces ignored.
+ * "2,500.50" in pounds and "2.500,50" in euros on a German phone are both 2500.50.
  */
-fun parseAmount(text: String, currency: Currency, locale: Locale = Locale.getDefault()): MoneyParseResult {
-    val symbols = DecimalFormatSymbols.getInstance(locale)
+fun parseAmount(text: String, currency: Currency, phone: Locale = Locale.getDefault()): MoneyParseResult {
+    val symbols = DecimalFormatSymbols.getInstance(currencyLocale(currency, phone))
     val decimal = symbols.decimalSeparator
     val grouping = symbols.groupingSeparator
     val plain = buildString {
@@ -63,12 +109,11 @@ fun formatDate(date: LocalDate, locale: Locale = Locale.getDefault()): String =
     date.toJavaLocalDate().format(DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM).withLocale(locale))
 
 /**
- * Reads a rate typed the way the phone's region writes numbers, as
- * [parseAmount] does: "0,75" in Germany and "0.75" in the UK are both 0.75.
- * One [unit] is worth the typed value in [quote].
+ * Reads a rate typed as an amount of [quote] is typed: "0,75" for euros on a
+ * German phone, "0.75" for pounds. One [unit] is worth the typed value in [quote].
  */
-fun parseRate(text: String, unit: Currency, quote: Currency, locale: Locale = Locale.getDefault()): RateParseResult {
-    val symbols = DecimalFormatSymbols.getInstance(locale)
+fun parseRate(text: String, unit: Currency, quote: Currency, phone: Locale = Locale.getDefault()): RateParseResult {
+    val symbols = DecimalFormatSymbols.getInstance(currencyLocale(quote, phone))
     val plain = buildString {
         for (c in text.trim()) {
             when {
@@ -82,11 +127,11 @@ fun parseRate(text: String, unit: Currency, quote: Currency, locale: Locale = Lo
     return Rate.parse(plain, unit, quote)
 }
 
-/** A rate as typed, in the region's decimal separator: "1 USD = 0.75 GBP", or "1 USD = 0,75 GBP" in Germany. */
-fun formatRate(rate: Rate, locale: Locale = Locale.getDefault()): String =
-    "1 ${rate.unit.code} = ${rateText(rate, locale)} ${rate.quote.code}"
+/** A rate as typed, in its quote currency's decimal separator: "1 USD = 0.75 GBP", or "1 USD = 0,93 EUR" on a German phone. */
+fun formatRate(rate: Rate, phone: Locale = Locale.getDefault()): String =
+    "1 ${rate.unit.code} = ${rateText(rate, phone)} ${rate.quote.code}"
 
-/** Just the rate's figure as typed, in the region's decimal separator, for filling in a field. */
-fun rateText(rate: Rate, locale: Locale = Locale.getDefault()): String =
-    rate.toDecimalText().replace('.', DecimalFormatSymbols.getInstance(locale).decimalSeparator)
+/** Just the rate's figure as typed, for filling in a field. */
+fun rateText(rate: Rate, phone: Locale = Locale.getDefault()): String =
+    rate.toDecimalText().replace('.', DecimalFormatSymbols.getInstance(currencyLocale(rate.quote, phone)).decimalSeparator)
 
