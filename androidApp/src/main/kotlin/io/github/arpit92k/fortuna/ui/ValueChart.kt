@@ -3,6 +3,13 @@ package io.github.arpit92k.fortuna.ui
 import android.icu.text.CompactDecimalFormat
 import android.text.format.DateFormat
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.size
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -81,11 +88,17 @@ fun ValueChart(points: List<ChartPoint>, modifier: Modifier = Modifier) {
 
     val locale = Locale.getDefault()
     val byDay = remember(points) { points.associateBy { it.date.toJavaLocalDate().toEpochDay().toDouble() } }
-    val range = remember(points) { chartRange(points.map { it.amount }) }
+    // With what was put in, a second line beneath the value: the gap between them is everything gained.
+    val withInvested = points.all { it.invested != null }
+    val range = remember(points) { chartRange(points.map { it.amount } + points.mapNotNull { it.investedAmount }) }
     val producer = remember { CartesianChartModelProducer() }
     LaunchedEffect(points) {
         producer.runTransaction {
-            lineModel { series(x = points.map { it.date.toJavaLocalDate().toEpochDay() }, y = points.map { it.amount }) }
+            lineModel {
+                val days = points.map { it.date.toJavaLocalDate().toEpochDay() }
+                series(x = days, y = points.map { it.amount })
+                if (withInvested) series(x = days, y = points.map { it.investedAmount!! })
+            }
         }
     }
 
@@ -100,6 +113,7 @@ fun ValueChart(points: List<ChartPoint>, modifier: Modifier = Modifier) {
 
     val line = MaterialTheme.colorScheme.primary
     val text = MaterialTheme.colorScheme.onSurfaceVariant
+    val investedLine = MaterialTheme.colorScheme.outline
     // Hidden amounts keep the line's shape, but lose the figures on the axis and the marker.
     val hidden = LocalAmountsHidden.current
     val summary = if (hidden) {
@@ -108,75 +122,127 @@ fun ValueChart(points: List<ChartPoint>, modifier: Modifier = Modifier) {
         summaryOf(points)
     }
 
-    ProvideVicoTheme(rememberM3VicoTheme(lineCartesianLayerColors = listOf(line), textColor = text)) {
-        val label = rememberAxisLabelComponent(style = TextStyle(color = text, fontSize = 11.sp))
-        val markerLabel = rememberTextComponent(
-            style = TextStyle(color = MaterialTheme.colorScheme.onSurface, fontSize = 13.sp),
-            padding = Insets(8.dp, 4.dp),
-            background = rememberShapeComponent(
-                fill = Fill(MaterialTheme.colorScheme.surface),
-                strokeFill = Fill(MaterialTheme.colorScheme.outline),
-                strokeThickness = 1.dp,
-            ),
-        )
-        val marker = rememberDefaultCartesianMarker(
-            label = markerLabel,
-            valueFormatter = remember(byDay, hidden) {
-                DefaultCartesianMarker.ValueFormatter { _, targets ->
-                    val point = targets.firstOrNull()?.let { byDay[it.x] }
-                    when {
-                        point == null -> ""
-                        hidden -> formatDate(point.date)
-                        else -> "${formatDate(point.date)}  ·  ${formatMoney(point.value)}"
+    Column(modifier) {
+        if (withInvested) ChartLegend(line, investedLine)
+        ProvideVicoTheme(rememberM3VicoTheme(lineCartesianLayerColors = listOf(line, investedLine), textColor = text)) {
+            val label = rememberAxisLabelComponent(style = TextStyle(color = text, fontSize = 11.sp))
+            val markerLabel = rememberTextComponent(
+                style = TextStyle(color = MaterialTheme.colorScheme.onSurface, fontSize = 13.sp),
+                // The value, then the gain to that point on a second line.
+                lineCount = 2,
+                padding = Insets(8.dp, 4.dp),
+                background = rememberShapeComponent(
+                    fill = Fill(MaterialTheme.colorScheme.surface),
+                    strokeFill = Fill(MaterialTheme.colorScheme.outline),
+                    strokeThickness = 1.dp,
+                ),
+            )
+            val gainLabel = stringResource(R.string.chart_gain)
+            val marker = rememberDefaultCartesianMarker(
+                label = markerLabel,
+                valueFormatter = remember(byDay, hidden, gainLabel) {
+                    DefaultCartesianMarker.ValueFormatter { _, targets ->
+                        val point = targets.firstOrNull()?.let { byDay[it.x] }
+                        val gain = point?.gain
+                        val invested = point?.invested
+                        // The gain to this point, as a percentage of what was put in; kept while amounts are hidden.
+                        val percent = if (gain != null && invested != null && invested.minorUnits > 0) {
+                            formatPercent(gain.minorUnits * 100.0 / invested.minorUnits)
+                        } else {
+                            null
+                        }
+                        when {
+                            point == null -> ""
+                            hidden -> listOfNotNull(formatDate(point.date), percent).joinToString("  ·  ")
+                            gain == null -> "${formatDate(point.date)}  ·  ${formatMoney(point.value)}"
+                            else -> "${formatDate(point.date)}  ·  ${formatMoney(point.value)}\n" +
+                                gainLabel.format(formatSignedMoney(gain) + (percent?.let { " ($it)" } ?: ""))
+                        }
                     }
-                }
-            },
-            indicator = { color -> ShapeComponent(Fill(color), CircleShape) },
-            indicatorSize = 10.dp,
-            guideline = rememberAxisGuidelineComponent(),
-        )
-        CartesianChartHost(
-            chart = rememberCartesianChart(
-                rememberLineCartesianLayer(
-                    lineProvider = LineCartesianLayer.LineProvider.series(
-                        LineCartesianLayer.rememberLine(
-                            fill = LineCartesianLayer.LineFill.single(Fill(line)),
-                            areaFill = LineCartesianLayer.AreaFill.single(
-                                Fill(Brush.verticalGradient(listOf(line.copy(alpha = 0.25f), Color.Transparent))),
+                },
+                indicator = { color -> ShapeComponent(Fill(color), CircleShape) },
+                indicatorSize = 10.dp,
+                guideline = rememberAxisGuidelineComponent(),
+            )
+            CartesianChartHost(
+                chart = rememberCartesianChart(
+                    rememberLineCartesianLayer(
+                        lineProvider = LineCartesianLayer.LineProvider.series(
+                            listOfNotNull(
+                                LineCartesianLayer.rememberLine(
+                                    fill = LineCartesianLayer.LineFill.single(Fill(line)),
+                                    areaFill = LineCartesianLayer.AreaFill.single(
+                                        Fill(Brush.verticalGradient(listOf(line.copy(alpha = 0.25f), Color.Transparent))),
+                                    ),
+                                ),
+                                // What was put in: dashed and quiet, so the value stays the line that leads.
+                                if (withInvested) {
+                                    LineCartesianLayer.rememberLine(
+                                        fill = LineCartesianLayer.LineFill.single(Fill(investedLine)),
+                                        stroke = LineCartesianLayer.LineStroke.Dashed(),
+                                    )
+                                } else {
+                                    null
+                                },
                             ),
                         ),
+                        rangeProvider = remember(range) {
+                            CartesianLayerRangeProvider.fixed(minY = range.start, maxY = range.endInclusive)
+                        },
                     ),
-                    rangeProvider = remember(range) {
-                        CartesianLayerRangeProvider.fixed(minY = range.start, maxY = range.endInclusive)
+                    // Hidden amounts drop the axis of amounts altogether: Vico refuses blank labels.
+                    startAxis = if (hidden) {
+                        null
+                    } else {
+                        VerticalAxis.rememberStart(
+                            label = label,
+                            valueFormatter = remember(compact) { CartesianValueFormatter { _, value, _ -> compact.format(value) } },
+                        )
                     },
-                ),
-                // Hidden amounts drop the axis of amounts altogether: Vico refuses blank labels.
-                startAxis = if (hidden) {
-                    null
-                } else {
-                    VerticalAxis.rememberStart(
+                    bottomAxis = HorizontalAxis.rememberBottom(
                         label = label,
-                        valueFormatter = remember(compact) { CartesianValueFormatter { _, value, _ -> compact.format(value) } },
-                    )
-                },
-                bottomAxis = HorizontalAxis.rememberBottom(
-                    label = label,
-                    valueFormatter = remember(axisDate) {
-                        CartesianValueFormatter { _, value, _ -> java.time.LocalDate.ofEpochDay(value.toLong()).format(axisDate) }
-                    },
+                        valueFormatter = remember(axisDate) {
+                            CartesianValueFormatter { _, value, _ -> java.time.LocalDate.ofEpochDay(value.toLong()).format(axisDate) }
+                        },
+                    ),
+                    marker = marker,
                 ),
-                marker = marker,
-            ),
-            modelProducer = producer,
-            // The whole period fits the width: nothing to scroll or zoom.
-            scrollState = rememberVicoScrollState(scrollEnabled = false),
-            zoomState = rememberVicoZoomState(zoomEnabled = false, initialZoom = Zoom.Content, minZoom = Zoom.Content, maxZoom = Zoom.Content),
-            modifier = modifier
-                .fillMaxWidth()
-                .height(ChartHeight)
-                .semantics { contentDescription = summary }
-                .testTag(CHART),
-        )
+                modelProducer = producer,
+                // The whole period fits the width: nothing to scroll or zoom.
+                scrollState = rememberVicoScrollState(scrollEnabled = false),
+                zoomState = rememberVicoZoomState(zoomEnabled = false, initialZoom = Zoom.Content, minZoom = Zoom.Content, maxZoom = Zoom.Content),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(ChartHeight)
+                    .semantics { contentDescription = summary }
+                    .testTag(CHART),
+            )
+        }
+    }
+}
+
+/** Which line is which: the value, solid, and what was put in, dashed. */
+@Composable
+private fun ChartLegend(value: Color, invested: Color) {
+    Row(Modifier.padding(start = 8.dp, bottom = 4.dp).testTag("chart-legend"), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+        LegendItem(value, dashed = false, stringResource(R.string.chart_value))
+        LegendItem(invested, dashed = true, stringResource(R.string.chart_invested))
+    }
+}
+
+@Composable
+private fun LegendItem(color: Color, dashed: Boolean, label: String) {
+    Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
+        Canvas(Modifier.size(width = 18.dp, height = 2.dp)) {
+            drawLine(
+                color,
+                start = Offset(0f, size.height / 2),
+                end = Offset(size.width, size.height / 2),
+                strokeWidth = size.height,
+                pathEffect = if (dashed) PathEffect.dashPathEffect(floatArrayOf(4.dp.toPx(), 3.dp.toPx())) else null,
+            )
+        }
+        Text(label, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
 }
 

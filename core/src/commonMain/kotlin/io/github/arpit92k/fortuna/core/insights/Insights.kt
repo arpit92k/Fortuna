@@ -185,6 +185,83 @@ fun Dataset.splitChange(id: SourceId, from: LocalDate, to: LocalDate): ChangeSpl
     return ChangeSplit(total, addedInBase, growthInBase, total - addedInBase - growthInBase)
 }
 
+// ---- Gains and losses ----
+//
+// Decided: a gain is what money earned, not money put in. Paying £1,000 into
+// savings is not a gain; interest, market moves and, for a foreign source,
+// the currency effect are. Borrowing more on a debt is not a loss; its
+// interest is. Each percentage is the gain against what was there at the
+// start plus what was added since.
+
+/** A gain (or, negative, a loss) and its percentage, or no percentage where there was nothing to measure against. */
+data class Gain(val amount: Money, val percent: Double?)
+
+/**
+ * What has been put in, as at [date], in the base currency: every asset's
+ * opening value and amounts added, less every debt's opening balance and
+ * amounts borrowed, each at the rate on its own date. Net worth less this is
+ * everything gained since the start.
+ */
+fun Dataset.investedOn(date: LocalDate): Money {
+    var invested = Money(0, requireBase())
+    for (source in sources) {
+        val sign = if (kindOf(source) == CategoryKind.LIABILITY) -1 else 1
+        source.snapshots.filter { it.date <= date }.forEachIndexed { index, dated ->
+            val put = if (index == 0) dated.value.value else dated.value.amountAdded
+            val inBase = toBase(put, dated.date)
+            invested += if (sign < 0) -inBase else inBase
+        }
+    }
+    return invested
+}
+
+/** Everything gained since the first value was recorded, to [today]: net worth less what was put in. */
+fun Dataset.gainSinceStart(today: LocalDate): Gain {
+    val invested = investedOn(today)
+    val gain = netWorthOn(today).total - invested
+    return Gain(gain, percentOf(gain, invested))
+}
+
+/**
+ * The gain across every source's latest change: from each one's previous
+ * value to its latest, in the base currency, growth and currency effect
+ * together. Sources with only an opening value have no change yet.
+ */
+fun Dataset.latestGain(): Gain {
+    var gain = Money(0, requireBase())
+    var base = Money(0, requireBase())
+    for (source in sources) {
+        val latest = source.snapshots.latest() ?: continue
+        val previous = source.snapshots.filter { it.date < latest.date }.lastOrNull() ?: continue
+        val split = splitChange(source.id, previous.date, latest.date)
+        val liability = kindOf(source) == CategoryKind.LIABILITY
+        // For a debt, growth is interest: a loss.
+        val earned = split.growth + split.currencyEffect
+        gain += if (liability) -earned else earned
+        val start = toBase(previous.value.value, previous.date) + split.added
+        base += if (liability) -start else start
+    }
+    return Gain(gain, percentOf(gain, base))
+}
+
+/**
+ * A source's latest change, in its own currency: what it earned (or for a
+ * debt, the interest, as a loss) since its previous value. Null with only an
+ * opening value.
+ */
+fun Dataset.sourceLatestGain(id: SourceId): Gain? {
+    val source = requireNotNull(source(id)) { "No source ${id.value}" }
+    val entry = history(id).entries.lastOrNull()?.takeIf { it.growth != null } ?: return null
+    val growth = entry.growth!!
+    val start = entry.value - entry.change!! + entry.amountAdded!!
+    val earned = if (kindOf(source) == CategoryKind.LIABILITY) -growth else growth
+    return Gain(earned, percentOf(earned, start))
+}
+
+/** [gain] as a percentage of [base], or null when the base is not positive and a percentage would mislead. */
+private fun percentOf(gain: Money, base: Money): Double? =
+    if (base.minorUnits > 0) gain.minorUnits * 100.0 / base.minorUnits else null
+
 // ---- Helpers ----
 
 private fun Dataset.requireBase(): Currency =

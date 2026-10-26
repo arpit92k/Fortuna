@@ -257,4 +257,62 @@ class InsightsTest {
         assertFailsWith<IllegalArgumentException> { updated.splitChange(brokerage, april, january) }
         assertFailsWith<IllegalArgumentException> { updated.splitChange(brokerage, january, february) }
     }
+
+    // ---- Gains and losses ----
+
+    // Decided: money put in is not a gain. Interest, market moves and the currency effect are.
+    @Test
+    fun whatWasPutInLeavesOutEveryGain() {
+        // £2,500 + £500; $10,000 at 0.80 + $1,000 at 0.75; less £180,000 owed and a £1,500 repayment.
+        assertEquals(gbp(300_000 + 800_000 + 75_000 - 17_850_000), updated.investedOn(april))
+        assertEquals(gbp(250_000 + 800_000 - 18_000_000), updated.investedOn(january))
+        assertEquals(gbp(0), updated.investedOn(newYear), "nothing before the first value")
+    }
+
+    @Test
+    fun theGainSinceTheStartIsNetWorthLessWhatWasPutIn() {
+        // £100.50 interest on the account, $500 growth less the dollar's fall on the
+        // brokerage (-£125.00), and £450.25 interest on the mortgage.
+        val gain = updated.gainSinceStart(april)
+        assertEquals(gbp(10_050 - 12_500 - 45_025), gain.amount)
+        assertNull(gain.percent, "more owed than put in: no percentage")
+        assertEquals(gbp(0), opened.gainSinceStart(january).amount, "nothing gained on the first day")
+    }
+
+    @Test
+    fun theGainHasAPercentageWhenThereIsSomethingToMeasureAgainst() {
+        val savings = Dataset.new().chooseBaseCurrency(pounds).dataset()
+            .addSource("Savings", cash, january, gbp(1_000_000), today).dataset()
+            .addSnapshot(SourceId(6), april, gbp(1_050_000), gbp(20_000), today).dataset()
+        val gain = savings.gainSinceStart(april)
+        assertEquals(gbp(30_000), gain.amount, "£500 more, of which £200 was paid in")
+        assertEquals(30_000 * 100.0 / 1_020_000, gain.percent!!, 1e-9)
+        assertEquals(gain, savings.latestGain(), "one change so far, so the latest is the whole")
+    }
+
+    @Test
+    fun theLatestGainAddsUpEachSourcesLatestChange() {
+        val latest = updated.latestGain()
+        assertEquals(gbp(10_050 - 12_500 - 45_025), latest.amount)
+        assertNull(latest.percent)
+        assertEquals(gbp(0), opened.latestGain().amount, "opening values only: no change yet")
+    }
+
+    @Test
+    fun eachSourcesLatestGainIsInItsOwnCurrency() {
+        val accountGain = updated.sourceLatestGain(account)!!
+        assertEquals(gbp(10_050), accountGain.amount)
+        assertEquals(10_050 * 100.0 / 300_000, accountGain.percent!!, 1e-9)
+
+        val brokerageGain = updated.sourceLatestGain(brokerage)!!
+        assertEquals(usd(50_000), brokerageGain.amount, "$500 grown, before the currency")
+        assertEquals(50_000 * 100.0 / 1_100_000, brokerageGain.percent!!, 1e-9)
+
+        // A debt's interest is a loss, against what was owed after the repayment.
+        val mortgageGain = updated.sourceLatestGain(mortgage)!!
+        assertEquals(gbp(-45_025), mortgageGain.amount)
+        assertEquals(-45_025 * 100.0 / 17_850_000, mortgageGain.percent!!, 1e-9)
+
+        assertNull(opened.sourceLatestGain(SourceId(6)), "only an opening value")
+    }
 }
