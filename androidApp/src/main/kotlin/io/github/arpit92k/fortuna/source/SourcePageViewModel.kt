@@ -137,5 +137,5 @@ private fun growthOf(history: SourceHistory, liability: Boolean): Gain? {
     if (history.entries.size < 2) return null
     val put = history.entries.first().value + history.totalAdded
     val earned = if (liability) -history.totalGrowth else history.totalGrowth
-    return Gain(earned, if (put.minorUnits > 0) earned.minorUnits * 100.0 / put.minorUnits else null)
+    return Gain(earned, put.takeIf { it.minorUnits > 0 })
 }

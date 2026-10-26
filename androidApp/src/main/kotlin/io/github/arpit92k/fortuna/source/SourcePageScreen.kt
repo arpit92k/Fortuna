@@ -40,6 +40,7 @@ import io.github.arpit92k.fortuna.ui.ReadableWidth
 import io.github.arpit92k.fortuna.ui.ValueChart
 import io.github.arpit92k.fortuna.ui.formatPercent
 import io.github.arpit92k.fortuna.ui.gainColor
+import io.github.arpit92k.fortuna.ui.percent
 import io.github.arpit92k.fortuna.ui.categoryIcon
 import io.github.arpit92k.fortuna.ui.formatDate
 import io.github.arpit92k.fortuna.ui.AmountText

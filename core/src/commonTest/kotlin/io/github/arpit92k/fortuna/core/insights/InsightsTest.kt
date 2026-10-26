@@ -275,7 +275,7 @@ class InsightsTest {
         // brokerage (-£125.00), and £450.25 interest on the mortgage.
         val gain = updated.gainSinceStart(april)
         assertEquals(gbp(10_050 - 12_500 - 45_025), gain.amount)
-        assertNull(gain.percent, "more owed than put in: no percentage")
+        assertNull(gain.base, "more owed than put in: nothing to measure against")
         assertEquals(gbp(0), opened.gainSinceStart(january).amount, "nothing gained on the first day")
     }
 
@@ -286,7 +286,7 @@ class InsightsTest {
             .addSnapshot(SourceId(6), april, gbp(1_050_000), gbp(20_000), today).dataset()
         val gain = savings.gainSinceStart(april)
         assertEquals(gbp(30_000), gain.amount, "£500 more, of which £200 was paid in")
-        assertEquals(30_000 * 100.0 / 1_020_000, gain.percent!!, 1e-9)
+        assertEquals(gbp(1_020_000), gain.base, "£10,000 there plus £200 paid in")
         assertEquals(gain, savings.latestGain(), "one change so far, so the latest is the whole")
     }
 
@@ -294,7 +294,7 @@ class InsightsTest {
     fun theLatestGainAddsUpEachSourcesLatestChange() {
         val latest = updated.latestGain()
         assertEquals(gbp(10_050 - 12_500 - 45_025), latest.amount)
-        assertNull(latest.percent)
+        assertNull(latest.base)
         assertEquals(gbp(0), opened.latestGain().amount, "opening values only: no change yet")
     }
 
@@ -302,16 +302,16 @@ class InsightsTest {
     fun eachSourcesLatestGainIsInItsOwnCurrency() {
         val accountGain = updated.sourceLatestGain(account)!!
         assertEquals(gbp(10_050), accountGain.amount)
-        assertEquals(10_050 * 100.0 / 300_000, accountGain.percent!!, 1e-9)
+        assertEquals(gbp(300_000), accountGain.base)
 
         val brokerageGain = updated.sourceLatestGain(brokerage)!!
         assertEquals(usd(50_000), brokerageGain.amount, "$500 grown, before the currency")
-        assertEquals(50_000 * 100.0 / 1_100_000, brokerageGain.percent!!, 1e-9)
+        assertEquals(usd(1_100_000), brokerageGain.base)
 
         // A debt's interest is a loss, against what was owed after the repayment.
         val mortgageGain = updated.sourceLatestGain(mortgage)!!
         assertEquals(gbp(-45_025), mortgageGain.amount)
-        assertEquals(-45_025 * 100.0 / 17_850_000, mortgageGain.percent!!, 1e-9)
+        assertEquals(gbp(17_850_000), mortgageGain.base, "what was owed after the repayment")
 
         assertNull(opened.sourceLatestGain(SourceId(6)), "only an opening value")
     }

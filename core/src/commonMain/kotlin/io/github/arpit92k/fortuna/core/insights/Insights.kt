@@ -193,8 +193,13 @@ fun Dataset.splitChange(id: SourceId, from: LocalDate, to: LocalDate): ChangeSpl
 // interest is. Each percentage is the gain against what was there at the
 // start plus what was added since.
 
-/** A gain (or, negative, a loss) and its percentage, or no percentage where there was nothing to measure against. */
-data class Gain(val amount: Money, val percent: Double?)
+/**
+ * A gain (or, negative, a loss) and the [base] it is measured against: what
+ * was there at the start plus what was added since. The base is null where it
+ * is not positive, so no percentage would make sense. The core keeps both
+ * exact; the screens work out the percentage.
+ */
+data class Gain(val amount: Money, val base: Money?)
 
 /**
  * What has been put in, as at [date], in the base currency: every asset's
@@ -219,7 +224,7 @@ fun Dataset.investedOn(date: LocalDate): Money {
 fun Dataset.gainSinceStart(today: LocalDate): Gain {
     val invested = investedOn(today)
     val gain = netWorthOn(today).total - invested
-    return Gain(gain, percentOf(gain, invested))
+    return Gain(gain, positive(invested))
 }
 
 /**
@@ -241,7 +246,7 @@ fun Dataset.latestGain(): Gain {
         val start = toBase(previous.value.value, previous.date) + split.added
         base += if (liability) -start else start
     }
-    return Gain(gain, percentOf(gain, base))
+    return Gain(gain, positive(base))
 }
 
 /**
@@ -255,12 +260,11 @@ fun Dataset.sourceLatestGain(id: SourceId): Gain? {
     val growth = entry.growth!!
     val start = entry.value - entry.change!! + entry.amountAdded!!
     val earned = if (kindOf(source) == CategoryKind.LIABILITY) -growth else growth
-    return Gain(earned, percentOf(earned, start))
+    return Gain(earned, positive(start))
 }
 
-/** [gain] as a percentage of [base], or null when the base is not positive and a percentage would mislead. */
-private fun percentOf(gain: Money, base: Money): Double? =
-    if (base.minorUnits > 0) gain.minorUnits * 100.0 / base.minorUnits else null
+/** [base], or null when it is not positive and a percentage of it would mislead. */
+private fun positive(base: Money): Money? = base.takeIf { it.minorUnits > 0 }
 
 // ---- Helpers ----
 

@@ -10,6 +10,9 @@ import io.github.arpit92k.fortuna.core.insights.Gain
 import java.text.NumberFormat
 import java.util.Locale
 
+/** The gain as a percentage of its base, or null where there is nothing to measure against. */
+val Gain.percent: Double? get() = base?.let { amount.minorUnits * 100.0 / it.minorUnits }
+
 /** A percentage with its sign and one decimal place, as the phone writes percentages: +2.1%, -0.4%. */
 fun formatPercent(percent: Double, phone: Locale = Locale.getDefault()): String {
     val format = NumberFormat.getPercentInstance(phone).apply {
