@@ -54,6 +54,7 @@ enum class FortunaIcon {
     Backup,
     Restore,
     Report,
+    Fingerprint,
 
     // On buttons, beside the words.
     Plus,
@@ -167,6 +168,14 @@ private fun FortunaIcon.parts(): List<Part> = when (this) {
         StrokePath("M5.5 4 H18.5 a2 2 0 0 1 2 2 V14.5 a2 2 0 0 1 -2 2 H10 L6 20 V16.5 H5.5 a2 2 0 0 1 -2 -2 V6 a2 2 0 0 1 2 -2 Z"),
         StrokePath("M12 7.5 V11", accent = true),
         FilledCircle(12f, 13.75f, 1f, accent = true),
+    )
+    // The ridges of a fingertip, the innermost lit.
+    FortunaIcon.Fingerprint -> listOf(
+        StrokePath("M4.5 9 A8 8 0 0 1 19.5 9"),
+        StrokePath("M7 13.5 V10.5 A5 5 0 0 1 17 10.5 V13"),
+        StrokePath("M7 16.5 A6 6 0 0 0 8.6 19.5 M17 15.5 A7 7 0 0 1 15.8 19"),
+        StrokePath("M9.5 15.5 V11 A2.5 2.5 0 0 1 14.5 11 V14 A5 5 0 0 1 13.3 17.2"),
+        StrokePath("M12 11 V14.5 A3 3 0 0 1 11 16.8", accent = true),
     )
     FortunaIcon.Plus -> listOf(
         StrokePath("M12 5 V19 M5 12 H19"),

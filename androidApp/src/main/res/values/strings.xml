@@ -290,4 +290,19 @@
     <string name="add_source_principal_owed_hint">If interest has already been added, the difference counts as a loss. Leave blank if not.</string>
     <string name="add_source_problem_principal">What you put in is not an amount.</string>
     <string name="source_opening_gain">Opening value: %1$s before it was added</string>
+
+    <!-- Biometric unlock -->
+    <string name="biometric_use">Use fingerprint</string>
+    <string name="biometric_use_pin">Use PIN</string>
+    <string name="biometric_unlock_title">Unlock Fortuna</string>
+    <string name="biometric_enable_title">Turn on fingerprint unlock</string>
+    <string name="biometric_changed">Fingerprints on this phone changed, so fingerprint unlock was turned off. Use your PIN, then turn it on again in Settings.</string>
+    <string name="biometric_stopped">Fingerprint unlock stopped working and was turned off. Use your PIN, then turn it on again in Settings.</string>
+    <string name="biometric_not_turned_on">Fingerprint unlock could not be turned on.</string>
+    <string name="settings_biometrics">Unlock with fingerprint</string>
+    <string name="settings_biometrics_body">Or face, where your phone counts it as secure. Your PIN still works.</string>
+    <string name="biometric_offer_title">Unlock with your fingerprint?</string>
+    <string name="biometric_offer_body">Open Fortuna with your fingerprint instead of typing the PIN. The PIN still works, and you can change this in Settings.</string>
+    <string name="biometric_offer_yes">Turn on</string>
+    <string name="biometric_offer_no">Not now</string>
 </resources>

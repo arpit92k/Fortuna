@@ -19,6 +19,11 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
+import androidx.compose.material3.Switch
+import androidx.compose.foundation.selection.toggleable
+import androidx.compose.ui.semantics.Role
+import io.github.arpit92k.fortuna.lock.BiometricMessage
+import io.github.arpit92k.fortuna.lock.BiometricsUi
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
@@ -64,8 +69,40 @@ private fun Page(title: String, onBack: () -> Unit, tag: String, content: @Compo
 
 /** S-15 Settings. */
 @Composable
-fun SettingsScreen(onCurrencies: () -> Unit, onBackup: () -> Unit, onReport: () -> Unit, onBack: () -> Unit) {
+fun SettingsScreen(
+    onCurrencies: () -> Unit,
+    onBackup: () -> Unit,
+    onReport: () -> Unit,
+    onBack: () -> Unit,
+    biometrics: BiometricsUi = BiometricsUi(),
+    onBiometrics: (Boolean) -> Unit = {},
+) {
     Page(stringResource(R.string.settings_title), onBack, "settings") {
+        // Only on a phone that can, or if it is on and the phone no longer can, so it can be turned off.
+        if (biometrics.available || biometrics.enabled) {
+            Row(
+                Modifier
+                    .fillMaxWidth()
+                    .toggleable(value = biometrics.enabled, enabled = !biometrics.working, role = Role.Switch, onValueChange = onBiometrics)
+                    .padding(8.dp, 16.dp)
+                    .testTag("settings-biometrics"),
+                horizontalArrangement = Arrangement.spacedBy(16.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                IconTile(FortunaIcon.Fingerprint, size = 40.dp)
+                Column(Modifier.weight(1f)) {
+                    Text(stringResource(R.string.settings_biometrics), style = MaterialTheme.typography.titleMedium)
+                    Text(
+                        stringResource(R.string.settings_biometrics_body),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    if (biometrics.message == BiometricMessage.NOT_TURNED_ON) Problem(stringResource(R.string.biometric_not_turned_on))
+                }
+                Switch(checked = biometrics.enabled, onCheckedChange = null, enabled = !biometrics.working)
+            }
+            HorizontalDivider()
+        }
         SettingsItem(
             FortunaIcon.Currency,
             stringResource(R.string.settings_currencies),

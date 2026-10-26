@@ -3,6 +3,7 @@ package io.github.arpit92k.fortuna
 import android.app.Application
 import io.github.arpit92k.fortuna.core.crypto.PlatformCrypto
 import io.github.arpit92k.fortuna.core.session.Session
+import io.github.arpit92k.fortuna.platform.AndroidBiometrics
 import io.github.arpit92k.fortuna.platform.AndroidClock
 import io.github.arpit92k.fortuna.platform.KeystoreDeviceKey
 import io.github.arpit92k.fortuna.platform.ProcessAppLifecycle
@@ -14,6 +15,10 @@ import io.github.arpit92k.fortuna.report.recordCrashes
 /** Creates the core once, with the Android adapters, and hands it to the interface. */
 class FortunaApplication : Application() {
     lateinit var core: Core
+        private set
+
+    /** Biometric unlock's copy of the data key. One for the app, so it outlives each screen. */
+    lateinit var biometrics: AndroidBiometrics
         private set
 
     /** Where crashes are recorded, to be offered for reporting the next time the app opens. */
@@ -32,6 +37,7 @@ class FortunaApplication : Application() {
             clock = AndroidClock(this),
         )
         core = Core(session)
+        biometrics = AndroidBiometrics(this)
         session.start(
             ProcessAppLifecycle(
                 checkAfter = listOf(Session.gracePeriod(enteringValue = false), Session.gracePeriod(enteringValue = true)),

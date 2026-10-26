@@ -2,13 +2,14 @@ package io.github.arpit92k.fortuna
 
 import android.os.Bundle
 import android.view.WindowManager
-import androidx.activity.ComponentActivity
+import androidx.fragment.app.FragmentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.lifecycle.viewmodel.compose.viewModel
 import io.github.arpit92k.fortuna.core.money.Currency
 import io.github.arpit92k.fortuna.dashboard.AmountsViewModel
 import io.github.arpit92k.fortuna.dashboard.DashboardViewModel
+import io.github.arpit92k.fortuna.lock.BiometricsViewModel
 import io.github.arpit92k.fortuna.lock.LockViewModel
 import io.github.arpit92k.fortuna.lock.RecoverViewModel
 import io.github.arpit92k.fortuna.platform.AndroidDisplayPreferences
@@ -26,7 +27,8 @@ import io.github.arpit92k.fortuna.source.ValueEntryViewModel
 import io.github.arpit92k.fortuna.update.UpdateViewModel
 import java.util.Locale
 
-class MainActivity : ComponentActivity() {
+// A FragmentActivity, because Android's biometric prompt is shown as a fragment.
+class MainActivity : FragmentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         // In the released app, figures never appear in the app switcher or in
@@ -39,6 +41,7 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         val core = (application as FortunaApplication).core
         val files = AndroidDocumentFiles(this)
+        val biometrics = (application as FortunaApplication).biometrics.also { it.attach(this) }
         val display = AndroidDisplayPreferences(this)
         setContent {
             // Scoped to the activity, so folding, unfolding and rotating keep what was typed.
@@ -56,6 +59,7 @@ class MainActivity : ComponentActivity() {
                 currencies = viewModel { CurrenciesViewModel(core) },
                 backup = viewModel { BackupViewModel(core, files) },
                 amounts = viewModel { AmountsViewModel(display) },
+                biometrics = viewModel { BiometricsViewModel(core, biometrics) },
                 report = viewModel { BugReportViewModel((application as FortunaApplication).crashes, deviceInfo()) },
             )
             FortunaApp(core, screens)
