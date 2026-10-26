@@ -41,10 +41,13 @@ fun ValueEntryScreen(
     onSave: () -> Unit,
     onReplace: () -> Unit,
     onKeep: () -> Unit,
+    onBack: (() -> Unit)? = null,
 ) {
     val date = editing ?: form.date ?: source.today
     val opening = date == source.opening
     AdaptiveScreen(
+        // Leaving without saving forgets what was typed, as the system back does.
+        onBack = onBack,
         info = {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 Text(

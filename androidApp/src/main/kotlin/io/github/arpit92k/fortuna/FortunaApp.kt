@@ -301,6 +301,7 @@ private fun UnlockedApp(core: Core, screens: Screens) {
                 onSave = { screens.valueEntry.save(source, current.editing) { navigator.back() } },
                 onReplace = { screens.valueEntry.save(source, current.editing, replace = true) { navigator.back() } },
                 onKeep = screens.valueEntry::keepExisting,
+                onBack = { leave(current, screens) },
             )
         }
     }
