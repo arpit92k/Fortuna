@@ -94,7 +94,9 @@ fun ValueChart(points: List<ChartPoint>, modifier: Modifier = Modifier) {
     val last = points.last().date.toJavaLocalDate()
     val skeleton = if (ChronoUnit.DAYS.between(first, last) > 92) "MMMyy" else "dMMM"
     val axisDate = remember(locale, skeleton) { DateTimeFormatter.ofPattern(DateFormat.getBestDateTimePattern(locale, skeleton), locale) }
-    val compact = remember(locale) { CompactDecimalFormat.getInstance(locale, CompactDecimalFormat.CompactStyle.SHORT) }
+    // Compact figures in the style of the chart's currency, as its amounts are written.
+    val amountStyle = currencyLocale(points.first().value.currency, locale)
+    val compact = remember(amountStyle) { CompactDecimalFormat.getInstance(amountStyle, CompactDecimalFormat.CompactStyle.SHORT) }
 
     val line = MaterialTheme.colorScheme.primary
     val text = MaterialTheme.colorScheme.onSurfaceVariant
