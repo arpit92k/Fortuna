@@ -101,7 +101,7 @@ fun parseAmount(text: String, currency: Currency, phone: Locale = Locale.getDefa
         }
     }
     if (plain.isEmpty()) return MoneyParseResult.Failure(AmountProblem.EMPTY)
-    return Money.parse(plain, currency)
+    return Money.parse(completeNumber(plain), currency)
 }
 
 /** A date as the phone's region writes it, such as 25 Oct 2026. */
@@ -124,7 +124,20 @@ fun parseRate(text: String, unit: Currency, quote: Currency, phone: Locale = Loc
         }
     }
     if (plain.isEmpty()) return RateParseResult.Failure(RateProblem.EMPTY)
-    return Rate.parse(plain, unit, quote)
+    return Rate.parse(completeNumber(plain), unit, quote)
+}
+
+/**
+ * Fills in what people leave out when typing a number: ".7" is 0.7, "-.5"
+ * is -0.5, and "7." is 7. The core reads only the full form, which is also
+ * how figures are saved, so the leniency stays here, where people type.
+ */
+internal fun completeNumber(plain: String): String {
+    val sign = if (plain.startsWith('-')) "-" else ""
+    var number = plain.removePrefix("-")
+    if (number.startsWith('.') && number.length > 1) number = "0$number"
+    if (number.endsWith('.') && number.length > 1) number = number.dropLast(1)
+    return sign + number
 }
 
 /** A rate as typed, in its quote currency's decimal separator: "1 USD = 0.75 GBP", or "1 USD = 0,93 EUR" on a German phone. */

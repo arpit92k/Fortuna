@@ -13,6 +13,11 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import io.github.arpit92k.fortuna.source.ConfirmDialog
+import androidx.compose.ui.res.stringResource
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import io.github.arpit92k.fortuna.core.domain.Status
@@ -152,7 +157,30 @@ private fun UnlockedApp(core: Core, screens: Screens) {
         if (id != null && data != null && data.source(id) == null) navigator.forget(id)
     }
 
-    BackHandler(enabled = stack.size > 1) { leave(current, screens) }
+    // Leaving a page with something typed and not saved asks first, from the arrow and the system back alike.
+    var confirmingLeave by rememberSaveable { mutableStateOf(false) }
+    val tryLeave: () -> Unit = {
+        if (hasUnsavedInput(current, screens)) {
+            confirmingLeave = true
+        } else {
+            leave(current, screens)
+        }
+    }
+    if (confirmingLeave) {
+        ConfirmDialog(
+            title = stringResource(R.string.discard_title),
+            text = stringResource(R.string.discard_text),
+            confirm = stringResource(R.string.discard_confirm),
+            onConfirm = {
+                confirmingLeave = false
+                leave(current, screens)
+            },
+            onDismiss = { confirmingLeave = false },
+            dismiss = stringResource(R.string.discard_keep),
+        )
+    }
+
+    BackHandler(enabled = stack.size > 1) { tryLeave() }
 
     val dashboard: @Composable (Modifier) -> Unit = { modifier ->
         val ui by screens.dashboard.ui.collectAsState()
@@ -192,6 +220,7 @@ private fun UnlockedApp(core: Core, screens: Screens) {
                 onRate = screens.addSource::rate,
                 onNote = screens.addSource::note,
                 onSave = { screens.addSource.save(base) { navigator.back() } },
+                onBack = tryLeave,
             )
         }
         is Destination.Source -> BoxWithConstraints {
@@ -204,7 +233,7 @@ private fun UnlockedApp(core: Core, screens: Screens) {
                     onEdit = { navigator.open(Destination.ValueEntry(current.id, editing = it)) },
                     onDeleteLatest = { screens.sourcePage.deleteLatest(current.id) },
                     onDeleteSource = { screens.sourcePage.deleteSource(current.id) { navigator.forget(current.id) } },
-                    onBack = { leave(current, screens) },
+                    onBack = tryLeave,
                     modifier = modifier,
                 )
             }
@@ -230,6 +259,7 @@ private fun UnlockedApp(core: Core, screens: Screens) {
                     screens.update.start()
                     navigator.open(Destination.UpdateStep)
                 },
+                onBack = tryLeave,
             )
         }
         Destination.UpdateStep -> {
@@ -248,13 +278,14 @@ private fun UnlockedApp(core: Core, screens: Screens) {
                 onNote = screens.update::note,
                 onSave = screens.update::save,
                 onSkip = screens.update::skip,
+                onBack = tryLeave,
             )
         }
         Destination.Settings -> SettingsScreen(
             onCurrencies = { navigator.open(Destination.Currencies) },
             onBackup = { navigator.open(Destination.Backup) },
             onReport = screens.report::open,
-            onBack = { leave(current, screens) },
+            onBack = tryLeave,
         )
         Destination.Backup -> {
             val ui by screens.backup.ui.collectAsState()
@@ -268,7 +299,7 @@ private fun UnlockedApp(core: Core, screens: Screens) {
                     screens.backup.clearMessage()
                     pick.launch(screens.backup.suggestedName(java.time.LocalDate.now().toKotlinLocalDate()))
                 },
-                onBack = { leave(current, screens) },
+                onBack = tryLeave,
             )
         }
         Destination.Currencies -> {
@@ -278,7 +309,7 @@ private fun UnlockedApp(core: Core, screens: Screens) {
                 onSave = screens.currencies::saveRate,
                 onDelete = screens.currencies::deleteRate,
                 onClearProblem = screens.currencies::clearProblem,
-                onBack = { leave(current, screens) },
+                onBack = tryLeave,
             )
         }
         is Destination.ValueEntry -> {
@@ -301,6 +332,7 @@ private fun UnlockedApp(core: Core, screens: Screens) {
                 onSave = { screens.valueEntry.save(source, current.editing) { navigator.back() } },
                 onReplace = { screens.valueEntry.save(source, current.editing, replace = true) { navigator.back() } },
                 onKeep = screens.valueEntry::keepExisting,
+                onBack = tryLeave,
             )
         }
     }
@@ -308,6 +340,14 @@ private fun UnlockedApp(core: Core, screens: Screens) {
 
 /** A backup is not a type the phone knows, so it is saved as plain bytes. */
 private const val BACKUP_TYPE = "application/octet-stream"
+
+/** Whether [current] has something typed and not saved, which leaving would lose. */
+private fun hasUnsavedInput(current: Destination, screens: Screens): Boolean = when (current) {
+    Destination.AddSource -> screens.addSource.hasInput
+    is Destination.ValueEntry -> screens.valueEntry.hasChanges
+    Destination.UpdateStep -> screens.update.hasInput
+    else -> false
+}
 
 /** Leaves [current], forgetting anything typed on a form left without saving. */
 private fun leave(current: Destination, screens: Screens) {

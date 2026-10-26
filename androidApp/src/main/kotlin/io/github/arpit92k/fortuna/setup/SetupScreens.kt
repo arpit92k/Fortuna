@@ -61,18 +61,23 @@ fun SetupFlow(viewModel: SetupViewModel, restore: RestoreViewModel, onReport: ()
     BackHandler(enabled = step != SetupStep.Welcome) { viewModel.back() }
     when (val current = step) {
         SetupStep.Welcome -> WelcomeScreen(onGetStarted = viewModel::getStarted, onRestore = restore::begin, onReport = onReport)
+        // The same arrow as the system back: the PIN back to the welcome screen,
+        // the phrase back to a new PIN, the check back to the phrase. Once the
+        // phrase is confirmed, setup only moves forward, so S-05 has none.
         is SetupStep.CreatePin -> CreatePinScreen(
             current,
             onDigit = viewModel::digit,
             onDelete = viewModel::deleteDigit,
             onOk = viewModel::pinOk,
+            onBack = { viewModel.back() },
         )
-        is SetupStep.ShowPhrase -> PhraseScreen(current, onWrittenDown = viewModel::phraseWrittenDown)
+        is SetupStep.ShowPhrase -> PhraseScreen(current, onWrittenDown = viewModel::phraseWrittenDown, onBack = { viewModel.back() })
         is SetupStep.ConfirmPhrase -> ConfirmPhraseScreen(
             current,
             onAnswer = viewModel::answer,
             onConfirm = viewModel::confirmPhrase,
             onShowPhrase = viewModel::showPhraseAgain,
+            onBack = { viewModel.back() },
         )
         is SetupStep.ChooseCurrency -> CurrencyScreen(current, onSearch = viewModel::search, onChoose = viewModel::choose)
     }
@@ -202,10 +207,11 @@ fun Problem(text: String) {
 // ---- S-03 Recovery phrase ----
 
 @Composable
-fun PhraseScreen(step: SetupStep.ShowPhrase, onWrittenDown: () -> Unit) {
+fun PhraseScreen(step: SetupStep.ShowPhrase, onWrittenDown: () -> Unit, onBack: (() -> Unit)? = null) {
     // The words may be kept as a screenshot, even where the rest of the app blocks them.
     AllowScreenshots()
     AdaptiveScreen(
+        onBack = onBack,
         info = { Heading(stringResource(R.string.phrase_title), stringResource(R.string.phrase_body), icon = FortunaIcon.Phrase) },
         action = {
             Column(verticalArrangement = Arrangement.spacedBy(24.dp)) {
@@ -238,8 +244,10 @@ fun ConfirmPhraseScreen(
     onAnswer: (Int, String) -> Unit,
     onConfirm: () -> Unit,
     onShowPhrase: () -> Unit,
+    onBack: (() -> Unit)? = null,
 ) {
     AdaptiveScreen(
+        onBack = onBack,
         info = {
             Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
                 Heading(stringResource(R.string.confirm_title), stringResource(R.string.confirm_body), icon = FortunaIcon.Phrase)

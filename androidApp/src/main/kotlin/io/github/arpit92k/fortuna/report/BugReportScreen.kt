@@ -16,6 +16,11 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
+import io.github.arpit92k.fortuna.source.ConfirmDialog
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.testTag
@@ -46,9 +51,31 @@ fun BugReportScreen(
     onDeleteCrashes: () -> Unit,
     onBack: () -> Unit,
 ) {
-    BackHandler(onBack = onBack)
+    // A description typed and not sent asks before it is thrown away.
+    var confirmingLeave by rememberSaveable { mutableStateOf(false) }
+    val tryLeave: () -> Unit = {
+        if (ui.description.isNotBlank()) {
+            confirmingLeave = true
+        } else {
+            onBack()
+        }
+    }
+    if (confirmingLeave) {
+        ConfirmDialog(
+            title = stringResource(R.string.discard_title),
+            text = stringResource(R.string.discard_text),
+            confirm = stringResource(R.string.discard_confirm),
+            onConfirm = {
+                confirmingLeave = false
+                onBack()
+            },
+            onDismiss = { confirmingLeave = false },
+            dismiss = stringResource(R.string.discard_keep),
+        )
+    }
+    BackHandler(onBack = tryLeave)
     AdaptiveScreen(
-        onBack = onBack,
+        onBack = tryLeave,
         actionScrolls = false,
         info = {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
