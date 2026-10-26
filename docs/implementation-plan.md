@@ -415,7 +415,7 @@ Decided since this plan was written:
 - **Responsive layout:** every screen, from step 15 on, adapts to the window's width class, so tablets and foldables work well. The technology document has the rules.
 - **Amount added:** optional when entering a value; left blank, it counts as nothing added. The field explains it, with a minus sign for withdrawals or repayments.
 - **Entering a rate:** it starts as 1 unit of the foreign currency in the base currency, such as 1 USD = … GBP, with a button to type it the other way round. Either way it is kept as typed.
-- **Amounts on screen:** in the phone's regional format, with each currency's own decimal places.
+- **Amounts on screen:** each in its own currency's style (pounds as Britain writes them, rupees as India does, euros in the phone's language where it is a euro country's), with each currency's own decimal places. Dates follow the phone.
 - **Bug reports:** by email, prefilled, through the user's own email app. A saved record of crashes, which the user reviews before sending. Offered in settings and on the welcome and lock screens.
 - **Interrupted setup:** nothing is saved until setup finishes. The store is written first and the lock state last, and the lock state marks that data exists; a store without one is removed on start.
 
