@@ -43,10 +43,18 @@ import kotlinx.datetime.LocalDate
 
 /** S-13 Update: the date, how many accounts are due, and how many are left out and why. */
 @Composable
-fun UpdateStartScreen(ui: UpdateUi, base: Currency?, onDate: (LocalDate?) -> Unit, onRate: (Currency, Rate) -> Unit, onStart: () -> Unit) {
+fun UpdateStartScreen(
+    ui: UpdateUi,
+    base: Currency?,
+    onDate: (LocalDate?) -> Unit,
+    onRate: (Currency, Rate) -> Unit,
+    onStart: () -> Unit,
+    onBack: (() -> Unit)? = null,
+) {
     val plan = ui.plan
     var renewing by rememberSaveable { mutableStateOf<String?>(null) }
     AdaptiveScreen(
+        onBack = onBack,
         info = {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 Text(stringResource(R.string.update_title), style = MaterialTheme.typography.headlineMedium)
@@ -148,11 +156,14 @@ fun UpdateStepScreen(
     onNote: (String) -> Unit,
     onSave: () -> Unit,
     onSkip: () -> Unit,
+    onBack: (() -> Unit)? = null,
 ) {
     val current = ui.current ?: return
     val plan = ui.plan ?: return
     val form = ui.form
     AdaptiveScreen(
+        // Leaving the walk keeps what was entered; starting again with the same date carries on.
+        onBack = onBack,
         info = {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 Text(

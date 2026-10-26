@@ -67,6 +67,7 @@ fun AddSourceScreen(
     onRate: (Rate?) -> Unit,
     onNote: (String) -> Unit,
     onSave: () -> Unit,
+    onBack: (() -> Unit)? = null,
 ) {
     val chosen = categories.firstOrNull { it.id == form.categoryId }
     val currency = form.currency ?: base
@@ -75,6 +76,8 @@ fun AddSourceScreen(
     var enteringRate by rememberSaveable { mutableStateOf(false) }
 
     AdaptiveScreen(
+        // Leaving without saving forgets what was typed, as the system back does.
+        onBack = onBack,
         info = {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 IconTile(FortunaIcon.Add)

@@ -192,6 +192,7 @@ private fun UnlockedApp(core: Core, screens: Screens) {
                 onRate = screens.addSource::rate,
                 onNote = screens.addSource::note,
                 onSave = { screens.addSource.save(base) { navigator.back() } },
+                onBack = { leave(current, screens) },
             )
         }
         is Destination.Source -> BoxWithConstraints {
@@ -230,6 +231,7 @@ private fun UnlockedApp(core: Core, screens: Screens) {
                     screens.update.start()
                     navigator.open(Destination.UpdateStep)
                 },
+                onBack = { leave(current, screens) },
             )
         }
         Destination.UpdateStep -> {
@@ -248,6 +250,7 @@ private fun UnlockedApp(core: Core, screens: Screens) {
                 onNote = screens.update::note,
                 onSave = screens.update::save,
                 onSkip = screens.update::skip,
+                onBack = { leave(current, screens) },
             )
         }
         Destination.Settings -> SettingsScreen(
