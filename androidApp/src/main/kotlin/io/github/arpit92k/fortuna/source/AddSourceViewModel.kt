@@ -93,6 +93,9 @@ class AddSourceViewModel(private val core: Core, private val locale: () -> Local
         mutableForm.value = AddSourceForm()
     }
 
+    /** Whether anything has been entered, so leaving asks first. */
+    val hasInput: Boolean get() = mutableForm.value.copy(problem = null, saving = false) != AddSourceForm()
+
     /** Saves the source. On success the form is cleared and [onSaved] runs. */
     fun save(baseCurrency: Currency, onSaved: () -> Unit) {
         val form = mutableForm.value

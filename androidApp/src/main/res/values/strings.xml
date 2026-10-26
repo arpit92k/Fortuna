@@ -269,4 +269,10 @@
     <string name="crash_offer_report">Report</string>
     <string name="crash_offer_delete">Delete</string>
     <string name="crash_offer_not_now">Not now</string>
+
+    <!-- Leaving a page with something typed -->
+    <string name="discard_title">Discard what you entered?</string>
+    <string name="discard_text">What you typed on this page has not been saved and will be lost.</string>
+    <string name="discard_confirm">Discard</string>
+    <string name="discard_keep">Keep editing</string>
 </resources>
