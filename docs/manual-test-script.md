@@ -1,6 +1,6 @@
 # Manual test script
 
-The MVP release check (plan step 25): every MVP flow in the [roadmap](roadmap.md), run by hand on a real phone with a **release build**. Download the release APK from the "Release app" job of the Checks run. It is shrunk with R8 and, until the app is published, signed with the debug key.
+The MVP release check (plan step 26): every MVP flow in the [roadmap](roadmap.md), run by hand on a real phone with a **release build**. Download the release APK from the "Release app" job of the Checks run. It is shrunk with R8 and, until the app is published, signed with the debug key.
 
 Run the sections in order: each starts where the one before left off. Tick a line only when what it says happens exactly. Anything else is a bug: report it from the app itself (section 13), so the reporting is tested too.
 
@@ -62,6 +62,17 @@ Run the sections in order: each starts where the one before left off. Tick a lin
 - [ ] Three wrong PINs: a wait starts, counts down, and the pad is off until it ends.
 - [ ] The lock icon on the dashboard locks at once. The right PIN returns to where the app was.
 - [ ] The app switcher shows no figures for Fortuna.
+
+## 8a. Biometric unlock (UF-02)
+
+Needs a phone with a fingerprint set up. Note the order: section 1's setup is where the offer appears.
+
+- [ ] Right after setup in section 1, the app offered fingerprint unlock once. If you chose "Not now", turn it on now in Settings: a fingerprint check confirms it.
+- [ ] Lock the app and come back: the fingerprint prompt appears by itself. A recognised finger opens the app where it was.
+- [ ] "Use PIN" on the prompt leaves the pad; the PIN works, and "Use fingerprint" asks again.
+- [ ] Add a new fingerprint in the phone's settings, then return: the lock screen says fingerprint unlock was turned off, and the PIN works.
+- [ ] Turning the switch off in Settings stops the prompt on the next lock.
+- [ ] After recovering with the phrase in section 10, fingerprint unlock still works if it was on.
 
 ## 9. Back up (UF-12)
 

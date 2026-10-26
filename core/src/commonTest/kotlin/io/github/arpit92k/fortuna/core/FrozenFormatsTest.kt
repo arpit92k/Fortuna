@@ -15,7 +15,7 @@ import kotlin.test.assertEquals
 
 /**
  * The saved formats were frozen as version 1 for the first release (plan
- * step 25). Phones keep these files for years, so every later version of the
+ * step 26). Phones keep these files for years, so every later version of the
  * app must read them exactly as written.
  *
  * Each fixture is locked by its SHA-256. If one of these fails, a fixture was

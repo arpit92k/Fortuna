@@ -209,6 +209,36 @@ class Session(
         key.fill(0)
     }
 
+    // ---- Biometric unlock ----
+
+    /**
+     * A copy of the data key, for the platform to lock behind a biometric
+     * check: the third locked copy, beside the PIN's and the phrase's. Only
+     * while unlocked. The caller clears it once it is locked away.
+     */
+    fun dataKeyForBiometricUnlock(): ByteArray {
+        requireUnlocked()
+        return store.dataKeyCopy()
+    }
+
+    /**
+     * Unlocks with the data key the platform released after a biometric
+     * check. The key is checked by opening the store with it, and cleared
+     * either way. A wrong key changes nothing and counts as no PIN attempt.
+     */
+    fun unlockWithBiometricKey(key: ByteArray): BiometricUnlockResult {
+        check(state.value is SessionState.Locked) { "The app is not locked" }
+        return when (val newerApp = openStore(key)) {
+            null -> {
+                mutableState.value = SessionState.Unlocked
+                BiometricUnlockResult.Success
+            }
+            // Biometric unlock's key is checked only against the store, so a
+            // store it cannot open may be damaged, or the copy may be stale.
+            else -> if (newerApp == true) BiometricUnlockResult.DataUnreadable(newerApp = true) else BiometricUnlockResult.WrongKey
+        }
+    }
+
     /** Locks now: the data key and the dataset are forgotten. */
     fun lock() {
         if (state.value != SessionState.Unlocked) return
@@ -277,4 +307,15 @@ class Session(
         /** How long the app may stay in the background before it locks. */
         fun gracePeriod(enteringValue: Boolean): Duration = if (enteringValue) 2.minutes else 1.minutes
     }
+}
+
+/** The outcome of [Session.unlockWithBiometricKey]. */
+sealed interface BiometricUnlockResult {
+    data object Success : BiometricUnlockResult
+
+    /** The key did not open the data: the copy is out of date, or the data is damaged. Use the PIN. */
+    data object WrongKey : BiometricUnlockResult
+
+    /** A newer version of the app wrote the data. */
+    data class DataUnreadable(val newerApp: Boolean) : BiometricUnlockResult
 }

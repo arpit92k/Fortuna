@@ -271,4 +271,19 @@
     <string name="crash_offer_report">Report</string>
     <string name="crash_offer_delete">Delete</string>
     <string name="crash_offer_not_now">Not now</string>
+
+    <!-- Biometric unlock -->
+    <string name="biometric_use">Use fingerprint</string>
+    <string name="biometric_use_pin">Use PIN</string>
+    <string name="biometric_unlock_title">Unlock Fortuna</string>
+    <string name="biometric_enable_title">Turn on fingerprint unlock</string>
+    <string name="biometric_changed">Fingerprints on this phone changed, so fingerprint unlock was turned off. Use your PIN, then turn it on again in Settings.</string>
+    <string name="biometric_stopped">Fingerprint unlock stopped working and was turned off. Use your PIN, then turn it on again in Settings.</string>
+    <string name="biometric_not_turned_on">Fingerprint unlock could not be turned on.</string>
+    <string name="settings_biometrics">Unlock with fingerprint</string>
+    <string name="settings_biometrics_body">Or face, where your phone counts it as secure. Your PIN still works.</string>
+    <string name="biometric_offer_title">Unlock with your fingerprint?</string>
+    <string name="biometric_offer_body">Open Fortuna with your fingerprint instead of typing the PIN. The PIN still works, and you can change this in Settings.</string>
+    <string name="biometric_offer_yes">Turn on</string>
+    <string name="biometric_offer_no">Not now</string>
 </resources>

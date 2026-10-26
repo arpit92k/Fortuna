@@ -249,4 +249,30 @@ class SessionTest {
         assertIs<SessionState.Locked>(app.state.value, "the lock state is still there")
         assertEquals(UnlockResult.DataUnreadable(newerApp = false), app.unlock(pin))
     }
+
+    // ---- Biometric unlock ----
+
+    @Test
+    fun theDataKeyGivenForBiometricUnlockOpensTheAppNextTime() {
+        val key = setUp().dataKeyForBiometricUnlock()
+        val app = session()
+        assertEquals(BiometricUnlockResult.Success, app.unlockWithBiometricKey(key.copyOf()))
+        assertEquals(SessionState.Unlocked, app.state.value)
+        assertEquals("GBP", app.dataset.value?.baseCurrency?.code)
+    }
+
+    @Test
+    fun aWrongBiometricKeyChangesNothingAndCostsNoPinAttempt() {
+        setUp()
+        val app = session()
+        assertEquals(BiometricUnlockResult.WrongKey, app.unlockWithBiometricKey(ByteArray(32) { 7 }))
+        assertEquals(SessionState.Locked(0.seconds), app.state.value, "no wait: it was not a PIN")
+        assertIs<UnlockResult.Success>(app.unlock(pin))
+    }
+
+    @Test
+    fun theDataKeyIsOnlyGivenWhileUnlocked() {
+        setUp()
+        assertFailsWith<IllegalStateException> { session().dataKeyForBiometricUnlock() }
+    }
 }
