@@ -50,7 +50,8 @@ There are four stages:
 | 22 | Welcome screen | A reworked S-01, agreed before it is built | App |
 | 23 | Hide amounts | An eye on S-09 that hides every amount in the app | App |
 | 24 | Bug reports | S-18, a saved record of crashes, links from S-01, S-07 and S-15 | App |
-| 25 | MVP release check | Frozen file format, release build | App |
+| 25 | Biometric unlock | The `Biometric gate` port, a prompt on S-07, a switch on S-15 | App |
+| 26 | MVP release check | Frozen file format, release build | App |
 
 Screen numbers refer to the [screen map](screen-map.md).
 
@@ -364,7 +365,20 @@ The screens where a value is entered (S-11 to S-14) each get the two-minute grac
 - **Tests:** a report never holds a figure, a source name, the PIN or the phrase; a crash record keeps code locations and drops messages; the email is addressed and filled in.
 - **Done when:** on a phone, a report can be sent from settings, from the lock screen and from the welcome screen, and a crash forced in a debug build is offered for reporting on the next start.
 
-### Step 25: MVP release check
+### Step 25: biometric unlock
+
+- **Builds:** biometric unlock (UF-02), moved forward from after the MVP so the first release has it.
+  - **The `Biometric gate` port** on the Android Keystore and `androidx.biometric`. The data key is encrypted under a Keystore key that needs a strong biometric check for every use and is voided when fingerprints or faces change.
+  - **Decided: its own file.** The biometric copy is a small file beside the lock state, not in it, so the lock state's version 1 format is unchanged. Turning biometric unlock off deletes that file and its key.
+  - **Decided: offered after setup, with a switch in settings.** After setup or a restore, a phone with a strong biometric asks once. S-15 has a switch.
+  - **On S-07:** the prompt appears by itself once each time the lock screen comes to the front, with the PIN pad beneath and a "Use fingerprint" button to ask again.
+  - **The core** gives the data key while unlocked, and opens with a key the platform returns; a wrong key changes nothing and counts as no PIN attempt.
+  - **On S-07, before it is on:** a "Use fingerprint next time" switch on a phone that can; it is turned on, with a fingerprint to confirm, once the PIN is right.
+  - **When fingerprints change,** Android voids the key. The lock screen checks for this as soon as it appears, without asking for a fingerprint: biometric unlock turns itself off, and the lock screen says why, every time it appears, until the user is in with the PIN. The PIN still works.
+- **Tests:** the core opens with the key it gave, refuses a wrong one without a wait; the offer comes once after setup and not on a phone without a sensor; the lock screen asks once per lock; changed fingerprints or a stale copy turn it off.
+- **Done when:** on a phone, biometric unlock can be turned on from the offer and from settings, opens the app from the lock screen, falls back to the PIN when cancelled, and turns itself off with a message after a fingerprint is added.
+
+### Step 26: MVP release check
 
 - **Builds:** nothing new. The file formats are frozen as version 1 and their fixtures are locked. A release build with code shrinking, with its mapping file kept so crash reports can be read. Empty and error states on every screen. A manual test script that follows the flow coverage table in the screen map.
 - **Done when:** every MVP flow in the roadmap passes the manual script on a real phone, with a release build.
@@ -421,8 +435,8 @@ Decided since this plan was written:
 
 Two notes on working order:
 
-- **Data is disposable until step 20.** Before backup and restore exist, and before the format is frozen in step 25, real history should not be kept only in the app.
-- **The saved format may change until step 25.** After that, any change needs a new format version and a new fixture.
+- **Data is disposable until step 20.** Before backup and restore exist, and before the format is frozen in step 26, real history should not be kept only in the app.
+- **The saved format may change until step 26.** After that, any change needs a new format version and a new fixture.
 
 ## After the MVP
 
@@ -435,8 +449,7 @@ The future plans in the roadmap, in a suggested order. Each is one or more steps
 5. **Close a source** and **manage categories**.
 6. **Security settings:** change the PIN, replace the recovery phrase and the data key.
 7. **Backup prompts** and **restore over existing data**.
-8. **Biometric unlock**, which adds the `Biometric gate` port.
-9. **Spreadsheet import**, then **unencrypted export**.
+8. **Spreadsheet import**, then **unencrypted export**.
 9. **Base-currency view of a source** and **change base currency**.
 10. **Update reminders.**
 11. **Network features**, after their own design.

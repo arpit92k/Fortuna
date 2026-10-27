@@ -147,7 +147,7 @@ The future plans add screens or extend existing ones. They are listed here so th
 | Out-of-date markers | Markers on S-09; an update frequency field on S-11 |
 | Import from a spreadsheet | A new screen under S-15, also offered on the empty dashboard |
 | Unencrypted export | An action on S-17 |
-| Biometric unlock and security settings | A new screen under S-15; a biometric prompt on S-07 |
+| Security settings | A new screen under S-15 |
 | Change base currency | An action on S-16 |
 | Update reminders | A setting on S-15 |
 | Share a picture of a screen (UF-17) | A share action on S-09, S-10 and the charts, and a preview screen where amounts are hidden or shown |

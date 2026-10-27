@@ -25,6 +25,8 @@ import io.github.arpit92k.fortuna.core.session.SessionState
 import io.github.arpit92k.fortuna.dashboard.AmountsViewModel
 import io.github.arpit92k.fortuna.dashboard.DashboardScreen
 import io.github.arpit92k.fortuna.dashboard.DashboardViewModel
+import io.github.arpit92k.fortuna.lock.BiometricOfferDialog
+import io.github.arpit92k.fortuna.lock.BiometricsViewModel
 import io.github.arpit92k.fortuna.lock.LockScreen
 import io.github.arpit92k.fortuna.platform.openEmail
 import io.github.arpit92k.fortuna.report.BugReportScreen
@@ -76,6 +78,7 @@ class Screens(
     val backup: BackupViewModel,
     val amounts: AmountsViewModel,
     val report: BugReportViewModel,
+    val biometrics: BiometricsViewModel,
 )
 
 /**
@@ -117,6 +120,7 @@ fun FortunaApp(core: Core, screens: Screens) {
                         RecoverFlow(screens.recover)
                     } else {
                         val ui by screens.lock.ui.collectAsState()
+                        val biometrics by screens.biometrics.ui.collectAsState()
                         LockScreen(
                             ui,
                             onDigit = screens.lock::digit,
@@ -124,6 +128,13 @@ fun FortunaApp(core: Core, screens: Screens) {
                             onOk = screens.lock::ok,
                             onForgotPin = screens.recover::begin,
                             onReport = screens.report::open,
+                            biometrics = biometrics,
+                            onBiometric = screens.biometrics::unlock,
+                            onEnableAfterUnlock = screens.biometrics::enableAfterUnlock,
+                            onShown = {
+                                screens.biometrics.refresh()
+                                screens.biometrics.lockScreenShown()
+                            },
                         )
                     }
                 }
@@ -131,6 +142,11 @@ fun FortunaApp(core: Core, screens: Screens) {
                     // Hidden or shown everywhere at once, as the dashboard's eye says.
                     val hidden by screens.amounts.hidden.collectAsState()
                     CompositionLocalProvider(LocalAmountsHidden provides hidden) { UnlockedApp(core, screens) }
+                    // Once, after setup or a restore, on a phone that can.
+                    val biometrics by screens.biometrics.ui.collectAsState()
+                    if (biometrics.offer) {
+                        BiometricOfferDialog(onYes = screens.biometrics::enable, onNo = screens.biometrics::notNow)
+                    }
                 }
             }
         }
@@ -283,6 +299,8 @@ private fun UnlockedApp(core: Core, screens: Screens) {
             )
         }
         Destination.Settings -> SettingsScreen(
+            biometrics = screens.biometrics.ui.collectAsState().value,
+            onBiometrics = { on -> if (on) screens.biometrics.enable() else screens.biometrics.disable() },
             onCurrencies = { navigator.open(Destination.Currencies) },
             onBackup = { navigator.open(Destination.Backup) },
             onReport = screens.report::open,

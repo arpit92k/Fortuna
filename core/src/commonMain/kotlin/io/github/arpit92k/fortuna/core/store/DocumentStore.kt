@@ -134,6 +134,12 @@ class DocumentStore(private val files: PrivateFiles, private val crypto: Crypto)
         files.deleteWithLeftovers(MAIN)
     }
 
+    /** A copy of the data key while the store is open, for a further locked copy such as biometric unlock's. */
+    fun dataKeyCopy(): ByteArray {
+        requireOpen()
+        return dataKey!!.copyOf()
+    }
+
     /** Forgets the data key and the dataset. The store stays on disk, encrypted. */
     fun lock() {
         dataKey?.fill(0)

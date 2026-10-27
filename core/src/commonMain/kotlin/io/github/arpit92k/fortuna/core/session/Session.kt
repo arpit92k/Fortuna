@@ -3,7 +3,13 @@ package io.github.arpit92k.fortuna.core.session
 import io.github.arpit92k.fortuna.core.backup.RestoreResult
 import io.github.arpit92k.fortuna.core.backup.restoreFromBackup
 import io.github.arpit92k.fortuna.core.crypto.Crypto
+import io.github.arpit92k.fortuna.core.crypto.DecryptionFailedException
 import io.github.arpit92k.fortuna.core.domain.Dataset
+import io.github.arpit92k.fortuna.core.domain.DatasetFormatException
+import io.github.arpit92k.fortuna.core.domain.UnsupportedFormatVersionException
+import io.github.arpit92k.fortuna.core.file.DamagedFileException
+import io.github.arpit92k.fortuna.core.file.NotAnEncryptedFileException
+import io.github.arpit92k.fortuna.core.file.UnsupportedFileVersionException
 import io.github.arpit92k.fortuna.core.keys.KeyGuard
 import io.github.arpit92k.fortuna.core.keys.PHRASE_ITERATIONS
 import io.github.arpit92k.fortuna.core.keys.PendingSetup
@@ -24,13 +30,14 @@ import io.github.arpit92k.fortuna.core.recording.RecordingResult
 import io.github.arpit92k.fortuna.core.recording.chooseBaseCurrency
 import io.github.arpit92k.fortuna.core.store.DocumentStore
 import io.github.arpit92k.fortuna.core.store.PreparedBackup
+import kotlin.time.Duration
+import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.Duration.Companion.minutes
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.datetime.LocalDate
-import kotlin.time.Duration
-import kotlin.time.Duration.Companion.milliseconds
-import kotlin.time.Duration.Companion.minutes
+import okio.IOException
 
 /** Where the app is. The interface shows the screens that fit. */
 sealed interface SessionState {
@@ -174,6 +181,63 @@ class Session(
         return result
     }
 
+    /**
+     * Opens the store with [key], then clears the key. Returns null if it
+     * opened, or, if it cannot be read, whether a newer app wrote it. A store
+     * that cannot be read is left exactly as it is, so a later version of the
+     * app, or the user's own copy of the file, can still be tried.
+     */
+    private fun openStore(key: ByteArray): Boolean? = try {
+        store.open(key)
+        null
+    } catch (e: UnsupportedFileVersionException) {
+        true
+    } catch (e: UnsupportedFormatVersionException) {
+        true
+    } catch (e: DecryptionFailedException) {
+        false
+    } catch (e: DatasetFormatException) {
+        false
+    } catch (e: NotAnEncryptedFileException) {
+        false
+    } catch (e: DamagedFileException) {
+        false
+    } catch (e: IOException) {
+        false
+    } finally {
+        key.fill(0)
+    }
+
+    // ---- Biometric unlock ----
+
+    /**
+     * A copy of the data key, for the platform to lock behind a biometric
+     * check: the third locked copy, beside the PIN's and the phrase's. Only
+     * while unlocked. The caller clears it once it is locked away.
+     */
+    fun dataKeyForBiometricUnlock(): ByteArray {
+        requireUnlocked()
+        return store.dataKeyCopy()
+    }
+
+    /**
+     * Unlocks with the data key the platform released after a biometric
+     * check. The key is checked by opening the store with it, and cleared
+     * either way. A wrong key changes nothing and counts as no PIN attempt.
+     */
+    fun unlockWithBiometricKey(key: ByteArray): BiometricUnlockResult {
+        check(state.value is SessionState.Locked) { "The app is not locked" }
+        return when (val newerApp = openStore(key)) {
+            null -> {
+                mutableState.value = SessionState.Unlocked
+                BiometricUnlockResult.Success
+            }
+            // Biometric unlock's key is checked only against the store, so a
+            // store it cannot open may be damaged, or the copy may be stale.
+            else -> if (newerApp == true) BiometricUnlockResult.DataUnreadable(newerApp = true) else BiometricUnlockResult.WrongKey
+        }
+    }
+
     /** Locks now: the data key and the dataset are forgotten. */
     fun lock() {
         if (state.value != SessionState.Unlocked) return
@@ -242,4 +306,15 @@ class Session(
         /** How long the app may stay in the background before it locks. */
         fun gracePeriod(enteringValue: Boolean): Duration = if (enteringValue) 2.minutes else 1.minutes
     }
+}
+
+/** The outcome of [Session.unlockWithBiometricKey]. */
+sealed interface BiometricUnlockResult {
+    data object Success : BiometricUnlockResult
+
+    /** The key did not open the data: the copy is out of date, or the data is damaged. Use the PIN. */
+    data object WrongKey : BiometricUnlockResult
+
+    /** A newer version of the app wrote the data. */
+    data class DataUnreadable(val newerApp: Boolean) : BiometricUnlockResult
 }

@@ -9,7 +9,7 @@ The line is drawn with one rule. The MVP captures and protects everything that c
 ### Getting in
 
 - **UF-01 First-time setup.** PIN, recovery phrase with confirmation, and base currency. Categories are a fixed starter set. The welcome screen is reworked before release.
-- **UF-02 Unlock the app.** PIN only, with auto-lock and growing delays after failed attempts.
+- **UF-02 Unlock the app.** PIN, or a fingerprint (or a face where the phone counts it as strong) as a shortcut beside it, with auto-lock and growing delays after failed PINs. Biometric unlock is offered once after setup and has a switch in settings.
 - **UF-14 Recover from a forgotten PIN.** Get back in with the recovery phrase and set a new PIN.
 
 ### Recording
@@ -69,7 +69,6 @@ These keep the MVP small. Each is lifted by an item in the future plans.
 
 ### Protecting the data
 
-- **Biometric unlock (UF-02).**
 - **Security settings (UF-16).** Change the PIN and replace the recovery phrase.
 - **Backup prompts (UF-12).** Offer a backup after each update and show whether data has changed since the last one.
 - **Restore over existing data (UF-13).**
