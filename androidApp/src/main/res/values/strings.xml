@@ -315,6 +315,7 @@
     <string name="chart_screen_interest">Interest</string>
     <string name="chart_range_3m">3M</string>
     <string name="chart_range_6m">6M</string>
+    <string name="chart_range_ytd">YTD</string>
     <string name="chart_range_1y">1Y</string>
     <string name="chart_range_all">All</string>
 </resources>

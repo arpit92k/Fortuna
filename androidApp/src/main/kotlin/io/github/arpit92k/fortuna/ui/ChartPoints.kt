@@ -67,16 +67,25 @@ fun chartRange(amounts: List<Double>): ClosedFloatingPointRange<Double> {
     return bottom..top
 }
 
-/** How far back the full-screen chart looks. [months] is null for everything recorded. */
-enum class ChartRange(val months: Int?) {
-    THREE_MONTHS(3),
-    SIX_MONTHS(6),
-    ONE_YEAR(12),
-    ALL(null),
+/** How far back the full-screen chart looks. */
+enum class ChartRange {
+    THREE_MONTHS,
+    SIX_MONTHS,
+
+    /** Since the first of January. */
+    YEAR_TO_DATE,
+    ONE_YEAR,
+    ALL,
     ;
 
     /** The first day shown on [today], or null for everything. */
-    fun start(today: LocalDate): LocalDate? = months?.let { today.minus(DatePeriod(months = it)) }
+    fun start(today: LocalDate): LocalDate? = when (this) {
+        THREE_MONTHS -> today.minus(DatePeriod(months = 3))
+        SIX_MONTHS -> today.minus(DatePeriod(months = 6))
+        YEAR_TO_DATE -> LocalDate(today.year, 1, 1)
+        ONE_YEAR -> today.minus(DatePeriod(years = 1))
+        ALL -> null
+    }
 }
 
 /**

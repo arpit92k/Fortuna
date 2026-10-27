@@ -101,6 +101,7 @@ private fun Figure(label: String, modifier: Modifier, value: @Composable () -> U
 private fun ChartRange.label(): Int = when (this) {
     ChartRange.THREE_MONTHS -> R.string.chart_range_3m
     ChartRange.SIX_MONTHS -> R.string.chart_range_6m
+    ChartRange.YEAR_TO_DATE -> R.string.chart_range_ytd
     ChartRange.ONE_YEAR -> R.string.chart_range_1y
     ChartRange.ALL -> R.string.chart_range_all
 }

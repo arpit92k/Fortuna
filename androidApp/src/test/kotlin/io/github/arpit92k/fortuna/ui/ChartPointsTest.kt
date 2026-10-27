@@ -147,6 +147,7 @@ class ChartPointsTest {
             pointsFrom(points, start),
         )
         assertEquals(points, pointsFrom(points, ChartRange.ALL.start(today)))
+        assertEquals(LocalDate(2026, 1, 1), ChartRange.YEAR_TO_DATE.start(today), "year to date starts on the first of January")
         assertEquals(points, pointsFrom(points, LocalDate(2025, 1, 1)), "a range longer than the history shows all of it")
     }
 
