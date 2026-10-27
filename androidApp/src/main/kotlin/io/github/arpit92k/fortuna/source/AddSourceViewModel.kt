@@ -27,6 +27,8 @@ data class AddSourceForm(
     val name: String = "",
     val categoryId: CategoryId? = null,
     val amount: String = "",
+    /** Optional: of the amount, what was put in (for a debt, borrowed). Blank means all of it. */
+    val principal: String = "",
     /** Null means today. */
     val date: LocalDate? = null,
     val note: String = "",
@@ -60,6 +62,9 @@ enum class AddSourceProblem {
     /** A foreign currency with no rate on or before the date needs one. */
     RATE_NEEDED,
 
+    /** What was put in is not an amount. */
+    PRINCIPAL_NOT_AN_AMOUNT,
+
     /** Anything the form does not expect; the core refused the change and nothing was saved. */
     NOT_SAVED,
 }
@@ -78,6 +83,8 @@ class AddSourceViewModel(private val core: Core, private val locale: () -> Local
     fun category(id: CategoryId) = edit { it.copy(categoryId = id) }
 
     fun amount(text: String) = edit { it.copy(amount = text) }
+
+    fun principal(text: String) = edit { it.copy(principal = text) }
 
     fun date(date: LocalDate?) = edit { it.copy(date = date, rate = null) }
 
@@ -117,12 +124,33 @@ class AddSourceViewModel(private val core: Core, private val locale: () -> Local
                 return
             }
         }
+        // Blank: all of it was put in, so nothing has been gained yet.
+        val principal = if (form.principal.isBlank()) {
+            null
+        } else {
+            when (val parsed = parseAmount(form.principal, currency, locale())) {
+                is MoneyParseResult.Success -> parsed.money
+                is MoneyParseResult.Failure -> {
+                    mutableForm.value = form.copy(problem = AddSourceProblem.PRINCIPAL_NOT_AN_AMOUNT)
+                    return
+                }
+            }
+        }
         mutableForm.value = form.copy(saving = true, problem = null)
         viewModelScope.launch {
             val result = core.run {
                 record { data, today ->
                     val rate = form.rate.takeIf { currency != baseCurrency }
-                    data.addSource(form.name, form.categoryId!!, form.date ?: today, money, today, note = form.note, rate = rate)
+                    data.addSource(
+                        form.name,
+                        form.categoryId!!,
+                        form.date ?: today,
+                        money,
+                        today,
+                        note = form.note,
+                        rate = rate,
+                        openingPrincipal = principal,
+                    )
                 }
             }
             when (result) {

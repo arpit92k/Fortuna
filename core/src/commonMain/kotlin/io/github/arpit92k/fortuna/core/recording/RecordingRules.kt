@@ -56,6 +56,11 @@ fun Dataset.chooseBaseCurrency(currency: Currency): RecordingResult {
  * Adds a source with its opening snapshot: [openingValue] on [openingDate],
  * with nothing added. The source's currency is the opening value's currency.
  *
+ * An account that already existed may have gained or lost before it was
+ * added: [openingPrincipal] is what had been put in (for a debt, borrowed),
+ * and the rest of the opening value counts as gained already. Without it the
+ * whole opening value was put in.
+ *
  * A source in a foreign currency needs a rate on or before [openingDate]. If
  * there is none yet, pass one as [rate]; it is recorded on [openingDate] in
  * the same change, so the source and its rate are added together or not at all.
@@ -71,8 +76,12 @@ fun Dataset.addSource(
     note: String? = null,
     updateFrequency: UpdateFrequency? = null,
     rate: Rate? = null,
+    openingPrincipal: Money? = null,
 ): RecordingResult {
     val base = baseCurrency ?: return fail(BaseCurrencyNotChosen)
+    if (openingPrincipal != null && openingPrincipal.currency != openingValue.currency) {
+        return fail(WrongCurrency(openingValue.currency, openingPrincipal.currency))
+    }
     if (openingDate > today) return fail(DateInFuture(openingDate, today))
 
     val cleanName = name.trim()
@@ -102,6 +111,8 @@ fun Dataset.addSource(
         updateFrequency = updateFrequency ?: settings.defaultUpdateFrequency,
         snapshots = DatedValues.of(Dated(openingDate, Snapshot(openingValue, Money(0, currency)))),
         note = clean(note),
+        // The same as the value says nothing more, so it is not kept.
+        openingPrincipal = openingPrincipal?.takeIf { it != openingValue },
     )
     return ok(copy(sources = sources + source, rates = newRates, nextId = nextId + 1))
 }

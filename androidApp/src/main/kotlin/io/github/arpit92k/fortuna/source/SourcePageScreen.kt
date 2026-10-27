@@ -40,6 +40,8 @@ import io.github.arpit92k.fortuna.ui.ReadableWidth
 import io.github.arpit92k.fortuna.ui.ValueChart
 import io.github.arpit92k.fortuna.ui.formatPercent
 import io.github.arpit92k.fortuna.ui.gainColor
+import io.github.arpit92k.fortuna.ui.gainText
+import io.github.arpit92k.fortuna.core.insights.Gain
 import io.github.arpit92k.fortuna.ui.percent
 import io.github.arpit92k.fortuna.ui.categoryIcon
 import io.github.arpit92k.fortuna.ui.formatDate
@@ -123,6 +125,7 @@ fun SourcePageScreen(
                     canDelete = ui.canDeleteLatest,
                     onEdit = { onEdit(row.date) },
                     onDelete = { confirm = DELETE_LATEST },
+                    openingGain = if (row.opening) ui.openingGain else null,
                 )
                 HorizontalDivider()
             }
@@ -190,7 +193,15 @@ private fun Header(ui: SourcePageUi) {
 }
 
 @Composable
-private fun HistoryItem(row: HistoryRow, liability: Boolean, latest: Boolean, canDelete: Boolean, onEdit: () -> Unit, onDelete: () -> Unit) {
+private fun HistoryItem(
+    row: HistoryRow,
+    liability: Boolean,
+    latest: Boolean,
+    canDelete: Boolean,
+    onEdit: () -> Unit,
+    onDelete: () -> Unit,
+    openingGain: Gain? = null,
+) {
     Column(
         Modifier.fillMaxWidth().clickable(onClick = onEdit).padding(vertical = 12.dp).testTag("history-${row.date}"),
         verticalArrangement = Arrangement.spacedBy(4.dp),
@@ -200,7 +211,13 @@ private fun HistoryItem(row: HistoryRow, liability: Boolean, latest: Boolean, ca
             AmountText(row.value, style = MaterialTheme.typography.titleMedium)
         }
         if (row.opening) {
-            Text(stringResource(R.string.source_opening), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            if (openingGain == null) {
+                Text(stringResource(R.string.source_opening), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            } else {
+                // An account added part-way through its life: what it had already gained or lost.
+                val text = stringResource(R.string.source_opening_gain, gainText(openingGain))
+                Text(text, style = MaterialTheme.typography.bodySmall, color = gainColor(openingGain), modifier = Modifier.readsHidden(text))
+            }
         } else {
             val added = row.added
             val growth = row.growth

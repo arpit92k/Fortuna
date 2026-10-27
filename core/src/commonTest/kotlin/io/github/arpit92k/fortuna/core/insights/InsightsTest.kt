@@ -315,4 +315,53 @@ class InsightsTest {
 
         assertNull(opened.sourceLatestGain(SourceId(6)), "only an opening value")
     }
+
+    // ---- An account added part-way through its life ----
+
+    // Decided: what it had already gained before it was added counts as gained, not as put in.
+    @Test
+    fun aGainMadeBeforeTheAccountWasAddedCountsAsGained() {
+        // An ISA worth £12,000, of which £10,000 was paid in over the years.
+        val isa = Dataset.new().chooseBaseCurrency(pounds).dataset()
+            .addSource("ISA", investments, january, gbp(1_200_000), today, openingPrincipal = gbp(1_000_000)).dataset()
+        val id = SourceId(6)
+        assertEquals(gbp(1_000_000), isa.investedOn(january))
+        assertEquals(Gain(gbp(200_000), gbp(1_000_000)), isa.gainSinceStart(january))
+        val history = isa.history(id)
+        assertEquals(gbp(200_000), history.openingGain)
+        assertEquals(gbp(200_000), history.totalGrowth)
+        assertEquals(gbp(0), history.totalAdded)
+
+        // Later growth adds to it; the latest change is only the latest.
+        val later = isa.addSnapshot(id, april, gbp(1_250_000), gbp(0), today).dataset()
+        assertEquals(gbp(250_000), later.gainSinceStart(april).amount)
+        assertEquals(gbp(50_000), later.latestGain().amount)
+        assertEquals(gbp(250_000), later.history(id).totalGrowth)
+    }
+
+    @Test
+    fun aDebtsInterestBeforeItWasAddedIsALoss() {
+        // £5,000 owed on a card, of which £4,800 was borrowed: £200 interest already.
+        val card = Dataset.new().chooseBaseCurrency(pounds).dataset()
+            .addSource("Card", debt, january, gbp(500_000), today, openingPrincipal = gbp(480_000)).dataset()
+        assertEquals(gbp(-480_000), card.investedOn(january))
+        assertEquals(gbp(-20_000), card.gainSinceStart(january).amount)
+    }
+
+    @Test
+    fun withoutAPrincipalTheWholeOpeningValueWasPutIn() {
+        assertEquals(gbp(0), opened.gainSinceStart(january).amount)
+        assertEquals(gbp(0), opened.history(account).openingGain)
+        // The same as the value says nothing more, so it is not kept.
+        val same = Dataset.new().chooseBaseCurrency(pounds).dataset()
+            .addSource("Savings", cash, january, gbp(100_000), today, openingPrincipal = gbp(100_000)).dataset()
+        assertNull(same.sources.single().openingPrincipal)
+    }
+
+    @Test
+    fun thePrincipalIsInTheAccountsCurrency() {
+        val result = Dataset.new().chooseBaseCurrency(pounds).dataset()
+            .addSource("Savings", cash, january, gbp(100_000), today, openingPrincipal = usd(100_000))
+        assertIs<RecordingResult.Failure>(result)
+    }
 }

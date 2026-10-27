@@ -45,8 +45,14 @@ data class SourceHistory(
     val entries: List<HistoryEntry>,
     /** Everything added since the opening balance. */
     val totalAdded: Money,
-    /** Everything the source earned (or for a liability, the interest and charges) since the opening balance. */
+    /**
+     * Everything the source earned (or for a liability, the interest and
+     * charges), including [openingGain], what it had already made before it
+     * was added.
+     */
     val totalGrowth: Money,
+    /** Of the opening value, what had been gained before the source was added: zero unless a principal was given. */
+    val openingGain: Money = Money(0, totalGrowth.currency),
 )
 
 /**
@@ -157,7 +163,8 @@ fun Dataset.history(id: SourceId): SourceHistory {
             HistoryEntry(date, snapshot.value, snapshot.note, change, snapshot.amountAdded, growth)
         }
     }
-    return SourceHistory(source, entries, totalAdded, totalGrowth)
+    val openingGain = source.snapshots.earliest()?.let { it.value.value - source.openingPutIn!! } ?: zero
+    return SourceHistory(source, entries, totalAdded, totalGrowth + openingGain, openingGain)
 }
 
 /**
@@ -212,7 +219,8 @@ fun Dataset.investedOn(date: LocalDate): Money {
     for (source in sources) {
         val sign = if (kindOf(source) == CategoryKind.LIABILITY) -1 else 1
         source.snapshots.filter { it.date <= date }.forEachIndexed { index, dated ->
-            val put = if (index == 0) dated.value.value else dated.value.amountAdded
+            // The opening value counts as put in, except any gain it had already made.
+            val put = if (index == 0) source.openingPutIn!! else dated.value.amountAdded
             val inBase = toBase(put, dated.date)
             invested += if (sign < 0) -inBase else inBase
         }

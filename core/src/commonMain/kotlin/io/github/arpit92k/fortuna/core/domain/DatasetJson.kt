@@ -105,6 +105,8 @@ private class SourceV1(
     val updateFrequency: FrequencyV1,
     val status: StatusV1,
     val note: String?,
+    /** Optional: absent when the whole opening value was put in. */
+    val openingPrincipal: String?,
     val snapshots: List<SnapshotV1>,
 )
 
@@ -163,6 +165,7 @@ private fun Dataset.toV1() = DatasetV1(
             updateFrequency = source.updateFrequency.toV1(),
             status = source.status.toV1(),
             note = source.note,
+            openingPrincipal = source.openingPrincipal?.toDecimalText(),
             snapshots = source.snapshots.map { (date, snapshot) ->
                 SnapshotV1(date.toString(), snapshot.value.toDecimalText(), snapshot.amountAdded.toDecimalText(), snapshot.note)
             },
@@ -236,6 +239,7 @@ private fun SourceV1.toDomain(): Source {
             )
         },
         note = note,
+        openingPrincipal = openingPrincipal?.let { parseMoney(it, sourceCurrency) },
         status = status.toDomain(),
     )
 }
