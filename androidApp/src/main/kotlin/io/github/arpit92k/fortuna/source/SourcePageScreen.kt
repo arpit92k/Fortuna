@@ -38,6 +38,9 @@ import io.github.arpit92k.fortuna.ui.BackButton
 import io.github.arpit92k.fortuna.ui.IconTile
 import io.github.arpit92k.fortuna.ui.ReadableWidth
 import io.github.arpit92k.fortuna.ui.ValueChart
+import io.github.arpit92k.fortuna.ui.formatPercent
+import io.github.arpit92k.fortuna.ui.gainColor
+import io.github.arpit92k.fortuna.ui.percent
 import io.github.arpit92k.fortuna.ui.categoryIcon
 import io.github.arpit92k.fortuna.ui.formatDate
 import io.github.arpit92k.fortuna.ui.AmountText
@@ -168,6 +171,17 @@ private fun Header(ui: SourcePageUi) {
                 Column(Modifier.weight(1f)) {
                     Text(stringResource(if (ui.liability) R.string.source_total_interest else R.string.source_total_growth), style = MaterialTheme.typography.labelMedium)
                     AmountText(ui.totalGrowth, signed = true, style = MaterialTheme.typography.titleMedium, modifier = Modifier.testTag("total-growth"))
+                    // As a percentage of what was there at the start plus what was added; shown even while amounts are hidden.
+                    val growth = ui.growth
+                    val percent = growth?.percent
+                    if (growth != null && percent != null) {
+                        Text(
+                            formatPercent(percent),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = gainColor(growth),
+                            modifier = Modifier.testTag("growth-percent"),
+                        )
+                    }
                 }
             }
             ui.note?.let { Text(it, style = MaterialTheme.typography.bodyMedium) }

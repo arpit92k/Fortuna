@@ -49,14 +49,17 @@ class ChartPointsTest {
     fun oneValueRecordedTodayIsOnePoint() = runTest(dispatcher) {
         val core = TestPhone().unlocked(dispatcher)
         core.add("Savings", 1, 1_000_00, today)
-        assertEquals(listOf(ChartPoint(today, gbp(1_000_00))), core.dashboard().timeline)
+        assertEquals(listOf(ChartPoint(today, gbp(1_000_00), invested = gbp(1_000_00))), core.dashboard().timeline)
     }
 
     @Test
     fun oneEarlierValueIsCarriedOnToToday() = runTest(dispatcher) {
         val core = TestPhone().unlocked(dispatcher)
         val id = core.add("Savings", 1, 1_000_00, LocalDate(2026, 1, 31))
-        val expected = listOf(ChartPoint(LocalDate(2026, 1, 31), gbp(1_000_00)), ChartPoint(today, gbp(1_000_00)))
+        val expected = listOf(
+            ChartPoint(LocalDate(2026, 1, 31), gbp(1_000_00), invested = gbp(1_000_00)),
+            ChartPoint(today, gbp(1_000_00), invested = gbp(1_000_00)),
+        )
         assertEquals(expected, core.dashboard().timeline)
         assertEquals(expected, core.run { read { data, now -> sourcePageOf(data, id, now)!!.chart } })
     }
@@ -69,11 +72,11 @@ class ChartPointsTest {
         core.value(savings, LocalDate(2026, 3, 31), 1_500_00)
         assertEquals(
             listOf(
-                ChartPoint(LocalDate(2025, 1, 31), gbp(1_000_00)),
+                ChartPoint(LocalDate(2025, 1, 31), gbp(1_000_00), invested = gbp(1_000_00)),
                 // The card is owed, so it counts against net worth.
-                ChartPoint(LocalDate(2025, 6, 30), gbp(800_00)),
-                ChartPoint(LocalDate(2026, 3, 31), gbp(1_300_00)),
-                ChartPoint(today, gbp(1_300_00)),
+                ChartPoint(LocalDate(2025, 6, 30), gbp(800_00), invested = gbp(800_00)),
+                ChartPoint(LocalDate(2026, 3, 31), gbp(1_300_00), invested = gbp(800_00)),
+                ChartPoint(today, gbp(1_300_00), invested = gbp(800_00)),
             ),
             core.dashboard().timeline,
         )
@@ -99,5 +102,32 @@ class ChartPointsTest {
 
         val paidOff = chartRange(listOf(-300.0, 0.0))
         assertEquals(0.0, paidOff.endInclusive, "below zero, the margin stops at zero too")
+    }
+
+    // The dashboard's gains: the latest change across sources and everything since the start, never money paid in.
+    @Test
+    fun theDashboardShowsGainsNotMoneyPaidIn() = runTest(dispatcher) {
+        val core = TestPhone().unlocked(dispatcher)
+        val savings = core.add("Savings", 1, 1_000_00, LocalDate(2026, 1, 31))
+        assertEquals(null, core.dashboard().latestGain, "nothing has changed yet")
+        assertEquals(null, core.dashboard().sources.single().gain)
+        // £600 more, of which £500 was paid in: £100 gained, against the £1,000 there plus the £500 added.
+        assertIs<RecordingResult.Success>(
+            core.run { record { d, now -> d.addSnapshot(savings, LocalDate(2026, 4, 30), gbp(1_600_00), gbp(500_00), now) } },
+        )
+        val dashboard = core.dashboard()
+        assertEquals(gbp(100_00), dashboard.latestGain!!.amount)
+        assertEquals(100.0 * 100 / 1_500, dashboard.latestGain!!.percent!!, 1e-9)
+        assertEquals(dashboard.latestGain, dashboard.gainSinceStart)
+        assertEquals(dashboard.latestGain, dashboard.sources.single().gain)
+        assertEquals(gbp(1_500_00), dashboard.timeline.last().invested)
+        assertEquals(gbp(100_00), dashboard.timeline.last().gain)
+    }
+
+    @Test
+    fun percentagesHaveASignAndOneDecimalPlace() {
+        assertEquals("+2.1%", formatPercent(2.14, java.util.Locale.UK))
+        assertEquals("-0.4%", formatPercent(-0.44, java.util.Locale.UK))
+        assertEquals("0.0%", formatPercent(0.0, java.util.Locale.UK))
     }
 }

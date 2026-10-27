@@ -1,6 +1,7 @@
 package io.github.arpit92k.fortuna.ui
 
 import io.github.arpit92k.fortuna.core.domain.Dataset
+import io.github.arpit92k.fortuna.core.insights.investedOn
 import io.github.arpit92k.fortuna.core.insights.timeline
 import io.github.arpit92k.fortuna.core.money.Money
 import kotlinx.datetime.LocalDate
@@ -10,11 +11,21 @@ import kotlin.math.pow
 // The figures behind the charts, worked out from the core's insights. Kept
 // apart from the drawing, so they can be checked without a screen.
 
-/** One point of a chart: a value on a date. */
-data class ChartPoint(val date: LocalDate, val value: Money) {
+/**
+ * One point of a chart: a value on a date, and what had been put in by then,
+ * so the gap between the two lines is everything gained.
+ */
+data class ChartPoint(val date: LocalDate, val value: Money, val invested: Money? = null) {
     /** The value in whole units of its currency, as the chart draws it: 1234.56 for £1,234.56. */
-    val amount: Double get() = value.minorUnits / 10.0.pow(value.currency.decimalPlaces)
+    val amount: Double get() = value.wholeUnits()
+
+    val investedAmount: Double? get() = invested?.wholeUnits()
+
+    /** Gained by this point: the value less what was put in. */
+    val gain: Money? get() = invested?.let { value - it }
 }
+
+private fun Money.wholeUnits(): Double = minorUnits / 10.0.pow(currency.decimalPlaces)
 
 /**
  * Net worth from the first value recorded up to [today]. The core gives a
@@ -25,7 +36,7 @@ data class ChartPoint(val date: LocalDate, val value: Money) {
 fun netWorthPoints(data: Dataset, today: LocalDate): List<ChartPoint> {
     val first = data.sources.flatMap { source -> source.snapshots.map { it.date } }.minOrNull() ?: return emptyList()
     if (first > today) return emptyList()
-    return data.timeline(first, today).map { ChartPoint(it.date, it.total) }
+    return data.timeline(first, today).map { ChartPoint(it.date, it.total, data.investedOn(it.date)) }
 }
 
 /**
@@ -34,7 +45,7 @@ fun netWorthPoints(data: Dataset, today: LocalDate): List<ChartPoint> {
  */
 fun sourcePoints(values: List<ChartPoint>, today: LocalDate): List<ChartPoint> {
     val latest = values.lastOrNull() ?: return emptyList()
-    return if (latest.date < today) values + ChartPoint(today, latest.value) else values
+    return if (latest.date < today) values + latest.copy(date = today) else values
 }
 
 /**

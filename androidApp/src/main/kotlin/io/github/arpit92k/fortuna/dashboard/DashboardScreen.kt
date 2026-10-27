@@ -50,6 +50,7 @@ import io.github.arpit92k.fortuna.ui.categoryIcon
 import io.github.arpit92k.fortuna.ui.formatDate
 import io.github.arpit92k.fortuna.ui.LocalAmountsHidden
 import io.github.arpit92k.fortuna.ui.AmountText
+import io.github.arpit92k.fortuna.ui.GainText
 
 /**
  * S-09 Dashboard: net worth, total assets and total liabilities, net worth
@@ -172,6 +173,22 @@ private fun Totals(ui: DashboardUi, modifier: Modifier = Modifier) {
                     AmountText(ui.liabilities, style = MaterialTheme.typography.titleMedium, modifier = Modifier.testTag("liabilities"))
                 }
             }
+            // Gains and losses: what money earned, never what was paid in.
+            val latest = ui.latestGain
+            val sinceStart = ui.gainSinceStart
+            if (latest != null && sinceStart != null) {
+                HorizontalDivider()
+                Row(horizontalArrangement = Arrangement.spacedBy(24.dp)) {
+                    Column(Modifier.weight(1f)) {
+                        Text(stringResource(R.string.dashboard_gain_latest), style = MaterialTheme.typography.labelMedium)
+                        GainText(latest, style = MaterialTheme.typography.titleSmall, modifier = Modifier.testTag("gain-latest"))
+                    }
+                    Column(Modifier.weight(1f)) {
+                        Text(stringResource(R.string.dashboard_gain_since_start), style = MaterialTheme.typography.labelMedium)
+                        GainText(sinceStart, style = MaterialTheme.typography.titleSmall, modifier = Modifier.testTag("gain-since-start"))
+                    }
+                }
+            }
         }
     }
 }
@@ -239,6 +256,7 @@ private fun SourceRowItem(row: SourceRow, onClick: () -> Unit) {
                     modifier = Modifier.testTag("value-in-base-${row.id.value}"),
                 )
             }
+            row.gain?.let { GainText(it, style = MaterialTheme.typography.bodySmall, modifier = Modifier.testTag("gain-${row.id.value}")) }
             if (row.liability) {
                 Text(
                     stringResource(R.string.dashboard_owed),

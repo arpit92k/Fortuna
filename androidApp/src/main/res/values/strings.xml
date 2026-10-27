@@ -275,4 +275,11 @@
     <string name="discard_text">What you typed on this page has not been saved and will be lost.</string>
     <string name="discard_confirm">Discard</string>
     <string name="discard_keep">Keep editing</string>
+
+    <!-- Gains and losses -->
+    <string name="dashboard_gain_latest">Latest change</string>
+    <string name="dashboard_gain_since_start">Since the start</string>
+    <string name="chart_value">Value</string>
+    <string name="chart_invested">Put in</string>
+    <string name="chart_gain">gain %1$s</string>
 </resources>

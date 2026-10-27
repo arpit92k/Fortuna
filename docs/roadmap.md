@@ -22,7 +22,7 @@ The line is drawn with one rule. The MVP captures and protects everything that c
 
 ### Insights
 
-- **UF-10 Net worth, basic.** Current net worth, total assets and liabilities, a timeline, and the source list with each value and when it was last updated.
+- **UF-10 Net worth, basic.** Current net worth, total assets and liabilities, a timeline with a second line for what was put in, the gain or loss on the latest change and since the start (with percentages), and the source list with each value, its latest gain and when it was last updated. Decided: a gain is what money earned, never money paid in or borrowed.
 - **UF-11 View a source, basic.** Value over time in the source's own currency, with each snapshot's change split into added and growth.
 
 ### Protecting the data
