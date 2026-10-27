@@ -21,6 +21,7 @@ import org.junit.Before
 import org.junit.Test
 import java.util.Locale
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
@@ -132,5 +133,25 @@ class AddSourceViewModelTest {
         assertEquals("Pension", add.form.value.name)
         core.run { unlock("246810") }
         assertEquals("42,000", add.form.value.amount)
+    }
+
+    // An account that already existed: of £12,000, £10,000 was put in, so £2,000 is gained already.
+    @Test
+    fun anAccountCanBeAddedWithWhatWasPutIn() = runTest(dispatcher) {
+        add.principal("10,000")
+        assertTrue(addSource("ISA", CategoryId(2), "12,000"))
+        val dashboard = DashboardViewModel(core)
+        advanceUntilIdle()
+        val ui = assertNotNull(dashboard.ui.value)
+        assertEquals(Money(200_000, pounds), ui.gainSinceStart!!.amount)
+        assertEquals(Money(1_000_000, pounds), ui.gainSinceStart!!.base)
+        assertEquals(Money(1_000_000, pounds), ui.timeline.single().invested)
+    }
+
+    @Test
+    fun whatWasPutInMustBeAnAmount() = runTest(dispatcher) {
+        add.principal("lots")
+        assertFalse(addSource("ISA", CategoryId(2), "12,000"))
+        assertEquals(AddSourceProblem.PRINCIPAL_NOT_AN_AMOUNT, add.form.value.problem)
     }
 }

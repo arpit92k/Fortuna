@@ -74,8 +74,21 @@ data class Source(
     val snapshots: DatedValues<Snapshot>,
     val note: String? = null,
     val status: Status = Status.ACTIVE,
+    /**
+     * Of the opening value, what had been put in (for a debt, what had been
+     * borrowed) before the source was added: the rest is the gain, or loss,
+     * it had already made. Null when it is all of the opening value, as for a
+     * new account: nothing gained yet.
+     */
+    val openingPrincipal: Money? = null,
 ) {
+    /** What had been put in by the opening value: the principal given, or the whole value. */
+    val openingPutIn: Money? get() = openingPrincipal ?: snapshots.earliest()?.value?.value
+
     init {
+        require(openingPrincipal == null || openingPrincipal.currency == currency) {
+            "Source ${id.value} is in $currency but its opening principal is in ${openingPrincipal?.currency}"
+        }
         val wrong = snapshots.firstOrNull { it.value.value.currency != currency }
         require(wrong == null) { "Source ${id.value} is in $currency but has a snapshot in ${wrong?.value?.value?.currency} on ${wrong?.date}" }
     }

@@ -131,4 +131,15 @@ class DatasetJsonTest {
             """{ "date": "2026-04-30", "value": "11500.00"""" to """{ "date": "2026-01-31", "value": "11500.00"""",
         )
     }
+
+    // An account added with a gain it had already made keeps what was put in; others write nothing new.
+    @Test
+    fun anOpeningPrincipalIsWrittenOnlyWhereThereIsOne() {
+        val isa = fixture.source(SourceId(6))!!.copy(openingPrincipal = Money(200_000, pounds))
+        val withPrincipal = fixture.copy(sources = fixture.sources.map { if (it.id == isa.id) isa else it })
+        val text = DatasetJson.encode(withPrincipal)
+        assertTrue(text.contains("\"openingPrincipal\":\"2000.00\""), text)
+        assertEquals(withPrincipal, DatasetJson.decode(text))
+        assertTrue("openingPrincipal" !in DatasetJson.encode(fixture), "absent where the whole opening value was put in")
+    }
 }

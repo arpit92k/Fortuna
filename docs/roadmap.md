@@ -14,7 +14,7 @@ The line is drawn with one rule. The MVP captures and protects everything that c
 
 ### Recording
 
-- **UF-03 Add a source.** Name, category, currency, opening value and date.
+- **UF-03 Add a source.** Name, category, currency, opening value and date, and optionally what of that value was put in (for a debt, borrowed), so an account added part-way through its life starts with the gain or loss it has already made.
 - **UF-05 Update a single source.** Value, amount added, date and note.
 - **UF-04 Periodic update, basic.** Walk through the sources, entering a value or skipping, after confirming the date and the rates for foreign currencies.
 - **UF-06 Corrections, basic.** Edit any snapshot's figures, delete a source's latest snapshot unless it is the only one, and delete a source created by mistake. Edits are saved without a confirmation; deleting and replacing ask first.

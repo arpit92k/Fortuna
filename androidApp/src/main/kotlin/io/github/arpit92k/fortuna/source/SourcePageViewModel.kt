@@ -39,8 +39,10 @@ data class SourcePageUi(
     val totalGrowth: Money,
     /** The value over time, oldest first, carried on to today, with what was put in. */
     val chart: List<ChartPoint> = emptyList(),
-    /** What it has earned since its opening value (for a debt, its interest, as a loss), or null with only an opening value. */
+    /** What it has earned (for a debt, its interest, as a loss), including before it was added, or null with nothing yet. */
     val growth: Gain? = null,
+    /** What it had gained or lost before it was added, or null when its whole opening value was put in. */
+    val openingGain: Gain? = null,
 ) {
     /** The latest value can be deleted unless it is the only one. */
     val canDeleteLatest: Boolean get() = entries.size > 1
@@ -77,8 +79,12 @@ fun sourcePageOf(data: Dataset, id: SourceId, today: LocalDate): SourcePageUi? {
         entries = rows.reversed(),
         totalAdded = history.totalAdded,
         totalGrowth = history.totalGrowth,
-        chart = sourcePoints(investedPoints(history.entries), today),
+        chart = sourcePoints(investedPoints(history.entries, source.openingPutIn!!), today),
         growth = growthOf(history, liability = data.category(source.categoryId)?.kind == CategoryKind.LIABILITY),
+        openingGain = history.openingGain.takeIf { it.minorUnits != 0L }?.let { gained ->
+            val liability = data.category(source.categoryId)?.kind == CategoryKind.LIABILITY
+            Gain(if (liability) -gained else gained, source.openingPutIn!!.takeIf { it.minorUnits > 0 })
+        },
     )
 }
 
@@ -118,11 +124,11 @@ class SourcePageViewModel(
     }
 }
 
-/** Each value with what had been put in by then: the opening value, then each amount added on top. */
-private fun investedPoints(entries: List<HistoryEntry>): List<ChartPoint> {
+/** Each value with what had been put in by then: [openingPutIn], then each amount added on top. */
+private fun investedPoints(entries: List<HistoryEntry>, openingPutIn: Money): List<ChartPoint> {
     var put: Money? = null
     return entries.map { entry ->
-        val now = put?.let { it + entry.amountAdded!! } ?: entry.value
+        val now = put?.let { it + entry.amountAdded!! } ?: openingPutIn
         put = now
         ChartPoint(entry.date, entry.value, now)
     }
@@ -134,8 +140,8 @@ private fun investedPoints(entries: List<HistoryEntry>): List<ChartPoint> {
  * an opening value.
  */
 private fun growthOf(history: SourceHistory, liability: Boolean): Gain? {
-    if (history.entries.size < 2) return null
-    val put = history.entries.first().value + history.totalAdded
+    if (history.entries.size < 2 && history.openingGain.minorUnits == 0L) return null
+    val put = history.source.openingPutIn!! + history.totalAdded
     val earned = if (liability) -history.totalGrowth else history.totalGrowth
     return Gain(earned, put.takeIf { it.minorUnits > 0 })
 }

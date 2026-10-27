@@ -63,6 +63,7 @@ fun AddSourceScreen(
     onCategory: (Category) -> Unit,
     onCurrency: (Currency?) -> Unit,
     onAmount: (String) -> Unit,
+    onPrincipal: (String) -> Unit = {},
     onDate: (LocalDate?) -> Unit,
     onRate: (Rate?) -> Unit,
     onNote: (String) -> Unit,
@@ -141,6 +142,21 @@ fun AddSourceScreen(
                     enabled = !form.saving,
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal, imeAction = ImeAction.Next),
                     modifier = Modifier.fillMaxWidth().testTag("source-amount"),
+                )
+
+                // An account that already existed may have gained or lost before it is added here.
+                val owed = chosen?.kind == CategoryKind.LIABILITY
+                OutlinedTextField(
+                    value = form.principal,
+                    onValueChange = onPrincipal,
+                    label = { Text(stringResource(if (owed) R.string.add_source_principal_owed else R.string.add_source_principal, currency.code)) },
+                    supportingText = {
+                        Text(stringResource(if (owed) R.string.add_source_principal_owed_hint else R.string.add_source_principal_hint))
+                    },
+                    singleLine = true,
+                    enabled = !form.saving,
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal, imeAction = ImeAction.Next),
+                    modifier = Modifier.fillMaxWidth().testTag("source-principal"),
                 )
 
                 val dateText = stringResource(R.string.add_source_date)
@@ -225,6 +241,7 @@ private fun AddSourceProblem.message(): Int = when (this) {
     AddSourceProblem.NO_CATEGORY -> R.string.add_source_problem_no_category
     AddSourceProblem.NO_AMOUNT -> R.string.add_source_problem_no_amount
     AddSourceProblem.NOT_AN_AMOUNT -> R.string.add_source_problem_not_an_amount
+    AddSourceProblem.PRINCIPAL_NOT_AN_AMOUNT -> R.string.add_source_problem_principal
     AddSourceProblem.TOO_MANY_DECIMAL_PLACES -> R.string.add_source_problem_decimal_places
     AddSourceProblem.AMOUNT_TOO_LARGE -> R.string.add_source_problem_too_large
     AddSourceProblem.DATE_IN_FUTURE -> R.string.add_source_problem_future

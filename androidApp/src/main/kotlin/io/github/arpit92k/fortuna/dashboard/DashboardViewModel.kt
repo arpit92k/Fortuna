@@ -71,7 +71,8 @@ fun dashboardOf(data: Dataset, today: LocalDate): DashboardUi {
         )
     }
     // Before any source has a second value there is nothing gained yet to show.
-    val changed = rows.any { it.gain != null }
+    // An account added with a gain it had already made counts too.
+    val changed = rows.any { it.gain != null } || data.sources.any { it.openingPrincipal != null }
     return DashboardUi(
         netWorth = worth.total,
         assets = worth.assets,
