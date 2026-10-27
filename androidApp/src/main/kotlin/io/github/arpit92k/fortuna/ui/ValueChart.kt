@@ -10,10 +10,12 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.size
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.PathEffect
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -71,11 +73,15 @@ import java.util.Locale
  *
  * With fewer than two dates there is no line to draw, so a short note says the
  * chart fills in as values are added.
+ *
+ * With [fill], the chart takes all the height [modifier] gives it, as on the
+ * full-screen chart, rather than a card's fixed height.
  */
 @Composable
-fun ValueChart(points: List<ChartPoint>, modifier: Modifier = Modifier) {
+fun ValueChart(points: List<ChartPoint>, modifier: Modifier = Modifier, fill: Boolean = false) {
     if (points.map { it.date }.distinct().size < 2) {
-        Box(modifier.fillMaxWidth().height(ChartHeight).testTag(CHART_EMPTY), contentAlignment = Alignment.Center) {
+        val size = if (fill) Modifier.fillMaxSize() else Modifier.fillMaxWidth().height(ChartHeight)
+        Box(modifier.then(size).testTag(CHART_EMPTY), contentAlignment = Alignment.Center) {
             Text(
                 stringResource(R.string.chart_one_point),
                 style = MaterialTheme.typography.bodyMedium,
@@ -213,7 +219,7 @@ fun ValueChart(points: List<ChartPoint>, modifier: Modifier = Modifier) {
                 zoomState = rememberVicoZoomState(zoomEnabled = false, initialZoom = Zoom.Content, minZoom = Zoom.Content, maxZoom = Zoom.Content),
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(ChartHeight)
+                    .then(if (fill) Modifier.weight(1f) else Modifier.height(ChartHeight))
                     .semantics { contentDescription = summary }
                     .testTag(CHART),
             )
@@ -265,3 +271,20 @@ private val ChartHeight = 200.dp
 
 const val CHART = "chart"
 const val CHART_EMPTY = "chart-empty"
+
+/** A chart card's title, with the button that opens the chart full screen at its end. */
+@Composable
+fun ChartCardTitle(title: String, onOpenChart: () -> Unit) {
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Text(
+            title,
+            style = MaterialTheme.typography.labelLarge,
+            modifier = Modifier.weight(1f).padding(start = 8.dp),
+        )
+        IconButton(onClick = onOpenChart, modifier = Modifier.testTag(OPEN_CHART)) {
+            FortunaIconImage(FortunaIcon.Expand, contentDescription = stringResource(R.string.chart_open_full_screen))
+        }
+    }
+}
+
+const val OPEN_CHART = "open-chart"

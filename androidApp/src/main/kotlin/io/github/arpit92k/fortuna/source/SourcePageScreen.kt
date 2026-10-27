@@ -34,6 +34,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import io.github.arpit92k.fortuna.R
 import io.github.arpit92k.fortuna.core.money.Money
+import io.github.arpit92k.fortuna.ui.ChartCardTitle
 import io.github.arpit92k.fortuna.ui.BackButton
 import io.github.arpit92k.fortuna.ui.IconTile
 import io.github.arpit92k.fortuna.ui.ReadableWidth
@@ -64,6 +65,7 @@ fun formatChange(money: Money): String = formatSignedMoney(money)
 fun SourcePageScreen(
     ui: SourcePageUi?,
     onAddValue: () -> Unit,
+    onOpenChart: () -> Unit,
     onEdit: (LocalDate) -> Unit,
     onDeleteLatest: () -> Unit,
     onDeleteSource: () -> Unit,
@@ -89,14 +91,10 @@ fun SourcePageScreen(
             item { Header(ui) }
             item {
                 Card(Modifier.fillMaxWidth().padding(top = 16.dp).testTag("source-chart")) {
-                    Column(Modifier.padding(start = 12.dp, end = 16.dp, top = 16.dp, bottom = 12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Text(
-                            stringResource(R.string.source_chart_title),
-                            style = MaterialTheme.typography.labelLarge,
-                            modifier = Modifier.padding(start = 8.dp),
-                        )
+                    Column(Modifier.padding(start = 12.dp, end = 4.dp, top = 4.dp, bottom = 12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        ChartCardTitle(stringResource(R.string.source_chart_title), onOpenChart)
                         // In the source's own currency, as its statements show it.
-                        ValueChart(ui.chart)
+                        ValueChart(ui.chart, Modifier.padding(end = 12.dp))
                     }
                 }
             }

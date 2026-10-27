@@ -45,7 +45,7 @@ class NavigatorTest {
     fun aDeletedSourceTakesItsScreensWithIt() {
         val navigator = Navigator()
         navigator.open(Destination.Source(SourceId(6)))
-        navigator.open(Destination.ValueEntry(SourceId(6)))
+        navigator.open(Destination.Chart(SourceId(6)))
         navigator.forget(SourceId(6))
         assertEquals(listOf(Destination.Dashboard), navigator.stack.value)
     }

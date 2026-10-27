@@ -37,6 +37,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import io.github.arpit92k.fortuna.R
+import io.github.arpit92k.fortuna.ui.ChartCardTitle
 import io.github.arpit92k.fortuna.ui.ButtonIcon
 import io.github.arpit92k.fortuna.ui.FortunaIcon
 import io.github.arpit92k.fortuna.ui.FortunaIconImage
@@ -63,6 +64,7 @@ fun DashboardScreen(
     ui: DashboardUi?,
     onAddSource: () -> Unit,
     onOpen: (SourceId) -> Unit,
+    onOpenChart: () -> Unit,
     onUpdate: () -> Unit,
     onSettings: () -> Unit,
     onLock: () -> Unit,
@@ -126,12 +128,18 @@ fun DashboardScreen(
                         verticalArrangement = Arrangement.spacedBy(16.dp),
                     ) {
                         Totals(ui, Modifier.fillMaxWidth())
-                        NetWorthChart(ui, Modifier.fillMaxWidth())
+                        NetWorthChart(ui, onOpenChart, Modifier.fillMaxWidth())
                     }
-                    SourceList(ui, Modifier.weight(1f), header = false, onOpen = onOpen)
+                    SourceList(ui, Modifier.weight(1f), header = false, onOpen = onOpen, onOpenChart = onOpenChart)
                 }
                 else -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
-                    SourceList(ui, Modifier.widthIn(max = ReadableWidth).fillMaxWidth().padding(horizontal = 16.dp), header = true, onOpen = onOpen)
+                    SourceList(
+                        ui,
+                        Modifier.widthIn(max = ReadableWidth).fillMaxWidth().padding(horizontal = 16.dp),
+                        header = true,
+                        onOpen = onOpen,
+                        onOpenChart = onOpenChart,
+                    )
                 }
             }
         }
@@ -194,26 +202,22 @@ private fun Totals(ui: DashboardUi, modifier: Modifier = Modifier) {
 }
 
 @Composable
-private fun NetWorthChart(ui: DashboardUi, modifier: Modifier = Modifier) {
+private fun NetWorthChart(ui: DashboardUi, onOpenChart: () -> Unit, modifier: Modifier = Modifier) {
     Card(modifier.testTag("net-worth-chart")) {
-        Column(Modifier.padding(start = 12.dp, end = 16.dp, top = 16.dp, bottom = 12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Text(
-                stringResource(R.string.dashboard_chart_title),
-                style = MaterialTheme.typography.labelLarge,
-                modifier = Modifier.padding(start = 8.dp),
-            )
-            ValueChart(ui.timeline)
+        Column(Modifier.padding(start = 12.dp, end = 4.dp, top = 4.dp, bottom = 12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            ChartCardTitle(stringResource(R.string.dashboard_chart_title), onOpenChart)
+            ValueChart(ui.timeline, Modifier.padding(end = 12.dp))
         }
     }
 }
 
 @Composable
-private fun SourceList(ui: DashboardUi, modifier: Modifier, header: Boolean, onOpen: (SourceId) -> Unit) {
+private fun SourceList(ui: DashboardUi, modifier: Modifier, header: Boolean, onOpen: (SourceId) -> Unit, onOpenChart: () -> Unit) {
     // Room at the end, so the add button never covers the last source.
     LazyColumn(modifier.testTag("source-list"), contentPadding = PaddingValues(top = 16.dp, bottom = 96.dp)) {
         if (header) {
             item { Totals(ui, Modifier.fillMaxWidth().padding(bottom = 16.dp)) }
-            item { NetWorthChart(ui, Modifier.fillMaxWidth().padding(bottom = 16.dp)) }
+            item { NetWorthChart(ui, onOpenChart, Modifier.fillMaxWidth().padding(bottom = 16.dp)) }
         }
         item {
             Text(
