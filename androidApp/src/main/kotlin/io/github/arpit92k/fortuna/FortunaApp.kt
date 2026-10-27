@@ -1,5 +1,6 @@
 package io.github.arpit92k.fortuna
 
+import io.github.arpit92k.fortuna.chart.ChartScreen
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -168,7 +169,7 @@ private fun UnlockedApp(core: Core, screens: Screens) {
 
     // A source deleted, here or elsewhere, takes its screens with it.
     LaunchedEffect(current, dataset) {
-        val id = (current as? Destination.Source)?.id ?: (current as? Destination.ValueEntry)?.id
+        val id = (current as? Destination.Source)?.id ?: (current as? Destination.ValueEntry)?.id ?: (current as? Destination.Chart)?.source
         val data = dataset
         if (id != null && data != null && data.source(id) == null) navigator.forget(id)
     }
@@ -204,6 +205,7 @@ private fun UnlockedApp(core: Core, screens: Screens) {
             ui = ui,
             onAddSource = { navigator.open(Destination.AddSource) },
             onOpen = { navigator.open(Destination.Source(it)) },
+            onOpenChart = { navigator.open(Destination.Chart()) },
             onUpdate = {
                 screens.update.prepare()
                 navigator.open(Destination.Update)
@@ -247,6 +249,7 @@ private fun UnlockedApp(core: Core, screens: Screens) {
                 SourcePageScreen(
                     ui = ui?.takeIf { it.id == current.id },
                     onAddValue = { navigator.open(Destination.ValueEntry(current.id)) },
+                    onOpenChart = { navigator.open(Destination.Chart(current.id)) },
                     onEdit = { navigator.open(Destination.ValueEntry(current.id, editing = it)) },
                     onDeleteLatest = { screens.sourcePage.deleteLatest(current.id) },
                     onDeleteSource = { screens.sourcePage.deleteSource(current.id) { navigator.forget(current.id) } },
@@ -330,6 +333,27 @@ private fun UnlockedApp(core: Core, screens: Screens) {
                 onClearProblem = screens.currencies::clearProblem,
                 onBack = tryLeave,
             )
+        }
+        is Destination.Chart -> {
+            val id = current.source
+            if (id == null) {
+                val ui by screens.dashboard.ui.collectAsState()
+                ChartScreen(
+                    title = stringResource(R.string.dashboard_chart_title),
+                    points = ui?.timeline.orEmpty(),
+                    onBack = tryLeave,
+                )
+            } else {
+                LaunchedEffect(id) { screens.sourcePage.show(id) }
+                val ui by screens.sourcePage.ui.collectAsState()
+                val page = ui?.takeIf { it.id == id }
+                ChartScreen(
+                    title = page?.name.orEmpty(),
+                    points = page?.chart.orEmpty(),
+                    liability = page?.liability == true,
+                    onBack = tryLeave,
+                )
+            }
         }
         is Destination.ValueEntry -> {
             val data = dataset ?: return

@@ -130,4 +130,48 @@ class ChartPointsTest {
         assertEquals("-0.4%", formatPercent(-0.44, java.util.Locale.UK))
         assertEquals("0.0%", formatPercent(0.0, java.util.Locale.UK))
     }
+
+    // The full-screen chart's ranges: the value in force on the first day starts the line.
+    @Test
+    fun aRangeStartsWithTheValueInForceOnItsFirstDay() {
+        val points = listOf(
+            ChartPoint(LocalDate(2026, 1, 31), gbp(1_000_00), gbp(1_000_00)),
+            ChartPoint(LocalDate(2026, 6, 30), gbp(1_200_00), gbp(1_100_00)),
+            ChartPoint(LocalDate(2026, 9, 30), gbp(1_300_00), gbp(1_100_00)),
+            ChartPoint(today, gbp(1_300_00), gbp(1_100_00)),
+        )
+        val start = ChartRange.SIX_MONTHS.start(today)
+        assertEquals(LocalDate(2026, 4, 24), start)
+        assertEquals(
+            listOf(ChartPoint(LocalDate(2026, 4, 24), gbp(1_000_00), gbp(1_000_00))) + points.drop(1),
+            pointsFrom(points, start),
+        )
+        assertEquals(points, pointsFrom(points, ChartRange.ALL.start(today)))
+        assertEquals(points, pointsFrom(points, LocalDate(2025, 1, 1)), "a range longer than the history shows all of it")
+    }
+
+    // Over the range: £1,000 grew to £1,300 with £100 paid in, so £200 was earned, against £1,000 plus the £100.
+    @Test
+    fun aRangeSummaryLeavesOutMoneyPaidIn() {
+        val points = listOf(
+            ChartPoint(LocalDate(2026, 4, 24), gbp(1_000_00), gbp(1_000_00)),
+            ChartPoint(today, gbp(1_300_00), gbp(1_100_00)),
+        )
+        val summary = rangeSummary(points)!!
+        assertEquals(gbp(1_300_00), summary.value)
+        assertEquals(gbp(300_00), summary.change)
+        assertEquals(gbp(200_00), summary.gain!!.amount)
+        assertEquals(gbp(1_100_00), summary.gain!!.base)
+        assertEquals(null, rangeSummary(emptyList()))
+    }
+
+    // A debt that grew by interest alone: the gain is a loss.
+    @Test
+    fun interestOnADebtIsALoss() {
+        val points = listOf(
+            ChartPoint(LocalDate(2026, 4, 24), gbp(5_000_00), gbp(5_000_00)),
+            ChartPoint(today, gbp(5_100_00), gbp(5_000_00)),
+        )
+        assertEquals(gbp(-100_00), rangeSummary(points, liability = true)!!.gain!!.amount)
+    }
 }

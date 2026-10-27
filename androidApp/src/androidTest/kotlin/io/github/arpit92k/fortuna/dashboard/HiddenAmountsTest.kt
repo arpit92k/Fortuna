@@ -55,6 +55,7 @@ class HiddenAmountsTest {
                         ui = ui,
                         onAddSource = {},
                         onOpen = {},
+                        onOpenChart = {},
                         onUpdate = {},
                         onSettings = {},
                         onLock = {},

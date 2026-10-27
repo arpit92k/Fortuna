@@ -1,10 +1,13 @@
 package io.github.arpit92k.fortuna.ui
 
 import io.github.arpit92k.fortuna.core.domain.Dataset
+import io.github.arpit92k.fortuna.core.insights.Gain
 import io.github.arpit92k.fortuna.core.insights.investedOn
 import io.github.arpit92k.fortuna.core.insights.timeline
 import io.github.arpit92k.fortuna.core.money.Money
+import kotlinx.datetime.DatePeriod
 import kotlinx.datetime.LocalDate
+import kotlinx.datetime.minus
 import kotlin.math.abs
 import kotlin.math.pow
 
@@ -62,4 +65,56 @@ fun chartRange(amounts: List<Double>): ClosedFloatingPointRange<Double> {
     val bottom = (low - margin).let { if (low >= 0 && it < 0) 0.0 else it }
     val top = (high + margin).let { if (high <= 0 && it > 0) 0.0 else it }
     return bottom..top
+}
+
+/** How far back the full-screen chart looks. [months] is null for everything recorded. */
+enum class ChartRange(val months: Int?) {
+    THREE_MONTHS(3),
+    SIX_MONTHS(6),
+    ONE_YEAR(12),
+    ALL(null),
+    ;
+
+    /** The first day shown on [today], or null for everything. */
+    fun start(today: LocalDate): LocalDate? = months?.let { today.minus(DatePeriod(months = it)) }
+}
+
+/**
+ * [points] from [from] on. Values hold until the next is recorded, so the
+ * value in force on [from] starts the line there. All of them when [from] is
+ * null or before the first point.
+ */
+fun pointsFrom(points: List<ChartPoint>, from: LocalDate?): List<ChartPoint> {
+    if (from == null || points.isEmpty() || points.first().date >= from) return points
+    val inForce = points.last { it.date <= from }
+    return listOf(inForce.copy(date = from)) + points.filter { it.date > from }
+}
+
+/** The figures above the full-screen chart, over the points it shows. */
+data class RangeSummary(
+    /** The value at the end. */
+    val value: Money,
+    /** From the first value to the last, including money put in or taken out. */
+    val change: Money,
+    /** What was earned over the range, or null where what was put in is not known. */
+    val gain: Gain?,
+)
+
+/**
+ * The value, change and gain over [points], oldest first. The gain leaves out
+ * money put in or taken out, and is measured, as elsewhere, against the value
+ * at the start plus what was added since. For a debt, the gain is turned
+ * round: interest owed is a loss. Null with no points.
+ */
+fun rangeSummary(points: List<ChartPoint>, liability: Boolean = false): RangeSummary? {
+    val first = points.firstOrNull() ?: return null
+    val last = points.last()
+    val gain = if (first.invested != null && last.invested != null) {
+        val earned = (last.value - last.invested) - (first.value - first.invested)
+        val base = first.value + (last.invested - first.invested)
+        Gain(if (liability) -earned else earned, base.takeIf { it.minorUnits > 0 })
+    } else {
+        null
+    }
+    return RangeSummary(last.value, last.value - first.value, gain)
 }

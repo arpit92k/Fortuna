@@ -36,6 +36,9 @@ sealed interface Destination {
 
     /** S-17. */
     data object Backup : Destination
+
+    /** A chart full screen: net worth with no [source], or one source's value. */
+    data class Chart(val source: SourceId? = null) : Destination
 }
 
 /**
@@ -86,7 +89,10 @@ class Navigator : ViewModel() {
     /** Leaves every screen of a source that no longer exists. */
     fun forget(id: SourceId) {
         mutableStack.update { stack ->
-            stack.filterNot { (it is Destination.Source && it.id == id) || (it is Destination.ValueEntry && it.id == id) }
+            stack.filterNot {
+                (it is Destination.Source && it.id == id) || (it is Destination.ValueEntry && it.id == id) ||
+                    (it is Destination.Chart && it.source == id)
+            }
         }
     }
 

@@ -306,4 +306,15 @@
     <string name="biometric_offer_yes">Turn on</string>
     <string name="biometric_offer_no">Not now</string>
     <string name="biometric_next_time">Use fingerprint next time</string>
+
+    <!-- The chart full screen -->
+    <string name="chart_open_full_screen">Open the chart full screen</string>
+    <string name="chart_screen_value">Value</string>
+    <string name="chart_screen_change">Change</string>
+    <string name="chart_screen_gain">Gain</string>
+    <string name="chart_screen_interest">Interest</string>
+    <string name="chart_range_3m">3M</string>
+    <string name="chart_range_6m">6M</string>
+    <string name="chart_range_1y">1Y</string>
+    <string name="chart_range_all">All</string>
 </resources>
