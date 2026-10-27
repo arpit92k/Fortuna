@@ -104,14 +104,14 @@
     <string name="back">Back</string>
     <string name="source_kind_asset">%1$s · Something you own</string>
     <string name="source_kind_liability">%1$s · Something you owe</string>
-    <string name="source_total_added">Added since opening</string>
+    <string name="source_total_added">Net deposits since opening</string>
     <string name="source_total_growth">Growth since opening</string>
     <string name="source_total_borrowed">Borrowed since opening</string>
     <string name="source_total_interest">Interest and charges</string>
     <string name="source_add_value">Add a value</string>
     <string name="source_history">History</string>
     <string name="source_opening">Opening value</string>
-    <string name="source_row_asset">Added %1$s · Growth %2$s</string>
+    <string name="source_row_asset">Net deposits %1$s · Growth %2$s</string>
     <string name="source_row_liability">Borrowed %1$s · Interest %2$s</string>
     <string name="source_delete">Delete</string>
     <string name="source_delete_value">Delete this value</string>
@@ -127,11 +127,11 @@
     <string name="value_edit_title">Correct %1$s</string>
     <string name="value_edit_body">Change the figures recorded for this date. The date itself stays.</string>
     <string name="value_value">Value (%1$s)</string>
-    <string name="value_added">Amount added (optional)</string>
-    <string name="value_added_hint">Money you paid in since the last value. Use a minus sign for withdrawals.</string>
+    <string name="value_added">Deposit (optional)</string>
+    <string name="value_added_hint">Money you deposited since the last value. Use a minus sign for withdrawals.</string>
     <string name="value_borrowed">New borrowing (optional)</string>
     <string name="value_borrowed_hint">Money borrowed since the last value. Use a minus sign for repayments.</string>
-    <string name="value_opening_nothing_added">This is the opening value, so nothing counts as added.</string>
+    <string name="value_opening_nothing_added">This is the opening value, so nothing counts as a deposit.</string>
     <string name="value_date_today">Value as of today</string>
     <string name="value_date">Value as of %1$s</string>
     <string name="value_save">Save</string>
@@ -280,15 +280,15 @@
     <string name="dashboard_gain_latest">Latest change</string>
     <string name="dashboard_gain_since_start">Since the start</string>
     <string name="chart_value">Value</string>
-    <string name="chart_invested">Put in</string>
+    <string name="chart_invested">Net deposits</string>
     <string name="chart_gain">gain %1$s</string>
 
     <!-- A gain or loss made before an account is added -->
-    <string name="add_source_principal">Of that, what you put in (%1$s, optional)</string>
-    <string name="add_source_principal_hint">If it has already grown or fallen, the difference counts as gained or lost. Leave blank if it has not.</string>
-    <string name="add_source_principal_owed">Of that, what you borrowed (%1$s, optional)</string>
-    <string name="add_source_principal_owed_hint">If interest has already been added, the difference counts as a loss. Leave blank if not.</string>
-    <string name="add_source_problem_principal">What you put in is not an amount.</string>
+    <string name="add_source_opening_gain">Gain or loss so far (%1$s, optional)</string>
+    <string name="add_source_opening_gain_hint">What it had already gained before you add it here. Use a minus sign for a loss. Leave blank if none.</string>
+    <string name="add_source_opening_interest">Interest so far (%1$s, optional)</string>
+    <string name="add_source_opening_interest_hint">Interest already added to what you owe. Leave blank if none.</string>
+    <string name="add_source_problem_opening_gain">The gain or loss is not an amount.</string>
     <string name="source_opening_gain">Opening value: %1$s before it was added</string>
 
     <!-- Biometric unlock -->

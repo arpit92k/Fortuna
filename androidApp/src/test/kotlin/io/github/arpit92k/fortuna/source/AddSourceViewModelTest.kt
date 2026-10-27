@@ -135,10 +135,10 @@ class AddSourceViewModelTest {
         assertEquals("42,000", add.form.value.amount)
     }
 
-    // An account that already existed: of £12,000, £10,000 was put in, so £2,000 is gained already.
+    // An account that already existed: of £12,000, £2,000 is gained already, so £10,000 was deposited.
     @Test
-    fun anAccountCanBeAddedWithWhatWasPutIn() = runTest(dispatcher) {
-        add.principal("10,000")
+    fun anAccountCanBeAddedWithItsGainSoFar() = runTest(dispatcher) {
+        add.openingGain("2,000")
         assertTrue(addSource("ISA", CategoryId(2), "12,000"))
         val dashboard = DashboardViewModel(core)
         advanceUntilIdle()
@@ -148,10 +148,22 @@ class AddSourceViewModelTest {
         assertEquals(Money(1_000_000, pounds), ui.timeline.single().invested)
     }
 
+    // £12,000 after a £1,500 loss: £13,500 was deposited.
     @Test
-    fun whatWasPutInMustBeAnAmount() = runTest(dispatcher) {
-        add.principal("lots")
+    fun aLossSoFarIsTypedWithAMinusSign() = runTest(dispatcher) {
+        add.openingGain("-1,500")
+        assertTrue(addSource("ISA", CategoryId(2), "12,000"))
+        val dashboard = DashboardViewModel(core)
+        advanceUntilIdle()
+        val ui = assertNotNull(dashboard.ui.value)
+        assertEquals(Money(-150_000, pounds), ui.gainSinceStart!!.amount)
+        assertEquals(Money(1_350_000, pounds), ui.timeline.single().invested)
+    }
+
+    @Test
+    fun theGainSoFarMustBeAnAmount() = runTest(dispatcher) {
+        add.openingGain("lots")
         assertFalse(addSource("ISA", CategoryId(2), "12,000"))
-        assertEquals(AddSourceProblem.PRINCIPAL_NOT_AN_AMOUNT, add.form.value.problem)
+        assertEquals(AddSourceProblem.GAIN_NOT_AN_AMOUNT, add.form.value.problem)
     }
 }

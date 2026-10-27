@@ -27,8 +27,12 @@ data class AddSourceForm(
     val name: String = "",
     val categoryId: CategoryId? = null,
     val amount: String = "",
-    /** Optional: of the amount, what was put in (for a debt, borrowed). Blank means all of it. */
-    val principal: String = "",
+    /**
+     * Optional: of the amount, what was already gained or, with a minus sign,
+     * lost before it is added here; for a debt, the interest already added.
+     * Blank means none.
+     */
+    val openingGain: String = "",
     /** Null means today. */
     val date: LocalDate? = null,
     val note: String = "",
@@ -63,7 +67,7 @@ enum class AddSourceProblem {
     RATE_NEEDED,
 
     /** What was put in is not an amount. */
-    PRINCIPAL_NOT_AN_AMOUNT,
+    GAIN_NOT_AN_AMOUNT,
 
     /** Anything the form does not expect; the core refused the change and nothing was saved. */
     NOT_SAVED,
@@ -84,7 +88,7 @@ class AddSourceViewModel(private val core: Core, private val locale: () -> Local
 
     fun amount(text: String) = edit { it.copy(amount = text) }
 
-    fun principal(text: String) = edit { it.copy(principal = text) }
+    fun openingGain(text: String) = edit { it.copy(openingGain = text) }
 
     fun date(date: LocalDate?) = edit { it.copy(date = date, rate = null) }
 
@@ -124,14 +128,15 @@ class AddSourceViewModel(private val core: Core, private val locale: () -> Local
                 return
             }
         }
-        // Blank: all of it was put in, so nothing has been gained yet.
-        val principal = if (form.principal.isBlank()) {
+        // Blank: nothing gained yet, so all of it is net deposits. Otherwise the deposits (for a debt,
+        // what was borrowed) are the amount less the gain (for a debt, less the interest).
+        val principal = if (form.openingGain.isBlank()) {
             null
         } else {
-            when (val parsed = parseAmount(form.principal, currency, locale())) {
-                is MoneyParseResult.Success -> parsed.money
+            when (val parsed = parseAmount(form.openingGain, currency, locale())) {
+                is MoneyParseResult.Success -> money - parsed.money
                 is MoneyParseResult.Failure -> {
-                    mutableForm.value = form.copy(problem = AddSourceProblem.PRINCIPAL_NOT_AN_AMOUNT)
+                    mutableForm.value = form.copy(problem = AddSourceProblem.GAIN_NOT_AN_AMOUNT)
                     return
                 }
             }

@@ -234,7 +234,7 @@ private fun UnlockedApp(core: Core, screens: Screens) {
                 onCategory = { screens.addSource.category(it.id) },
                 onCurrency = screens.addSource::currency,
                 onAmount = screens.addSource::amount,
-                onPrincipal = screens.addSource::principal,
+                onOpeningGain = screens.addSource::openingGain,
                 onDate = screens.addSource::date,
                 onRate = screens.addSource::rate,
                 onNote = screens.addSource::note,
