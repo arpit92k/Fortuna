@@ -3,6 +3,7 @@ package io.github.arpit92k.fortuna.ui
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
+import androidx.compose.material3.DisplayMode
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.SelectableDates
@@ -10,11 +11,14 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.stringResource
 import io.github.arpit92k.fortuna.R
 import kotlinx.datetime.LocalDate
@@ -40,7 +44,19 @@ fun DateButton(
     enabled: Boolean = true,
 ) {
     var picking by rememberSaveable { mutableStateOf(false) }
-    OutlinedButton(onClick = { picking = true }, enabled = enabled, modifier = modifier.fillMaxWidth()) {
+    val focusManager = LocalFocusManager.current
+    val keyboard = LocalSoftwareKeyboardController.current
+    OutlinedButton(
+        onClick = {
+            // The form's keyboard goes first. Left focused, a field behind the calendar would take the
+            // keyboard back, and scroll the form, as soon as the calendar's own typing box goes away.
+            focusManager.clearFocus()
+            keyboard?.hide()
+            picking = true
+        },
+        enabled = enabled,
+        modifier = modifier.fillMaxWidth(),
+    ) {
         Text(if (date == null) todayText else dateText(formatDate(date)))
     }
     if (!picking) return
@@ -73,6 +89,16 @@ fun DateButton(
             TextButton(onClick = { picking = false }) { Text(stringResource(R.string.date_cancel)) }
         },
     ) {
+        // Switching from typing the date to the calendar closes the keyboard at once, so the
+        // dialog settles in one move instead of following the keyboard down.
+        val dialogFocus = LocalFocusManager.current
+        val dialogKeyboard = LocalSoftwareKeyboardController.current
+        LaunchedEffect(state.displayMode) {
+            if (state.displayMode == DisplayMode.Picker) {
+                dialogFocus.clearFocus()
+                dialogKeyboard?.hide()
+            }
+        }
         DatePicker(state = state)
     }
 }
