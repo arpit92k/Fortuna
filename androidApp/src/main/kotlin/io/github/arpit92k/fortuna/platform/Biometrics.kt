@@ -57,6 +57,20 @@ interface Biometrics {
 
     /** Turns biometric unlock off: its copy and its key are deleted. */
     fun disable()
+
+    /**
+     * Checks, without asking for a fingerprint, that biometric unlock still
+     * works: Android voids its key when fingerprints or faces are added or
+     * removed. If it was voided, biometric unlock is turned off and
+     * [turnedOffByChange] is set, so the lock screen can say why.
+     */
+    fun checkStillValid()
+
+    /** Biometric unlock was turned off because fingerprints or faces changed, and the user has not yet been told. Kept across restarts. */
+    val turnedOffByChange: Boolean
+
+    /** The user has seen why: unlocked, or turned biometric unlock on again. */
+    fun acknowledgeChange()
 }
 
 /**
@@ -70,6 +84,7 @@ interface Biometrics {
 class AndroidBiometrics(context: Context) : Biometrics {
     private val app = context.applicationContext
     private val file = File(app.filesDir, FILE)
+    private val changedMarker = File(app.filesDir, CHANGED_FILE)
     private var host: WeakReference<FragmentActivity>? = null
 
     /** The screen that shows the prompt. The activity calls this as it is created. */
@@ -128,8 +143,29 @@ class AndroidBiometrics(context: Context) : Biometrics {
         runCatching { keyStore().deleteEntry(ALIAS) }
     }
 
+    override fun checkStillValid() {
+        if (!enabled()) return
+        try {
+            val key = keyStore().getKey(ALIAS, null) as? SecretKey
+            // Initialising a cipher needs no fingerprint, but fails at once on a voided key.
+            if (key == null) invalidated() else Cipher.getInstance(TRANSFORMATION).init(Cipher.ENCRYPT_MODE, key)
+        } catch (e: KeyPermanentlyInvalidatedException) {
+            invalidated()
+        } catch (e: GeneralSecurityException) {
+            // Something else, such as the keystore being busy: tried again at the next unlock.
+        }
+    }
+
+    override val turnedOffByChange: Boolean get() = changedMarker.exists()
+
+    override fun acknowledgeChange() {
+        changedMarker.delete()
+    }
+
+    /** The key was voided: biometric unlock is off, and a marker remembers why until the user has been told. */
     private fun invalidated(): BiometricResult<Nothing> {
         disable()
+        runCatching { changedMarker.createNewFile() }
         return BiometricResult.Invalidated
     }
 
@@ -211,6 +247,7 @@ class AndroidBiometrics(context: Context) : Biometrics {
 
     private companion object {
         const val FILE = "biometric.key"
+        const val CHANGED_FILE = "biometric.changed"
         const val ALIAS = "fortuna-biometric"
         const val KEYSTORE = "AndroidKeyStore"
         const val TRANSFORMATION = "AES/GCM/NoPadding"

@@ -373,7 +373,8 @@ The screens where a value is entered (S-11 to S-14) each get the two-minute grac
   - **Decided: offered after setup, with a switch in settings.** After setup or a restore, a phone with a strong biometric asks once. S-15 has a switch.
   - **On S-07:** the prompt appears by itself once each time the lock screen comes to the front, with the PIN pad beneath and a "Use fingerprint" button to ask again.
   - **The core** gives the data key while unlocked, and opens with a key the platform returns; a wrong key changes nothing and counts as no PIN attempt.
-  - **When fingerprints change,** Android voids the key: biometric unlock turns itself off, the lock screen says why, and the PIN still works.
+  - **On S-07, before it is on:** a "Use fingerprint next time" switch on a phone that can; it is turned on, with a fingerprint to confirm, once the PIN is right.
+  - **When fingerprints change,** Android voids the key. The lock screen checks for this as soon as it appears, without asking for a fingerprint: biometric unlock turns itself off, and the lock screen says why, every time it appears, until the user is in with the PIN. The PIN still works.
 - **Tests:** the core opens with the key it gave, refuses a wrong one without a wait; the offer comes once after setup and not on a phone without a sensor; the lock screen asks once per lock; changed fingerprints or a stale copy turn it off.
 - **Done when:** on a phone, biometric unlock can be turned on from the offer and from settings, opens the app from the lock screen, falls back to the PIN when cancelled, and turns itself off with a message after a fingerprint is added.
 

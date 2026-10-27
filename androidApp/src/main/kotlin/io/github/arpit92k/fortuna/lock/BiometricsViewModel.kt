@@ -33,7 +33,12 @@ data class BiometricsUi(
     val offer: Boolean = false,
     val working: Boolean = false,
     val message: BiometricMessage? = null,
-)
+    /** On the lock screen: turn biometric unlock on once this unlock with the PIN succeeds. */
+    val enableAfterUnlock: Boolean = false,
+) {
+    /** The lock screen offers to turn it on next time: the phone can, and it is not on. */
+    val canOfferOnLockScreen: Boolean get() = available && !enabled
+}
 
 /**
  * Biometric unlock (UF-02): a shortcut beside the PIN, never instead of it.
@@ -54,6 +59,14 @@ class BiometricsViewModel(private val core: Core, private val biometrics: Biomet
             core.state.collect { state ->
                 if (state == SessionState.Unlocked) {
                     askedThisLock = false
+                    // The user has been in the lock screen, which said why it was turned off.
+                    if (biometrics.turnedOffByChange) biometrics.acknowledgeChange()
+                    if (mutableUi.value.message == BiometricMessage.CHANGED) mutableUi.update { it.copy(message = null) }
+                    // Chosen on the lock screen: turned on now there is a data key to lock away.
+                    if (mutableUi.value.enableAfterUnlock) {
+                        mutableUi.update { it.copy(enableAfterUnlock = false) }
+                        if (biometrics.available() && !biometrics.enabled()) enable()
+                    }
                     // Just set up or restored: offer it once, if the phone can.
                     val fresh = previous == SessionState.NoData || previous is SessionState.SettingUp
                     if (fresh && biometrics.available() && !biometrics.enabled()) mutableUi.update { it.copy(offer = true) }
@@ -64,9 +77,25 @@ class BiometricsViewModel(private val core: Core, private val biometrics: Biomet
         }
     }
 
-    /** Fingerprints may have been set up or removed while the app was away. */
+    /**
+     * Fingerprints may have been set up or removed while the app was away.
+     * If they changed, biometric unlock was turned off, and the lock screen
+     * says so until the user is in.
+     */
     fun refresh() {
-        mutableUi.update { it.copy(available = biometrics.available(), enabled = biometrics.enabled()) }
+        biometrics.checkStillValid()
+        mutableUi.update {
+            it.copy(
+                available = biometrics.available(),
+                enabled = biometrics.enabled(),
+                message = if (biometrics.turnedOffByChange) BiometricMessage.CHANGED else it.message,
+            )
+        }
+    }
+
+    /** The lock screen's "use fingerprint next time" switch. */
+    fun enableAfterUnlock(on: Boolean) {
+        mutableUi.update { it.copy(enableAfterUnlock = on) }
     }
 
     /** The lock screen came to the front: asks by itself, once per lock. */
@@ -91,6 +120,7 @@ class BiometricsViewModel(private val core: Core, private val biometrics: Biomet
                         BiometricMessage.STOPPED_WORKING
                     }
                 }
+                // Turned off, with a marker so the lock screen keeps saying why.
                 BiometricResult.Invalidated -> BiometricMessage.CHANGED
                 BiometricResult.Cancelled, BiometricResult.Failed -> null
             }

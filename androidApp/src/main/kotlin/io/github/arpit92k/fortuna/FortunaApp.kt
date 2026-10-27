@@ -130,6 +130,7 @@ fun FortunaApp(core: Core, screens: Screens) {
                             onReport = screens.report::open,
                             biometrics = biometrics,
                             onBiometric = screens.biometrics::unlock,
+                            onEnableAfterUnlock = screens.biometrics::enableAfterUnlock,
                             onShown = {
                                 screens.biometrics.refresh()
                                 screens.biometrics.lockScreenShown()

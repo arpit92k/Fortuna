@@ -296,7 +296,7 @@
     <string name="biometric_use_pin">Use PIN</string>
     <string name="biometric_unlock_title">Unlock Fortuna</string>
     <string name="biometric_enable_title">Turn on fingerprint unlock</string>
-    <string name="biometric_changed">Fingerprints on this phone changed, so fingerprint unlock was turned off. Use your PIN, then turn it on again in Settings.</string>
+    <string name="biometric_changed">Fingerprints or faces on this phone were added or removed, so Android voided the fingerprint key and fingerprint unlock was turned off. This keeps someone who added their own fingerprint from getting in. Use your PIN. Once your fingerprints are as you want them, you can turn it on again here or in Settings.</string>
     <string name="biometric_stopped">Fingerprint unlock stopped working and was turned off. Use your PIN, then turn it on again in Settings.</string>
     <string name="biometric_not_turned_on">Fingerprint unlock could not be turned on.</string>
     <string name="settings_biometrics">Unlock with fingerprint</string>
@@ -305,4 +305,5 @@
     <string name="biometric_offer_body">Open Fortuna with your fingerprint instead of typing the PIN. The PIN still works, and you can change this in Settings.</string>
     <string name="biometric_offer_yes">Turn on</string>
     <string name="biometric_offer_no">Not now</string>
+    <string name="biometric_next_time">Use fingerprint next time</string>
 </resources>

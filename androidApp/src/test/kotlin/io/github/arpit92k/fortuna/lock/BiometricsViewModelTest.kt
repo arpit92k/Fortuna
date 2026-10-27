@@ -34,6 +34,10 @@ class BiometricsViewModelTest {
         var next: BiometricResult<Nothing>? = null
         var prompts = 0
 
+        /** Fingerprints changed in the phone's settings, so Android voided the key. */
+        var voided = false
+        override var turnedOffByChange = false
+
         override fun available() = available
 
         override fun enabled() = copy != null
@@ -48,7 +52,10 @@ class BiometricsViewModelTest {
         override suspend fun unlock(): BiometricResult<ByteArray> {
             prompts++
             next?.let {
-                if (it == BiometricResult.Invalidated) copy = null
+                if (it == BiometricResult.Invalidated) {
+                    copy = null
+                    turnedOffByChange = true
+                }
                 return it
             }
             return copy?.let { BiometricResult.Done(it.copyOf()) } ?: BiometricResult.Failed
@@ -56,6 +63,17 @@ class BiometricsViewModelTest {
 
         override fun disable() {
             copy = null
+        }
+
+        override fun checkStillValid() {
+            if (voided && copy != null) {
+                copy = null
+                turnedOffByChange = true
+            }
+        }
+
+        override fun acknowledgeChange() {
+            turnedOffByChange = false
         }
     }
 
@@ -181,5 +199,55 @@ class BiometricsViewModelTest {
         biometrics.lockScreenShown()
         advanceUntilIdle()
         assertEquals(before, sensor.prompts, "nothing to ask for")
+    }
+
+    // Fingerprints changed while the app was closed: the lock screen says why before anything is tried.
+    @Test
+    fun aChangeIsExplainedAsSoonAsTheLockScreenAppears() = runTest(dispatcher) {
+        setUp()
+        biometrics.enable()
+        advanceUntilIdle()
+        lock()
+        sensor.voided = true
+        val before = sensor.prompts
+        biometrics.refresh()
+        biometrics.lockScreenShown()
+        advanceUntilIdle()
+        assertEquals(BiometricMessage.CHANGED, biometrics.ui.value.message)
+        assertFalse(biometrics.ui.value.enabled)
+        assertEquals(before, sensor.prompts, "nothing to ask for")
+
+        // Still said after the app is closed and opened again, until the user is in.
+        val reopened = BiometricsViewModel(core, sensor)
+        advanceUntilIdle()
+        assertEquals(BiometricMessage.CHANGED, reopened.ui.value.message)
+        core.run { unlock(pin) }
+        advanceUntilIdle()
+        assertNull(reopened.ui.value.message)
+        assertFalse(sensor.turnedOffByChange)
+    }
+
+    @Test
+    fun theLockScreenCanTurnItOnForNextTime() = runTest(dispatcher) {
+        setUp()
+        biometrics.notNow()
+        lock()
+        assertTrue(biometrics.ui.value.canOfferOnLockScreen)
+        biometrics.enableAfterUnlock(true)
+        core.run { unlock(pin) }
+        advanceUntilIdle()
+        assertTrue(biometrics.ui.value.enabled, "turned on once the PIN was right")
+        assertFalse(biometrics.ui.value.enableAfterUnlock)
+        assertFalse(biometrics.ui.value.canOfferOnLockScreen)
+    }
+
+    @Test
+    fun leftOffTheLockScreenTurnsNothingOn() = runTest(dispatcher) {
+        setUp()
+        biometrics.notNow()
+        lock()
+        core.run { unlock(pin) }
+        advanceUntilIdle()
+        assertFalse(biometrics.ui.value.enabled)
     }
 }
