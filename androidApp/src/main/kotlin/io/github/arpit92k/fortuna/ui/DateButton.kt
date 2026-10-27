@@ -3,7 +3,6 @@ package io.github.arpit92k.fortuna.ui
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
-import androidx.compose.material3.DisplayMode
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.SelectableDates
@@ -11,7 +10,6 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -89,16 +87,7 @@ fun DateButton(
             TextButton(onClick = { picking = false }) { Text(stringResource(R.string.date_cancel)) }
         },
     ) {
-        // Switching from typing the date to the calendar closes the keyboard at once, so the
-        // dialog settles in one move instead of following the keyboard down.
-        val dialogFocus = LocalFocusManager.current
-        val dialogKeyboard = LocalSoftwareKeyboardController.current
-        LaunchedEffect(state.displayMode) {
-            if (state.displayMode == DisplayMode.Picker) {
-                dialogFocus.clearFocus()
-                dialogKeyboard?.hide()
-            }
-        }
-        DatePicker(state = state)
+        // Calendar only. Switching to typing the date and back made the dialog jump with the keyboard.
+        DatePicker(state = state, showModeToggle = false)
     }
 }
