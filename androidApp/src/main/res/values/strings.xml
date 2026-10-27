@@ -284,11 +284,11 @@
     <string name="chart_gain">gain %1$s</string>
 
     <!-- A gain or loss made before an account is added -->
-    <string name="add_source_principal">Of that, your net deposits (%1$s, optional)</string>
-    <string name="add_source_principal_hint">If it has already grown or fallen, the difference counts as gained or lost. Leave blank if it has not.</string>
-    <string name="add_source_principal_owed">Of that, what you borrowed (%1$s, optional)</string>
-    <string name="add_source_principal_owed_hint">If interest has already been added, the difference counts as a loss. Leave blank if not.</string>
-    <string name="add_source_problem_principal">The net deposits figure is not an amount.</string>
+    <string name="add_source_opening_gain">Gain or loss so far (%1$s, optional)</string>
+    <string name="add_source_opening_gain_hint">What it had already gained before you add it here. Use a minus sign for a loss. Leave blank if none.</string>
+    <string name="add_source_opening_interest">Interest so far (%1$s, optional)</string>
+    <string name="add_source_opening_interest_hint">Interest already added to what you owe. Leave blank if none.</string>
+    <string name="add_source_problem_opening_gain">The gain or loss is not an amount.</string>
     <string name="source_opening_gain">Opening value: %1$s before it was added</string>
 
     <!-- Biometric unlock -->
