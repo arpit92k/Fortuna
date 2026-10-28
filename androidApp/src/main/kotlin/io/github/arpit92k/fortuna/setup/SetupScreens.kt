@@ -1,5 +1,20 @@
 package io.github.arpit92k.fortuna.setup
 
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.material3.Surface
+import androidx.compose.material3.SuggestionChip
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.platform.LocalFocusManager
+import io.github.arpit92k.fortuna.ui.phraseSuggestions
+import io.github.arpit92k.fortuna.ui.phraseWordWrong
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -246,6 +261,20 @@ fun ConfirmPhraseScreen(
     onShowPhrase: () -> Unit,
     onBack: (() -> Unit)? = null,
 ) {
+    val focusManager = LocalFocusManager.current
+    val focus = remember(step.positions) { step.positions.map { FocusRequester() } }
+    // The box being typed in, as an index into the positions, or -1 when none is.
+    var focused by remember(step.positions) { mutableIntStateOf(-1) }
+
+    // As on the twelve-word entry: a word ended by a space, or a suggestion
+    // chosen, fills the box and moves to the next; the last closes the keyboard.
+    fun enter(index: Int, text: String) {
+        val edit = confirmWordEdit(text)
+        onAnswer(step.positions[index], edit.word)
+        if (!edit.finished) return
+        if (index < step.positions.lastIndex) focus[index + 1].requestFocus() else focusManager.clearFocus()
+    }
+
     AdaptiveScreen(
         onBack = onBack,
         info = {
@@ -257,11 +286,14 @@ fun ConfirmPhraseScreen(
         action = {
             Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
                 for ((index, position) in step.positions.withIndex()) {
+                    val word = step.answers[position].orEmpty()
                     OutlinedTextField(
-                        value = step.answers[position].orEmpty(),
-                        onValueChange = { onAnswer(position, it) },
+                        value = word,
+                        onValueChange = { enter(index, it) },
                         label = { Text(stringResource(R.string.confirm_word_label, position)) },
                         singleLine = true,
+                        isError = phraseWordWrong(word, finished = focused != index),
+                        textStyle = MaterialTheme.typography.bodyLarge.copy(fontFamily = FontFamily.Monospace),
                         // A password field, so the keyboard neither suggests nor learns the words.
                         keyboardOptions = KeyboardOptions(
                             capitalization = KeyboardCapitalization.None,
@@ -269,7 +301,21 @@ fun ConfirmPhraseScreen(
                             keyboardType = KeyboardType.Password,
                             imeAction = if (index == step.positions.lastIndex) ImeAction.Done else ImeAction.Next,
                         ),
-                        modifier = Modifier.fillMaxWidth().testTag("word-$position"),
+                        keyboardActions = KeyboardActions(
+                            onNext = { focus[index + 1].requestFocus() },
+                            onDone = { focusManager.clearFocus() },
+                        ),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .focusRequester(focus[index])
+                            .onFocusChanged { state ->
+                                if (state.hasFocus) {
+                                    focused = index
+                                } else if (focused == index) {
+                                    focused = -1
+                                }
+                            }
+                            .testTag("word-$position"),
                     )
                 }
                 Button(onClick = onConfirm, enabled = step.confirmEnabled, modifier = Modifier.fillMaxWidth().testTag("confirm")) {
@@ -280,7 +326,51 @@ fun ConfirmPhraseScreen(
                 }
             }
         },
+        // The words of the list for the box being typed in, just above the keyboard, as on the recovery screens.
+        bottomBar = {
+            if (focused in step.positions.indices) {
+                ConfirmSuggestions(phraseSuggestions(step.answers[step.positions[focused]].orEmpty())) { enter(focused, "$it ") }
+            }
+        },
     )
+}
+
+/** A word typed into a box of S-04, and whether a space after it [finished] the box. */
+data class ConfirmWordEdit(val word: String, val finished: Boolean)
+
+/**
+ * [text] as typed or pasted into a box of S-04: its first word, keeping only
+ * its letters, in lower case, as the word list has them. A space after a word
+ * finishes the box.
+ */
+fun confirmWordEdit(text: String): ConfirmWordEdit {
+    val word = text.trimStart().takeWhile { !it.isWhitespace() }.lowercase().filter { it in 'a'..'z' }
+    return ConfirmWordEdit(word, finished = word.isNotEmpty() && text.last().isWhitespace())
+}
+
+@Composable
+private fun ConfirmSuggestions(suggestions: List<String>, onChoose: (String) -> Unit) {
+    Surface(color = MaterialTheme.colorScheme.surfaceContainer, modifier = Modifier.fillMaxWidth()) {
+        // One row's height whether or not there is anything to offer, so the page does not jump as the user types.
+        Row(
+            Modifier
+                .fillMaxWidth()
+                .heightIn(min = 56.dp)
+                .horizontalScroll(rememberScrollState())
+                .padding(horizontal = 16.dp)
+                .testTag("phrase-suggestions"),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            for (suggestion in suggestions) {
+                SuggestionChip(
+                    onClick = { onChoose(suggestion) },
+                    label = { Text(suggestion, fontFamily = FontFamily.Monospace) },
+                    modifier = Modifier.testTag("suggestion-$suggestion"),
+                )
+            }
+        }
+    }
 }
 
 // ---- S-05 Base currency ----
