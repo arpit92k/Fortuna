@@ -9,6 +9,11 @@ import android.content.Context
  */
 interface DisplayPreferences {
     var amountsHidden: Boolean
+
+    /** The code of the currency the dashboard shows its figures in, or null for the base currency. */
+    var dashboardCurrency: String?
+        get() = null
+        set(_) {}
 }
 
 /** [DisplayPreferences] in the app's own shared preferences. */
@@ -21,7 +26,14 @@ class AndroidDisplayPreferences(context: Context) : DisplayPreferences {
             preferences.edit().putBoolean(AMOUNTS_HIDDEN, value).apply()
         }
 
+    override var dashboardCurrency: String?
+        get() = preferences.getString(DASHBOARD_CURRENCY, null)
+        set(value) {
+            preferences.edit().putString(DASHBOARD_CURRENCY, value).apply()
+        }
+
     private companion object {
         const val AMOUNTS_HIDDEN = "amounts_hidden"
+        const val DASHBOARD_CURRENCY = "dashboard_currency"
     }
 }
