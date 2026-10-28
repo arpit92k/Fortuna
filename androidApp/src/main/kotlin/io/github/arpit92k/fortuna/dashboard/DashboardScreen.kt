@@ -11,7 +11,11 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.WindowInsetsSides
+import androidx.compose.foundation.layout.only
+import androidx.compose.foundation.layout.safeDrawing
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
@@ -74,9 +78,16 @@ fun DashboardScreen(
     val hidden = LocalAmountsHidden.current
     Scaffold(
         modifier = modifier,
+        // Clear of everything the system draws over the window: the status bar, the camera cutout, the
+        // app handle in split screen and on a desktop, and the navigation bar. In split screen the status
+        // bar may be hidden while the cutout and the handle still cover the top of the window.
+        contentWindowInsets = WindowInsets.safeDrawing,
         topBar = {
             Row(
-                Modifier.fillMaxWidth().statusBarsPadding().padding(start = 24.dp, end = 8.dp, top = 8.dp),
+                Modifier
+                    .fillMaxWidth()
+                    .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal))
+                    .padding(start = 24.dp, end = 8.dp, top = 8.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(stringResource(R.string.app_name), style = MaterialTheme.typography.titleLarge, modifier = Modifier.weight(1f))
