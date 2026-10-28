@@ -12,6 +12,7 @@ import io.github.arpit92k.fortuna.core.recording.addSnapshot
 import io.github.arpit92k.fortuna.core.recording.addSource
 import io.github.arpit92k.fortuna.core.recording.chooseBaseCurrency
 import io.github.arpit92k.fortuna.core.recording.recordRate
+import io.github.arpit92k.fortuna.core.insights.netWorthChange
 import kotlinx.datetime.LocalDate
 import org.junit.Test
 import kotlin.test.assertEquals
@@ -64,5 +65,16 @@ class DashboardCurrencyTest {
     @Test
     fun aCurrencyNoAccountUsesFallsBackToTheBase() {
         assertEquals(pounds, dashboardOf(data, today, Currency.forCode("JPY")!!).shownIn)
+    }
+
+    // Over the chart's range in dollars, the parts add up to the change the chart draws.
+    @Test
+    fun theBreakdownInDollarsAddsUpToTheChartsChange() {
+        val change = netWorthChangeIn(data, january, today, dollars)
+        val points = dashboardOf(data, today, dollars).timeline
+        assertEquals(points.last().value - points.first().value, change.total)
+        assertEquals(change.total, change.added + change.growth + change.currencyEffect + change.newlyTracked)
+        assertEquals(usd(66_667), change.added, "the £500 paid in, at today's 0.75")
+        assertEquals(netWorthChangeIn(data, january, today, pounds), data.netWorthChange(january, today))
     }
 }
