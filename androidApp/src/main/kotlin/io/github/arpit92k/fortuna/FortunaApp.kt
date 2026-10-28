@@ -1,5 +1,6 @@
 package io.github.arpit92k.fortuna
 
+import io.github.arpit92k.fortuna.ui.currenciesInUse
 import io.github.arpit92k.fortuna.chart.ChartScreen
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -239,6 +240,7 @@ private fun UnlockedApp(core: Core, screens: Screens) {
                 onRate = screens.addSource::rate,
                 onNote = screens.addSource::note,
                 onSave = { screens.addSource.save(base) { navigator.back() } },
+                currenciesInUse = currenciesInUse(data.sources.map { it.currency }),
                 onBack = tryLeave,
             )
         }

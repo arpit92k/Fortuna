@@ -30,18 +30,39 @@ import androidx.compose.ui.unit.dp
 import io.github.arpit92k.fortuna.R
 import io.github.arpit92k.fortuna.core.money.Currency
 
-/** The currencies matching [query] by code or name, with [first] at the top. */
-fun currencyChoices(query: String, first: Currency?): List<Currency> {
+/**
+ * The currencies matching [query] by code or name: [first] at the top, then
+ * those in [inUse], then the rest in the list's order. Each appears once.
+ */
+fun currencyChoices(query: String, first: Currency?, inUse: List<Currency> = emptyList()): List<Currency> {
     val text = query.trim()
     val matching = Currency.all.filter {
         text.isEmpty() || it.code.contains(text, ignoreCase = true) || it.name.contains(text, ignoreCase = true)
     }
-    return if (first != null && first in matching) listOf(first) + (matching - first) else matching
+    val top = (listOfNotNull(first) + inUse).distinct().filter { it in matching }
+    return top + (matching - top.toSet())
 }
 
-/** Choose a currency from the fixed list, searching by code or name. [suggested] comes first. */
+/**
+ * The currencies of [accounts]' values, the most used first, and among those
+ * used as often, in code order.
+ */
+fun currenciesInUse(accounts: List<Currency>): List<Currency> =
+    accounts.groupingBy { it }.eachCount().entries
+        .sortedWith(compareByDescending<Map.Entry<Currency, Int>> { it.value }.thenBy { it.key.code })
+        .map { it.key }
+
+/**
+ * Choose a currency from the fixed list, searching by code or name.
+ * [suggested] comes first, then the currencies [inUse] by accounts already.
+ */
 @Composable
-fun CurrencyPickerDialog(suggested: Currency?, onChoose: (Currency) -> Unit, onDismiss: () -> Unit) {
+fun CurrencyPickerDialog(
+    suggested: Currency?,
+    onChoose: (Currency) -> Unit,
+    onDismiss: () -> Unit,
+    inUse: List<Currency> = emptyList(),
+) {
     var query by rememberSaveable { mutableStateOf("") }
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -57,7 +78,7 @@ fun CurrencyPickerDialog(suggested: Currency?, onChoose: (Currency) -> Unit, onD
                     modifier = Modifier.fillMaxWidth().testTag("currency-pick-search"),
                 )
                 LazyColumn(Modifier.fillMaxWidth().heightIn(max = 360.dp).testTag("currency-pick-list")) {
-                    items(currencyChoices(query, suggested), key = { it.code }) { currency ->
+                    items(currencyChoices(query, suggested, inUse), key = { it.code }) { currency ->
                         Row(
                             Modifier
                                 .fillMaxWidth()
