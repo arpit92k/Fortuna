@@ -76,7 +76,7 @@ fun dashboardOf(data: Dataset, today: LocalDate, shownIn: Currency? = null): Das
     val inBase = dashboardInBase(data, today)
     if (shown == base) return inBase.copy(shownIn = base, currencies = currencies)
     fun Money.shown(date: LocalDate = today) = data.fromBase(this, shown, date)!!
-    fun Gain.shown() = Gain(amount.shown(), base?.shown())
+    fun Gain.shown() = Gain(amount.shown(), this.base?.shown())
     return inBase.copy(
         netWorth = inBase.netWorth.shown(),
         assets = inBase.assets.shown(),
