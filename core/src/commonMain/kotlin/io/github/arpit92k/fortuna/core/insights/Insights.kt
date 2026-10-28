@@ -225,6 +225,55 @@ fun Dataset.changeOver(id: SourceId, from: LocalDate, to: LocalDate): ChangeSpli
     return ChangeSplit(total, added, growth, total - added - growth)
 }
 
+/**
+ * The change in net worth over a period, split into its parts. The parts
+ * always add up to [total].
+ */
+data class NetWorthChange(
+    val total: Money,
+    /** Money paid in, less money borrowed, after each account opened. */
+    val added: Money,
+    /** What money earned, less the interest on debts. */
+    val growth: Money,
+    /** What the exchange rates moving did to foreign accounts. */
+    val currencyEffect: Money,
+    /** The opening values of accounts added during the period. */
+    val newlyTracked: Money,
+)
+
+/**
+ * How net worth changed from [from] to [to], split into net deposits,
+ * growth, currency effect and accounts newly tracked. Each account counts
+ * from [from], or from its opening date if it opened later, when its opening
+ * value counts as newly tracked. A null [from] takes everything since the
+ * first value, so every account is newly tracked. A debt counts against net
+ * worth: borrowing and interest lower it.
+ */
+fun Dataset.netWorthChange(from: LocalDate?, to: LocalDate): NetWorthChange {
+    val base = requireBase()
+    var added = Money(0, base)
+    var growth = Money(0, base)
+    var currency = Money(0, base)
+    var newlyTracked = Money(0, base)
+    for (source in sources) {
+        val opening = source.snapshots.earliest() ?: continue
+        if (opening.date > to) continue
+        val sign = if (kindOf(source) == CategoryKind.LIABILITY) -1 else 1
+        fun Money.counted() = if (sign < 0) -this else this
+        val start = if (from == null || opening.date > from) {
+            newlyTracked += toBase(opening.value.value, opening.date).counted()
+            opening.date
+        } else {
+            from
+        }
+        val split = changeOver(source.id, start, to)
+        added += split.added.counted()
+        growth += split.growth.counted()
+        currency += split.currencyEffect.counted()
+    }
+    return NetWorthChange(added + growth + currency + newlyTracked, added, growth, currency, newlyTracked)
+}
+
 /** One point of a source's value in the base currency, with what had been put in by then. */
 data class BasePoint(val date: LocalDate, val value: Money, val invested: Money)
 
