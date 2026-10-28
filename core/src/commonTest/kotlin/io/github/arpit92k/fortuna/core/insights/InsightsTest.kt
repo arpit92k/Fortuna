@@ -316,6 +316,34 @@ class InsightsTest {
         assertEquals(usd(100_000), updated.fromBase(gbp(80_000), dollars, newYear), "before the first rate, at the first")
         assertEquals(gbp(80_000), updated.fromBase(gbp(80_000), pounds, today))
         assertNull(updated.fromBase(gbp(80_000), Currency.forCode("JPY")!!, today), "no rate for yen")
+
+    // ---- Net worth's change, split ----
+
+    @Test
+    fun netWorthsChangeSplitsIntoItsPartsAndAddsUp() {
+        val change = updated.netWorthChange(january, april)
+        assertEquals(updated.netWorthOn(april).total - updated.netWorthOn(january).total, change.total)
+        // Paid in: £500 and $1,000 at 0.75; a debt repaid by £1,500 counts as £1,500 more.
+        assertEquals(gbp(50_000 + 75_000 + 150_000), change.added)
+        // Earned: £100.50 and $500 at 0.75, less £450.25 of interest.
+        assertEquals(gbp(10_050 + 37_500 - 45_025), change.growth)
+        assertEquals(gbp(-50_000), change.currencyEffect)
+        assertEquals(gbp(0), change.newlyTracked)
+    }
+
+    @Test
+    fun anAccountOpenedDuringThePeriodIsNewlyTracked() {
+        val withSavings = updated.addSource("Savings", cash, february, gbp(100_000), today).dataset()
+        val change = withSavings.netWorthChange(january, april)
+        assertEquals(gbp(100_000), change.newlyTracked)
+        assertEquals(withSavings.netWorthOn(april).total - withSavings.netWorthOn(january).total, change.total)
+    }
+
+    @Test
+    fun everythingSinceTheStartTracksEveryAccountAsNew() {
+        val change = updated.netWorthChange(null, april)
+        assertEquals(updated.netWorthOn(january).total, change.newlyTracked, "the opening values, the mortgage against them")
+        assertEquals(updated.netWorthOn(april).total, change.total)
     }
 
     // ---- Gains and losses ----
