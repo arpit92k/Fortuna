@@ -250,6 +250,7 @@ private fun UnlockedApp(core: Core, screens: Screens) {
                     ui = ui?.takeIf { it.id == current.id },
                     onAddValue = { navigator.open(Destination.ValueEntry(current.id)) },
                     onOpenChart = { navigator.open(Destination.Chart(current.id)) },
+                    onShowInBase = screens.sourcePage::showInBase,
                     onEdit = { navigator.open(Destination.ValueEntry(current.id, editing = it)) },
                     onDeleteLatest = { screens.sourcePage.deleteLatest(current.id) },
                     onDeleteSource = { screens.sourcePage.deleteSource(current.id) { navigator.forget(current.id) } },
@@ -349,7 +350,7 @@ private fun UnlockedApp(core: Core, screens: Screens) {
                 val page = ui?.takeIf { it.id == id }
                 ChartScreen(
                     title = page?.name.orEmpty(),
-                    points = page?.chart.orEmpty(),
+                    points = page?.shownChart.orEmpty(),
                     liability = page?.liability == true,
                     onBack = tryLeave,
                 )

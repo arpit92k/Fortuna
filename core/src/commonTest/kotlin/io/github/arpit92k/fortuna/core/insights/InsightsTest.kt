@@ -258,6 +258,55 @@ class InsightsTest {
         assertFailsWith<IllegalArgumentException> { updated.splitChange(brokerage, january, february) }
     }
 
+    // ---- A source in the base currency ----
+
+    @Test
+    fun betweenTwoValuesWithNoRateBetweenTheStepwiseSplitIsTheSame() {
+        assertEquals(updated.splitChange(brokerage, january, april), updated.changeOver(brokerage, january, april))
+        assertEquals(updated.splitChange(account, january, april), updated.changeOver(account, january, april))
+    }
+
+    // The dollar falls to 0.70 in February with no new value: $10,000 lost £1,000, all of it currency effect.
+    @Test
+    fun aRateThatMovesBetweenValuesIsCurrencyEffectWhenItMoves() {
+        val withFebruary = updated.recordRate(dollars, february, rate("0.70"), today).dataset()
+        val toFebruary = withFebruary.changeOver(brokerage, january, february)
+        assertEquals(gbp(-100_000), toFebruary.total)
+        assertEquals(gbp(0), toFebruary.added)
+        assertEquals(gbp(0), toFebruary.growth)
+        assertEquals(gbp(-100_000), toFebruary.currencyEffect)
+
+        // To April: £8,000 to £8,625 as before, the steps adding up to the same total.
+        val toApril = withFebruary.changeOver(brokerage, january, april)
+        assertEquals(gbp(62_500), toApril.total)
+        assertEquals(gbp(75_000), toApril.added, "$1,000 at April's 0.75")
+        assertEquals(gbp(37_500), toApril.growth, "the other $500 at 0.75")
+        assertEquals(gbp(-50_000), toApril.currencyEffect, "down 0.10 to February, up 0.05 to April, on $10,000")
+    }
+
+    @Test
+    fun aChangeCannotStartBeforeTheSourceOpens() {
+        assertFailsWith<IllegalArgumentException> { updated.changeOver(brokerage, newYear, april) }
+        assertFailsWith<IllegalArgumentException> { updated.changeOver(brokerage, april, january) }
+        assertEquals(gbp(0), updated.changeOver(brokerage, april, april).total)
+    }
+
+    @Test
+    fun aForeignSourcesValueInTheBaseCurrencyFollowsTheRate() {
+        val withFebruary = updated.recordRate(dollars, february, rate("0.70"), today).dataset()
+        assertEquals(
+            listOf(
+                BasePoint(january, gbp(800_000), gbp(800_000)),
+                BasePoint(february, gbp(700_000), gbp(800_000)),
+                // $11,500 at 0.75; put in, the opening $10,000 at 0.80 and $1,000 at 0.75.
+                BasePoint(april, gbp(862_500), gbp(875_000)),
+                BasePoint(today, gbp(862_500), gbp(875_000)),
+            ),
+            withFebruary.sourceInBase(brokerage, today),
+        )
+        assertEquals(emptyList(), withFebruary.sourceInBase(brokerage, newYear), "not yet opened")
+    }
+
     // ---- Gains and losses ----
 
     // Decided: money put in is not a gain. Interest, market moves and the currency effect are.

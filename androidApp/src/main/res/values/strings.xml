@@ -112,6 +112,14 @@
     <string name="source_history">History</string>
     <string name="source_opening">Opening value</string>
     <string name="source_row_asset">Net deposits %1$s · Growth %2$s</string>
+    <string name="source_row_asset_base">Net deposits %1$s · Growth %2$s · Currency %3$s</string>
+    <string name="source_row_liability_base">Borrowed %1$s · Interest %2$s · Currency %3$s</string>
+    <string name="source_base_since_opening">Since opening, in the base currency</string>
+    <string name="source_base_deposits">Net deposits</string>
+    <string name="source_base_growth">Growth</string>
+    <string name="source_base_borrowed">Borrowed</string>
+    <string name="source_base_interest">Interest</string>
+    <string name="source_base_currency">Currency effect</string>
     <string name="source_row_liability">Borrowed %1$s · Interest %2$s</string>
     <string name="source_delete">Delete</string>
     <string name="source_delete_value">Delete this value</string>

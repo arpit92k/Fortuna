@@ -1,5 +1,10 @@
 package io.github.arpit92k.fortuna.source
 
+import androidx.compose.foundation.layout.RowScope
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.SegmentedButton
+import androidx.compose.material3.SegmentedButtonDefaults
+import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -66,6 +71,7 @@ fun SourcePageScreen(
     ui: SourcePageUi?,
     onAddValue: () -> Unit,
     onOpenChart: () -> Unit,
+    onShowInBase: (Boolean) -> Unit,
     onEdit: (LocalDate) -> Unit,
     onDeleteLatest: () -> Unit,
     onDeleteSource: () -> Unit,
@@ -88,13 +94,13 @@ fun SourcePageScreen(
                     if (showBack) BackButton(onBack)
                 }
             }
-            item { Header(ui) }
+            item { Header(ui, onShowInBase) }
             item {
                 Card(Modifier.fillMaxWidth().padding(top = 16.dp).testTag("source-chart")) {
                     Column(Modifier.padding(start = 12.dp, end = 4.dp, top = 4.dp, bottom = 12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                         ChartCardTitle(stringResource(R.string.source_chart_title), onOpenChart)
-                        // In the source's own currency, as its statements show it.
-                        ValueChart(ui.chart, Modifier.padding(end = 12.dp))
+                        // In the source's own currency, as its statements show it, unless the page shows the base currency.
+                        ValueChart(ui.shownChart, Modifier.padding(end = 12.dp))
                     }
                 }
             }
@@ -124,6 +130,7 @@ fun SourcePageScreen(
                     onEdit = { onEdit(row.date) },
                     onDelete = { confirm = DELETE_LATEST },
                     openingGain = if (row.opening) ui.openingGain else null,
+                    inBase = ui.inBase?.takeIf { ui.showingBase }?.rows?.get(row.date),
                 )
                 HorizontalDivider()
             }
@@ -151,8 +158,9 @@ fun SourcePageScreen(
 private const val DELETE_LATEST = "latest"
 private const val DELETE_SOURCE = "source"
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun Header(ui: SourcePageUi) {
+private fun Header(ui: SourcePageUi, onShowInBase: (Boolean) -> Unit) {
     Card(Modifier.fillMaxWidth()) {
         Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             // As on the dashboard: the category's picture, if it has one.
@@ -163,29 +171,82 @@ private fun Header(ui: SourcePageUi) {
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
-            AmountText(ui.value, style = MaterialTheme.typography.headlineMedium, modifier = Modifier.testTag("source-value"))
-            Row(horizontalArrangement = Arrangement.spacedBy(24.dp)) {
-                Column(Modifier.weight(1f)) {
-                    Text(stringResource(if (ui.liability) R.string.source_total_borrowed else R.string.source_total_added), style = MaterialTheme.typography.labelMedium)
-                    AmountText(ui.totalAdded, signed = true, style = MaterialTheme.typography.titleMedium, modifier = Modifier.testTag("total-added"))
-                }
-                Column(Modifier.weight(1f)) {
-                    Text(stringResource(if (ui.liability) R.string.source_total_interest else R.string.source_total_growth), style = MaterialTheme.typography.labelMedium)
-                    AmountText(ui.totalGrowth, signed = true, style = MaterialTheme.typography.titleMedium, modifier = Modifier.testTag("total-growth"))
-                    // As a percentage of what was there at the start plus what was added; shown even while amounts are hidden.
-                    val growth = ui.growth
-                    val percent = growth?.percent
-                    if (growth != null && percent != null) {
-                        Text(
-                            formatPercent(percent),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = gainColor(growth),
-                            modifier = Modifier.testTag("growth-percent"),
-                        )
-                    }
+            val inBase = ui.inBase
+            // A foreign source: its own currency, or the base currency with the currency's effect on it.
+            if (inBase != null) {
+                SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth().padding(vertical = 4.dp).testTag("currency-view")) {
+                    SegmentedButton(
+                        selected = !ui.showingBase,
+                        onClick = { onShowInBase(false) },
+                        shape = SegmentedButtonDefaults.itemShape(0, 2),
+                        modifier = Modifier.testTag("view-own"),
+                    ) { Text(ui.value.currency.code) }
+                    SegmentedButton(
+                        selected = ui.showingBase,
+                        onClick = { onShowInBase(true) },
+                        shape = SegmentedButtonDefaults.itemShape(1, 2),
+                        modifier = Modifier.testTag("view-base"),
+                    ) { Text(inBase.value.currency.code) }
                 }
             }
+            if (inBase != null && ui.showingBase) {
+                BaseFigures(inBase, ui.liability)
+            } else {
+                OwnFigures(ui)
+            }
             ui.note?.let { Text(it, style = MaterialTheme.typography.bodyMedium) }
+        }
+    }
+}
+
+/** The value in the base currency, and its change since opening split into its three parts. */
+@Composable
+private fun BaseFigures(inBase: InBase, liability: Boolean) {
+    AmountText(inBase.value, style = MaterialTheme.typography.headlineMedium, modifier = Modifier.testTag("source-value"))
+    Text(
+        stringResource(R.string.source_base_since_opening),
+        style = MaterialTheme.typography.labelMedium,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+    )
+    val split = inBase.sinceOpening
+    Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+        Figure(stringResource(if (liability) R.string.source_base_borrowed else R.string.source_base_deposits), split.added, "base-added")
+        Figure(stringResource(if (liability) R.string.source_base_interest else R.string.source_base_growth), split.growth, "base-growth")
+        Figure(stringResource(R.string.source_base_currency), split.currencyEffect, "currency-effect")
+    }
+}
+
+@Composable
+private fun RowScope.Figure(label: String, amount: Money, tag: String) {
+    Column(Modifier.weight(1f)) {
+        Text(label, style = MaterialTheme.typography.labelMedium)
+        AmountText(amount, signed = true, style = MaterialTheme.typography.titleMedium, modifier = Modifier.testTag(tag))
+    }
+}
+
+/** The value in the source's own currency, with what was added and what it earned since opening. */
+@Composable
+private fun OwnFigures(ui: SourcePageUi) {
+    AmountText(ui.value, style = MaterialTheme.typography.headlineMedium, modifier = Modifier.testTag("source-value"))
+    Row(horizontalArrangement = Arrangement.spacedBy(24.dp)) {
+        Column(Modifier.weight(1f)) {
+            Text(stringResource(if (ui.liability) R.string.source_total_borrowed else R.string.source_total_added), style = MaterialTheme.typography.labelMedium)
+            AmountText(ui.totalAdded, signed = true, style = MaterialTheme.typography.titleMedium, modifier = Modifier.testTag("total-added"))
+        }
+        Column(Modifier.weight(1f)) {
+            Text(stringResource(if (ui.liability) R.string.source_total_interest else R.string.source_total_growth), style = MaterialTheme.typography.labelMedium)
+            AmountText(ui.totalGrowth, signed = true, style = MaterialTheme.typography.titleMedium, modifier = Modifier.testTag("total-growth"))
+            // As a percentage of what was there at the start plus what was added; shown even while amounts are hidden.
+            val growth = ui.growth
+            val percent = growth?.percent
+            if (growth != null && percent != null) {
+                Text(
+                    formatPercent(percent),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = gainColor(growth),
+                    modifier = Modifier.testTag("growth-percent"),
+                )
+            }
         }
     }
 }
@@ -199,6 +260,7 @@ private fun HistoryItem(
     onEdit: () -> Unit,
     onDelete: () -> Unit,
     openingGain: Gain? = null,
+    inBase: BaseRow? = null,
 ) {
     Column(
         Modifier.fillMaxWidth().clickable(onClick = onEdit).padding(vertical = 12.dp).testTag("history-${row.date}"),
@@ -206,7 +268,7 @@ private fun HistoryItem(
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(formatDate(row.date), style = MaterialTheme.typography.titleSmall, modifier = Modifier.weight(1f))
-            AmountText(row.value, style = MaterialTheme.typography.titleMedium)
+            AmountText(inBase?.value ?: row.value, style = MaterialTheme.typography.titleMedium)
         }
         if (row.opening) {
             if (openingGain == null) {
@@ -216,6 +278,21 @@ private fun HistoryItem(
                 val text = stringResource(R.string.source_opening_gain, gainText(openingGain))
                 Text(text, style = MaterialTheme.typography.bodySmall, color = gainColor(openingGain), modifier = Modifier.readsHidden(text))
             }
+        } else if (inBase?.change != null) {
+            // In the base currency: the change split three ways, the currency's part last.
+            val split = inBase.change
+            val parts = stringResource(
+                if (liability) R.string.source_row_liability_base else R.string.source_row_asset_base,
+                change(split.added),
+                change(split.growth),
+                change(split.currencyEffect),
+            )
+            Text(
+                parts,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.readsHidden(parts),
+            )
         } else {
             val added = row.added
             val growth = row.growth

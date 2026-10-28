@@ -192,6 +192,71 @@ fun Dataset.splitChange(id: SourceId, from: LocalDate, to: LocalDate): ChangeSpl
     return ChangeSplit(total, addedInBase, growthInBase, total - addedInBase - growthInBase)
 }
 
+/**
+ * The change in a source from [from] to [to], any two dates from its opening
+ * date on, in the base currency, split as [splitChange] splits it. The period
+ * is taken in steps, at every date on which the source's value or its
+ * currency's rate changed, so a rate that moved between two values counts in
+ * the currency effect when it moved. Between two of the source's own values
+ * with no rate in between, the result equals [splitChange]'s.
+ */
+fun Dataset.changeOver(id: SourceId, from: LocalDate, to: LocalDate): ChangeSplit {
+    val source = requireNotNull(source(id)) { "No source ${id.value}" }
+    require(from <= to) { "The period starts on $from, after it ends on $to" }
+    val opening = requireNotNull(source.snapshots.earliest()) { "Source ${id.value} has no values" }.date
+    require(from >= opening) { "Source ${id.value} opens on $opening, after $from" }
+    val base = requireBase()
+    var total = Money(0, base)
+    var added = Money(0, base)
+    var growth = Money(0, base)
+    var start = from
+    for (end in changeDates(source).filter { it > from && it < to } + to) {
+        if (end == start) continue
+        val before = source.snapshots.latestOnOrBefore(start)!!.value.value
+        val after = source.snapshots.latestOnOrBefore(end)!!.value.value
+        val put = source.snapshots
+            .filter { it.date > start && it.date <= end }
+            .fold(Money(0, source.currency)) { sum, dated -> sum + dated.value.amountAdded }
+        total += toBase(after, end) - toBase(before, start)
+        added += toBase(put, end)
+        growth += toBase(after - before - put, end)
+        start = end
+    }
+    return ChangeSplit(total, added, growth, total - added - growth)
+}
+
+/** One point of a source's value in the base currency, with what had been put in by then. */
+data class BasePoint(val date: LocalDate, val value: Money, val invested: Money)
+
+/**
+ * A source's value in the base currency from its opening date to [to]: on
+ * its opening date, on every later date its value or its currency's rate
+ * changed, and on [to]. [BasePoint.invested] is what was put in (for a debt,
+ * borrowed), each amount at the rate on its own date, as [investedOn] counts
+ * it. Empty if the source opens after [to].
+ */
+fun Dataset.sourceInBase(id: SourceId, to: LocalDate): List<BasePoint> {
+    val source = requireNotNull(source(id)) { "No source ${id.value}" }
+    val opening = source.snapshots.earliest()?.date ?: return emptyList()
+    if (opening > to) return emptyList()
+    val dates = (changeDates(source).filter { it > opening && it < to } + opening + to).distinct().sorted()
+    return dates.map { date ->
+        val value = source.snapshots.latestOnOrBefore(date)!!.value.value
+        var invested = Money(0, requireBase())
+        source.snapshots.filter { it.date <= date }.forEachIndexed { index, dated ->
+            val put = if (index == 0) source.openingPutIn!! else dated.value.amountAdded
+            invested += toBase(put, dated.date)
+        }
+        BasePoint(date, toBase(value, date), invested)
+    }
+}
+
+/** Every date on which [source]'s value, or the rate of its currency, changed, in order. */
+private fun Dataset.changeDates(source: Source): List<LocalDate> {
+    val rateDates = if (source.currency == requireBase()) emptyList() else rates[source.currency]?.map { it.date }.orEmpty()
+    return (source.snapshots.map { it.date } + rateDates).distinct().sorted()
+}
+
 // ---- Gains and losses ----
 //
 // Decided: a gain is what money earned, not money put in. Paying £1,000 into
