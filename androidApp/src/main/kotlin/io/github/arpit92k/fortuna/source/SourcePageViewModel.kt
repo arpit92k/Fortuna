@@ -7,6 +7,9 @@ import io.github.arpit92k.fortuna.core.domain.CategoryKind
 import io.github.arpit92k.fortuna.core.domain.Dataset
 import io.github.arpit92k.fortuna.core.domain.SourceId
 import io.github.arpit92k.fortuna.core.insights.Gain
+import io.github.arpit92k.fortuna.core.insights.sourceInBase
+import io.github.arpit92k.fortuna.core.insights.changeOver
+import io.github.arpit92k.fortuna.core.insights.ChangeSplit
 import io.github.arpit92k.fortuna.core.insights.HistoryEntry
 import io.github.arpit92k.fortuna.core.insights.SourceHistory
 import io.github.arpit92k.fortuna.core.insights.history
@@ -43,13 +46,36 @@ data class SourcePageUi(
     val growth: Gain? = null,
     /** What it had gained or lost before it was added, or null when its whole opening value was put in. */
     val openingGain: Gain? = null,
+    /** The same source in the base currency, or null for a source already in it. */
+    val inBase: InBase? = null,
+    /** Whether the page shows [inBase] rather than the source's own currency. */
+    val showingBase: Boolean = false,
 ) {
+    /** The chart the page shows: in the base currency when [showingBase]. */
+    val shownChart: List<ChartPoint> get() = inBase?.takeIf { showingBase }?.chart ?: chart
+
     /** The latest value can be deleted unless it is the only one. */
     val canDeleteLatest: Boolean get() = entries.size > 1
 
     /** A source is deleted only while it has just its opening value; one with history is kept. */
     val canDeleteSource: Boolean get() = entries.size == 1
 }
+
+/**
+ * A foreign source in the base currency: its value today at today's rate,
+ * the value over time, and every change since it opened split into net
+ * deposits, growth and currency effect.
+ */
+data class InBase(
+    val value: Money,
+    val chart: List<ChartPoint>,
+    /** From the opening value to today. */
+    val sinceOpening: ChangeSplit,
+    /** Each value at the rate on its date, and its change from the value before; null for the opening value. */
+    val rows: Map<LocalDate, BaseRow>,
+)
+
+data class BaseRow(val value: Money, val change: ChangeSplit?)
 
 /** One snapshot in the history. For the opening balance, the three parts are null. */
 data class HistoryRow(
@@ -81,10 +107,27 @@ fun sourcePageOf(data: Dataset, id: SourceId, today: LocalDate): SourcePageUi? {
         totalGrowth = history.totalGrowth,
         chart = sourcePoints(investedPoints(history.entries, source.openingPutIn!!), today),
         growth = growthOf(history, liability = data.category(source.categoryId)?.kind == CategoryKind.LIABILITY),
+        inBase = if (source.currency == data.baseCurrency) null else inBaseOf(data, id, history.entries, today),
         openingGain = history.openingGain.takeIf { it.minorUnits != 0L }?.let { gained ->
             val liability = data.category(source.categoryId)?.kind == CategoryKind.LIABILITY
             Gain(if (liability) -gained else gained, source.openingPutIn!!.takeIf { it.minorUnits > 0 })
         },
+    )
+}
+
+private fun inBaseOf(data: Dataset, id: SourceId, entries: List<HistoryEntry>, today: LocalDate): InBase {
+    val opening = entries.first().date
+    // Today, or the latest value's date should the phone's clock be behind it.
+    val end = maxOf(today, entries.last().date)
+    val points = data.sourceInBase(id, end)
+    val byDate = points.associateBy { it.date }
+    return InBase(
+        value = points.last().value,
+        chart = points.map { ChartPoint(it.date, it.value, it.invested) },
+        sinceOpening = data.changeOver(id, opening, end),
+        rows = entries.zipWithNext().associate { (before, after) ->
+            after.date to BaseRow(byDate.getValue(after.date).value, data.changeOver(id, before.date, after.date))
+        } + (opening to BaseRow(byDate.getValue(opening).value, null)),
     )
 }
 
@@ -94,20 +137,32 @@ class SourcePageViewModel(
     private val today: () -> LocalDate = { java.time.LocalDate.now().toKotlinLocalDate() },
 ) : ViewModel() {
     private val shown = MutableStateFlow<SourceId?>(null)
+    private val inBase = MutableStateFlow(false)
     private val mutableUi = MutableStateFlow<SourcePageUi?>(null)
     val ui: StateFlow<SourcePageUi?> = mutableUi.asStateFlow()
 
     init {
         viewModelScope.launch {
-            combine(core.state, core.dataset, shown) { state, data, id -> Triple(state == SessionState.Unlocked, data, id) }
-                .collect { (open, data, id) ->
-                    mutableUi.value = if (open && data != null && id != null) sourcePageOf(data, id, today()) else null
+            combine(core.state, core.dataset, shown, inBase) { state, data, id, base -> Shown(state == SessionState.Unlocked, data, id, base) }
+                .collect { (open, data, id, base) ->
+                    mutableUi.value = if (open && data != null && id != null) {
+                        sourcePageOf(data, id, today())?.let { it.copy(showingBase = base && it.inBase != null) }
+                    } else {
+                        null
+                    }
                 }
         }
     }
 
     fun show(id: SourceId) {
+        // Another source starts in its own currency.
+        if (shown.value != id) inBase.value = false
         shown.value = id
+    }
+
+    /** Shows a foreign source in the base currency, or back in its own. */
+    fun showInBase(show: Boolean) {
+        inBase.value = show
     }
 
     /** Deletes the latest value, after the screen has asked. */
@@ -145,3 +200,5 @@ private fun growthOf(history: SourceHistory, liability: Boolean): Gain? {
     val earned = if (liability) -history.totalGrowth else history.totalGrowth
     return Gain(earned, put.takeIf { it.minorUnits > 0 })
 }
+
+private data class Shown(val open: Boolean, val data: Dataset?, val id: SourceId?, val base: Boolean)
