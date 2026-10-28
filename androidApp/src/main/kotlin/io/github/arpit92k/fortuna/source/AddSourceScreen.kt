@@ -69,6 +69,8 @@ fun AddSourceScreen(
     onNote: (String) -> Unit,
     onSave: () -> Unit,
     onBack: (() -> Unit)? = null,
+    /** The currencies of the accounts already added, offered first after the base currency. */
+    currenciesInUse: List<Currency> = emptyList(),
 ) {
     val chosen = categories.firstOrNull { it.id == form.categoryId }
     val currency = form.currency ?: base
@@ -212,6 +214,7 @@ fun AddSourceScreen(
     if (pickingCurrency) {
         CurrencyPickerDialog(
             suggested = base,
+            inUse = currenciesInUse,
             onChoose = {
                 onCurrency(it.takeIf { c -> c != base })
                 pickingCurrency = false
