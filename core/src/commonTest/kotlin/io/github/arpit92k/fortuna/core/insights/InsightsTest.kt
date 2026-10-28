@@ -316,6 +316,7 @@ class InsightsTest {
         assertEquals(usd(100_000), updated.fromBase(gbp(80_000), dollars, newYear), "before the first rate, at the first")
         assertEquals(gbp(80_000), updated.fromBase(gbp(80_000), pounds, today))
         assertNull(updated.fromBase(gbp(80_000), Currency.forCode("JPY")!!, today), "no rate for yen")
+    }
 
     // ---- Net worth's change, split ----
 
