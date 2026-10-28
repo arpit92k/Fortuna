@@ -51,7 +51,7 @@ class MainActivity : FragmentActivity() {
                 lock = viewModel { LockViewModel(core) },
                 recover = viewModel { RecoverViewModel(core) },
                 navigator = viewModel { Navigator() },
-                dashboard = viewModel { DashboardViewModel(core) },
+                dashboard = viewModel { DashboardViewModel(core, display) },
                 addSource = viewModel { AddSourceViewModel(core) },
                 sourcePage = viewModel { SourcePageViewModel(core) },
                 valueEntry = viewModel { ValueEntryViewModel(core) },

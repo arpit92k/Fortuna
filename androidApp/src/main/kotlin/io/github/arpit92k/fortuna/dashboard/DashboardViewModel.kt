@@ -1,5 +1,9 @@
 package io.github.arpit92k.fortuna.dashboard
 
+import io.github.arpit92k.fortuna.ui.currenciesInUse
+import io.github.arpit92k.fortuna.platform.DisplayPreferences
+import io.github.arpit92k.fortuna.core.money.Currency
+import io.github.arpit92k.fortuna.core.insights.fromBase
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import io.github.arpit92k.fortuna.Core
@@ -35,6 +39,10 @@ data class DashboardUi(
     val latestGain: Gain? = null,
     /** Gained since the first value was recorded. */
     val gainSinceStart: Gain? = null,
+    /** The currency the figures above are shown in: the base currency unless another was chosen. */
+    val shownIn: Currency? = null,
+    /** The currencies the figures can be shown in: the base currency, then those of the accounts. */
+    val currencies: List<Currency> = emptyList(),
 ) {
     /** With no sources, the dashboard only invites the first one. */
     val empty: Boolean get() = sources.isEmpty()
@@ -48,15 +56,45 @@ data class SourceRow(
     val liability: Boolean,
     /** In the source's own currency, as its statement shows. */
     val value: Money,
-    /** For a source in a foreign currency, the same value in the base currency at the latest rate. */
+    /** For a source in another currency than [DashboardUi.shownIn], the same value in that one at the latest rate. */
     val valueInBase: Money? = null,
     val lastUpdated: LocalDate,
     /** Its latest change, in its own currency, or null with only an opening value. */
     val gain: Gain? = null,
 )
 
-/** The dashboard's figures, from the core's insights. */
-fun dashboardOf(data: Dataset, today: LocalDate): DashboardUi {
+/**
+ * The dashboard's figures, from the core's insights, shown in [shownIn]: the
+ * base currency's figures converted at the rate on each one's date, today's
+ * for the totals and gains. Percentages stay as they are. The base currency
+ * when [shownIn] is null or has no rate.
+ */
+fun dashboardOf(data: Dataset, today: LocalDate, shownIn: Currency? = null): DashboardUi {
+    val base = data.baseCurrency!!
+    val currencies = (listOf(base) + currenciesInUse(data.sources.map { it.currency })).distinct()
+    val shown = shownIn?.takeIf { it in currencies && data.fromBase(Money(0, base), it, today) != null } ?: base
+    val inBase = dashboardInBase(data, today)
+    if (shown == base) return inBase.copy(shownIn = base, currencies = currencies)
+    fun Money.shown(date: LocalDate = today) = data.fromBase(this, shown, date)!!
+    fun Gain.shown() = Gain(amount.shown(), this.base?.shown())
+    return inBase.copy(
+        netWorth = inBase.netWorth.shown(),
+        assets = inBase.assets.shown(),
+        liabilities = inBase.liabilities.shown(),
+        sources = inBase.sources.map { row ->
+            row.copy(valueInBase = if (row.value.currency == shown) null else (row.valueInBase ?: row.value).shown())
+        },
+        timeline = inBase.timeline.map { point ->
+            point.copy(value = point.value.shown(point.date), invested = point.invested?.shown(point.date))
+        },
+        latestGain = inBase.latestGain?.shown(),
+        gainSinceStart = inBase.gainSinceStart?.shown(),
+        shownIn = shown,
+        currencies = currencies,
+    )
+}
+
+private fun dashboardInBase(data: Dataset, today: LocalDate): DashboardUi {
     val worth = data.netWorthOn(today)
     val rows = data.sourceList(today).map { summary ->
         SourceRow(
@@ -88,22 +126,32 @@ fun dashboardOf(data: Dataset, today: LocalDate): DashboardUi {
  * Follows the open dataset and works out the dashboard each time it changes.
  * Null while locked, when there is nothing to show.
  */
-class DashboardViewModel(private val core: Core) : ViewModel() {
+class DashboardViewModel(private val core: Core, private val preferences: DisplayPreferences? = null) : ViewModel() {
     private val mutableUi = MutableStateFlow<DashboardUi?>(null)
     val ui: StateFlow<DashboardUi?> = mutableUi.asStateFlow()
+
+    // Remembered between launches, as hiding amounts is.
+    private val shownIn = MutableStateFlow(preferences?.dashboardCurrency?.let { Currency.forCode(it) })
 
     init {
         viewModelScope.launch {
             // Both: setup writes the dataset a moment before the app is unlocked.
-            combine(core.state, core.dataset) { state, data -> state == SessionState.Unlocked && data != null }
-                .collect { open ->
-                    mutableUi.value = if (open) figures() else null
+            combine(core.state, core.dataset, shownIn) { state, data, currency -> (state == SessionState.Unlocked && data != null) to currency }
+                .collect { (open, currency) ->
+                    mutableUi.value = if (open) figures(currency) else null
                 }
         }
     }
 
-    private suspend fun figures(): DashboardUi? = try {
-        core.run { read { data, today -> dashboardOf(data, today) } }
+    /** Shows the dashboard's figures in [currency], one of [DashboardUi.currencies]. */
+    fun showIn(currency: Currency) {
+        val base = mutableUi.value?.currencies?.firstOrNull()
+        preferences?.dashboardCurrency = currency.code.takeIf { currency != base }
+        shownIn.value = currency
+    }
+
+    private suspend fun figures(currency: Currency?): DashboardUi? = try {
+        core.run { read { data, today -> dashboardOf(data, today, currency) } }
     } catch (e: IllegalStateException) {
         // Locked in the meantime.
         null

@@ -346,6 +346,20 @@ private fun Dataset.requireBase(): Currency =
 
 private fun Dataset.kindOf(source: Source): CategoryKind = category(source.categoryId)!!.kind
 
+/**
+ * [amount], in the base currency, shown in [currency] instead: at that
+ * currency's latest rate on or before [date], or before its first rate, at
+ * its first. For a total already in the base currency, this rounds once more,
+ * at the end. Null when [currency] has no rate at all.
+ */
+fun Dataset.fromBase(amount: Money, currency: Currency, date: LocalDate): Money? {
+    require(amount.currency == requireBase()) { "${amount.currency} is not the base currency" }
+    if (currency == amount.currency) return amount
+    val history = rates[currency] ?: return null
+    val rate = (history.latestOnOrBefore(date) ?: history.earliest())?.value ?: return null
+    return convert(amount, rate)
+}
+
 /** [amount] in the base currency at the latest rate on or before [date]. */
 private fun Dataset.toBase(amount: Money, date: LocalDate): Money {
     if (amount.currency == requireBase()) return amount

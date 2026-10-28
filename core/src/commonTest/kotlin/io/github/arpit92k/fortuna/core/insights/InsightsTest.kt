@@ -307,6 +307,17 @@ class InsightsTest {
         assertEquals(emptyList(), withFebruary.sourceInBase(brokerage, newYear), "not yet opened")
     }
 
+    // ---- Shown in another currency ----
+
+    @Test
+    fun aTotalCanBeShownInAnyCurrencyWithARate() {
+        assertEquals(usd(100_000), updated.fromBase(gbp(80_000), dollars, january), "£800 at 0.80")
+        assertEquals(usd(100_000), updated.fromBase(gbp(75_000), dollars, today), "£750 at April's 0.75")
+        assertEquals(usd(100_000), updated.fromBase(gbp(80_000), dollars, newYear), "before the first rate, at the first")
+        assertEquals(gbp(80_000), updated.fromBase(gbp(80_000), pounds, today))
+        assertNull(updated.fromBase(gbp(80_000), Currency.forCode("JPY")!!, today), "no rate for yen")
+    }
+
     // ---- Gains and losses ----
 
     // Decided: money put in is not a gain. Interest, market moves and the currency effect are.

@@ -214,6 +214,7 @@ private fun UnlockedApp(core: Core, screens: Screens) {
             onSettings = { navigator.open(Destination.Settings) },
             onLock = { core.post { lock() } },
             onToggleAmounts = screens.amounts::toggle,
+            onShowIn = screens.dashboard::showIn,
             modifier = modifier,
         )
     }

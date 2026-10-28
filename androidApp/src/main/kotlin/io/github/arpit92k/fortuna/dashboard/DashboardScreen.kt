@@ -1,5 +1,16 @@
 package io.github.arpit92k.fortuna.dashboard
 
+import androidx.compose.material3.AssistChip
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.font.FontFamily
+import io.github.arpit92k.fortuna.core.money.Currency
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -74,6 +85,7 @@ fun DashboardScreen(
     onLock: () -> Unit,
     onToggleAmounts: () -> Unit,
     modifier: Modifier = Modifier,
+    onShowIn: (Currency) -> Unit = {},
 ) {
     val hidden = LocalAmountsHidden.current
     Scaffold(
@@ -138,10 +150,10 @@ fun DashboardScreen(
                         Modifier.width(360.dp).fillMaxHeight().verticalScroll(rememberScrollState()).padding(top = 16.dp, bottom = 96.dp),
                         verticalArrangement = Arrangement.spacedBy(16.dp),
                     ) {
-                        Totals(ui, Modifier.fillMaxWidth())
+                        Totals(ui, onShowIn, Modifier.fillMaxWidth())
                         NetWorthChart(ui, onOpenChart, Modifier.fillMaxWidth())
                     }
-                    SourceList(ui, Modifier.weight(1f), header = false, onOpen = onOpen, onOpenChart = onOpenChart)
+                    SourceList(ui, Modifier.weight(1f), header = false, onOpen = onOpen, onOpenChart = onOpenChart, onShowIn = onShowIn)
                 }
                 else -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
                     SourceList(
@@ -150,6 +162,7 @@ fun DashboardScreen(
                         header = true,
                         onOpen = onOpen,
                         onOpenChart = onOpenChart,
+                        onShowIn = onShowIn,
                     )
                 }
             }
@@ -177,10 +190,13 @@ private fun EmptyDashboard(onAddSource: () -> Unit) {
 }
 
 @Composable
-private fun Totals(ui: DashboardUi, modifier: Modifier = Modifier) {
+private fun Totals(ui: DashboardUi, onShowIn: (Currency) -> Unit, modifier: Modifier = Modifier) {
     Card(modifier.testTag("totals")) {
         Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            Text(stringResource(R.string.dashboard_net_worth), style = MaterialTheme.typography.labelLarge)
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(stringResource(R.string.dashboard_net_worth), style = MaterialTheme.typography.labelLarge, modifier = Modifier.weight(1f))
+                ShownInChip(ui, onShowIn)
+            }
             AmountText(ui.netWorth, style = MaterialTheme.typography.headlineMedium, modifier = Modifier.testTag("net-worth"))
             Row(horizontalArrangement = Arrangement.spacedBy(24.dp)) {
                 Column(Modifier.weight(1f)) {
@@ -212,6 +228,39 @@ private fun Totals(ui: DashboardUi, modifier: Modifier = Modifier) {
     }
 }
 
+/**
+ * The currency the dashboard's figures are shown in, with the others the
+ * accounts use to choose from. Nothing to choose with only one currency.
+ */
+@Composable
+private fun ShownInChip(ui: DashboardUi, onShowIn: (Currency) -> Unit) {
+    val shown = ui.shownIn ?: return
+    if (ui.currencies.size < 2) return
+    var open by remember { mutableStateOf(false) }
+    val description = stringResource(R.string.dashboard_shown_in, shown.name)
+    Box {
+        AssistChip(
+            onClick = { open = true },
+            label = { Text("${shown.code} ▾", fontFamily = FontFamily.Monospace) },
+            modifier = Modifier
+                .semantics { contentDescription = description }
+                .testTag("shown-in"),
+        )
+        DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
+            for (currency in ui.currencies) {
+                DropdownMenuItem(
+                    text = { Text("${currency.code}  ${currency.name}") },
+                    onClick = {
+                        open = false
+                        onShowIn(currency)
+                    },
+                    modifier = Modifier.testTag("shown-in-${currency.code}"),
+                )
+            }
+        }
+    }
+}
+
 @Composable
 private fun NetWorthChart(ui: DashboardUi, onOpenChart: () -> Unit, modifier: Modifier = Modifier) {
     Card(modifier.testTag("net-worth-chart")) {
@@ -223,11 +272,18 @@ private fun NetWorthChart(ui: DashboardUi, onOpenChart: () -> Unit, modifier: Mo
 }
 
 @Composable
-private fun SourceList(ui: DashboardUi, modifier: Modifier, header: Boolean, onOpen: (SourceId) -> Unit, onOpenChart: () -> Unit) {
+private fun SourceList(
+    ui: DashboardUi,
+    modifier: Modifier,
+    header: Boolean,
+    onOpen: (SourceId) -> Unit,
+    onOpenChart: () -> Unit,
+    onShowIn: (Currency) -> Unit,
+) {
     // Room at the end, so the add button never covers the last source.
     LazyColumn(modifier.testTag("source-list"), contentPadding = PaddingValues(top = 16.dp, bottom = 96.dp)) {
         if (header) {
-            item { Totals(ui, Modifier.fillMaxWidth().padding(bottom = 16.dp)) }
+            item { Totals(ui, onShowIn, Modifier.fillMaxWidth().padding(bottom = 16.dp)) }
             item { NetWorthChart(ui, onOpenChart, Modifier.fillMaxWidth().padding(bottom = 16.dp)) }
         }
         item {
