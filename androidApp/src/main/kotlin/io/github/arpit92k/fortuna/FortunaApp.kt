@@ -1,5 +1,7 @@
 package io.github.arpit92k.fortuna
 
+import io.github.arpit92k.fortuna.growth.growthOf
+import io.github.arpit92k.fortuna.growth.GrowthScreen
 import io.github.arpit92k.fortuna.dashboard.ZeroAccountsViewModel
 import io.github.arpit92k.fortuna.ui.currenciesInUse
 import androidx.compose.runtime.remember
@@ -211,6 +213,7 @@ private fun UnlockedApp(core: Core, screens: Screens) {
             onAddSource = { navigator.open(Destination.AddSource) },
             onOpen = { navigator.open(Destination.Source(it)) },
             onOpenChart = { navigator.open(Destination.Chart()) },
+            onGrowth = { navigator.open(Destination.Growth) },
             onUpdate = {
                 screens.update.prepare()
                 navigator.open(Destination.Update)
@@ -345,6 +348,15 @@ private fun UnlockedApp(core: Core, screens: Screens) {
                 onClearProblem = screens.currencies::clearProblem,
                 onBack = tryLeave,
             )
+        }
+        Destination.Growth -> {
+            val ui by screens.dashboard.ui.collectAsState()
+            val data = dataset
+            val shownIn = ui?.shownIn
+            val today = java.time.LocalDate.now().toKotlinLocalDate()
+            // In the currency the dashboard shows.
+            val growth = remember(data, shownIn) { data?.let { growthOf(it, today, shownIn) } }
+            GrowthScreen(growth, onBack = tryLeave)
         }
         is Destination.Chart -> {
             val id = current.source

@@ -37,6 +37,9 @@ sealed interface Destination {
     /** S-17. */
     data object Backup : Destination
 
+    /** Growth: net worth now against earlier years, whatever moved it. */
+    data object Growth : Destination
+
     /** A chart full screen: net worth with no [source], or one source's value. */
     data class Chart(val source: SourceId? = null) : Destination
 }
