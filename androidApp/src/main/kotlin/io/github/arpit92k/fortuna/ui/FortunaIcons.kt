@@ -66,8 +66,7 @@ enum class FortunaIcon {
     Show,
     Hide,
     Expand,
-    Filter,
-    Filtered,
+    Check,
 
     // The starter categories. Debt, a bill, is drawn in the error colour.
     Cash,
@@ -113,13 +112,6 @@ private class StrokeRect(
     override fun render(scope: DrawScope, color: Color, stroke: Stroke) =
         scope.drawRoundRect(color, topLeft = Offset(x, y), size = Size(w, h), cornerRadius = CornerRadius(corner), style = stroke)
 }
-
-private class FilledPath(d: String, accent: Boolean = false) : Part(accent) {
-    private val path: Path = PathParser().parsePathString(d).toPath()
-    override fun render(scope: DrawScope, color: Color, stroke: Stroke) = scope.drawPath(path, color, style = Fill)
-}
-
-private const val FUNNEL = "M4 5 H20 L14 12.5 V18.5 L10 20.5 V12.5 Z"
 
 private class FilledCircle(val cx: Float, val cy: Float, val r: Float, accent: Boolean = false) : Part(accent) {
     override fun render(scope: DrawScope, color: Color, stroke: Stroke) =
@@ -213,13 +205,9 @@ private fun FortunaIcon.parts(): List<Part> = when (this) {
         StrokePath("M4 4 L20 20", accent = true),
     )
     // Pointing left; mirrored where text runs right to left.
-    // A funnel, for filtering a list: outlined while nothing is filtered out, filled in the accent while something is.
-    FortunaIcon.Filter -> listOf(
-        StrokePath(FUNNEL),
-    )
-    FortunaIcon.Filtered -> listOf(
-        FilledPath(FUNNEL, accent = true),
-        StrokePath(FUNNEL, accent = true),
+    // A tick, on a chip that is on.
+    FortunaIcon.Check -> listOf(
+        StrokePath("M5 12.5 L10 17.5 L19 7"),
     )
     // Four corners opening out, around a small line: the chart, full screen.
     FortunaIcon.Expand -> listOf(

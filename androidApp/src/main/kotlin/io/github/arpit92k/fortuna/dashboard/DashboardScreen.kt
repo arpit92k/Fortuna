@@ -1,8 +1,7 @@
 package io.github.arpit92k.fortuna.dashboard
 
-import androidx.compose.material3.FilledTonalIconButton
-import androidx.compose.material3.BadgedBox
-import androidx.compose.material3.Badge
+import io.github.arpit92k.fortuna.ui.currencyLocale
+import androidx.compose.material3.FilterChip
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.DropdownMenu
@@ -268,23 +267,42 @@ private fun ShownInChip(ui: DashboardUi, onShowIn: (Currency) -> Unit) {
 }
 
 /**
- * Hides or shows the accounts at zero, beside the list's heading: a filter,
- * filled in while they are hidden, with how many are hidden. On a tinted
- * circle, so it reads as a button. Only when there are any.
+ * Hides or shows the accounts at zero, beside the list's heading: a chip
+ * reading "£0" in the base currency, ticked while they are hidden, with how
+ * many are hidden. Only when there are any.
  */
 @Composable
 private fun ZeroToggle(ui: DashboardUi, onToggleZero: () -> Unit) {
     if (ui.atZero == 0) return
+    val base = ui.currencies.firstOrNull() ?: return
+    val zero = remember(base) { zeroIn(base) }
     val description = if (ui.zeroHidden) {
         pluralStringResource(R.plurals.dashboard_show_zero, ui.atZero, ui.atZero)
     } else {
         pluralStringResource(R.plurals.dashboard_hide_zero, ui.atZero, ui.atZero)
     }
-    FilledTonalIconButton(onClick = onToggleZero, modifier = Modifier.testTag("toggle-zero")) {
-        BadgedBox(badge = { if (ui.zeroHidden) Badge { Text(ui.atZero.toString()) } }) {
-            FortunaIconImage(if (ui.zeroHidden) FortunaIcon.Filtered else FortunaIcon.Filter, contentDescription = description)
-        }
-    }
+    FilterChip(
+        selected = ui.zeroHidden,
+        onClick = onToggleZero,
+        label = { Text(if (ui.zeroHidden) "$zero \u00B7 ${ui.atZero}" else zero) },
+        leadingIcon = if (ui.zeroHidden) {
+            { FortunaIconImage(FortunaIcon.Check, size = 18.dp, line = LocalContentColor.current) }
+        } else {
+            null
+        },
+        modifier = Modifier
+            .semantics { contentDescription = description }
+            .testTag("toggle-zero"),
+    )
+}
+
+/** Zero in [currency], with its symbol and no decimals, as its own country writes it: "£0", "0 €". */
+private fun zeroIn(currency: Currency): String {
+    val format = java.text.NumberFormat.getCurrencyInstance(currencyLocale(currency))
+    runCatching { format.currency = java.util.Currency.getInstance(currency.code) }
+    format.maximumFractionDigits = 0
+    format.minimumFractionDigits = 0
+    return format.format(0)
 }
 
 @Composable
