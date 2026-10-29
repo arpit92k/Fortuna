@@ -315,6 +315,7 @@ private fun UnlockedApp(core: Core, screens: Screens) {
             onBiometrics = { on -> if (on) screens.biometrics.enable() else screens.biometrics.disable() },
             zeroAccountsHidden = screens.zeroAccounts.hidden.collectAsState().value,
             onZeroAccountsHidden = screens.zeroAccounts::hide,
+            anyAtZero = (screens.dashboard.ui.collectAsState().value?.atZero ?: 0) > 0,
             onCurrencies = { navigator.open(Destination.Currencies) },
             onBackup = { navigator.open(Destination.Backup) },
             onReport = screens.report::open,
