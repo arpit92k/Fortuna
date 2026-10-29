@@ -76,6 +76,10 @@ fun SettingsScreen(
     onBack: () -> Unit,
     biometrics: BiometricsUi = BiometricsUi(),
     onBiometrics: (Boolean) -> Unit = {},
+    zeroAccountsHidden: Boolean = false,
+    onZeroAccountsHidden: (Boolean) -> Unit = {},
+    /** Whether any account is at zero; the switch shows only then, as the dashboard's toggle does. */
+    anyAtZero: Boolean = false,
 ) {
     Page(stringResource(R.string.settings_title), onBack, "settings") {
         // Only on a phone that can, or if it is on and the phone no longer can, so it can be turned off.
@@ -100,6 +104,30 @@ fun SettingsScreen(
                     if (biometrics.message == BiometricMessage.NOT_TURNED_ON) Problem(stringResource(R.string.biometric_not_turned_on))
                 }
                 Switch(checked = biometrics.enabled, onCheckedChange = null, enabled = !biometrics.working)
+            }
+            HorizontalDivider()
+        }
+        // Accounts at zero, such as a closed account or a paid-off card, off the dashboard and out of updates.
+        if (anyAtZero) {
+            Row(
+                Modifier
+                    .fillMaxWidth()
+                    .toggleable(value = zeroAccountsHidden, role = Role.Switch, onValueChange = onZeroAccountsHidden)
+                    .padding(8.dp, 16.dp)
+                    .testTag("settings-hide-zero"),
+                horizontalArrangement = Arrangement.spacedBy(16.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                IconTile(FortunaIcon.Hide, size = 40.dp)
+                Column(Modifier.weight(1f)) {
+                    Text(stringResource(R.string.settings_hide_zero), style = MaterialTheme.typography.titleMedium)
+                    Text(
+                        stringResource(R.string.settings_hide_zero_body),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+                Switch(checked = zeroAccountsHidden, onCheckedChange = null)
             }
             HorizontalDivider()
         }

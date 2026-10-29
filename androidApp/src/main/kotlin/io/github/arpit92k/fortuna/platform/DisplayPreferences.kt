@@ -14,6 +14,11 @@ interface DisplayPreferences {
     var dashboardCurrency: String?
         get() = null
         set(_) {}
+
+    /** Whether accounts whose latest value is zero are left off the dashboard and out of updates. */
+    var zeroAccountsHidden: Boolean
+        get() = false
+        set(_) {}
 }
 
 /** [DisplayPreferences] in the app's own shared preferences. */
@@ -32,7 +37,14 @@ class AndroidDisplayPreferences(context: Context) : DisplayPreferences {
             preferences.edit().putString(DASHBOARD_CURRENCY, value).apply()
         }
 
+    override var zeroAccountsHidden: Boolean
+        get() = preferences.getBoolean(ZERO_ACCOUNTS_HIDDEN, false)
+        set(value) {
+            preferences.edit().putBoolean(ZERO_ACCOUNTS_HIDDEN, value).apply()
+        }
+
     private companion object {
+        const val ZERO_ACCOUNTS_HIDDEN = "zero_accounts_hidden"
         const val AMOUNTS_HIDDEN = "amounts_hidden"
         const val DASHBOARD_CURRENCY = "dashboard_currency"
     }

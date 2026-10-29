@@ -66,6 +66,7 @@ enum class FortunaIcon {
     Show,
     Hide,
     Expand,
+    Check,
 
     // The starter categories. Debt, a bill, is drawn in the error colour.
     Cash,
@@ -204,6 +205,10 @@ private fun FortunaIcon.parts(): List<Part> = when (this) {
         StrokePath("M4 4 L20 20", accent = true),
     )
     // Pointing left; mirrored where text runs right to left.
+    // A tick, on a chip that is on.
+    FortunaIcon.Check -> listOf(
+        StrokePath("M5 12.5 L10 17.5 L19 7"),
+    )
     // Four corners opening out, around a small line: the chart, full screen.
     FortunaIcon.Expand -> listOf(
         StrokePath("M4 9 V4 H9"),

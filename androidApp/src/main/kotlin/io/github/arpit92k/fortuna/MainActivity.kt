@@ -1,5 +1,6 @@
 package io.github.arpit92k.fortuna
 
+import io.github.arpit92k.fortuna.dashboard.ZeroAccountsViewModel
 import android.os.Bundle
 import android.view.WindowManager
 import androidx.fragment.app.FragmentActivity
@@ -45,20 +46,22 @@ class MainActivity : FragmentActivity() {
         val display = AndroidDisplayPreferences(this)
         setContent {
             // Scoped to the activity, so folding, unfolding and rotating keep what was typed.
+            val zeroAccounts = viewModel { ZeroAccountsViewModel(display) }
             val screens = Screens(
                 setup = viewModel { SetupViewModel(core, suggestedCurrency = regionCurrency()) },
                 restore = viewModel { RestoreViewModel(core, files) },
                 lock = viewModel { LockViewModel(core) },
                 recover = viewModel { RecoverViewModel(core) },
                 navigator = viewModel { Navigator() },
-                dashboard = viewModel { DashboardViewModel(core, display) },
+                dashboard = viewModel { DashboardViewModel(core, display, zeroAccounts.hidden) },
                 addSource = viewModel { AddSourceViewModel(core) },
                 sourcePage = viewModel { SourcePageViewModel(core) },
                 valueEntry = viewModel { ValueEntryViewModel(core) },
-                update = viewModel { UpdateViewModel(core) },
+                update = viewModel { UpdateViewModel(core, hideZero = zeroAccounts.hidden) },
                 currencies = viewModel { CurrenciesViewModel(core) },
                 backup = viewModel { BackupViewModel(core, files) },
                 amounts = viewModel { AmountsViewModel(display) },
+                zeroAccounts = zeroAccounts,
                 biometrics = viewModel { BiometricsViewModel(core, biometrics) },
                 report = viewModel { BugReportViewModel((application as FortunaApplication).crashes, deviceInfo()) },
             )

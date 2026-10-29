@@ -1,5 +1,6 @@
 package io.github.arpit92k.fortuna
 
+import io.github.arpit92k.fortuna.dashboard.ZeroAccountsViewModel
 import io.github.arpit92k.fortuna.ui.currenciesInUse
 import androidx.compose.runtime.remember
 import io.github.arpit92k.fortuna.dashboard.netWorthChangeIn
@@ -81,6 +82,7 @@ class Screens(
     val currencies: CurrenciesViewModel,
     val backup: BackupViewModel,
     val amounts: AmountsViewModel,
+    val zeroAccounts: ZeroAccountsViewModel,
     val report: BugReportViewModel,
     val biometrics: BiometricsViewModel,
 )
@@ -217,6 +219,7 @@ private fun UnlockedApp(core: Core, screens: Screens) {
             onLock = { core.post { lock() } },
             onToggleAmounts = screens.amounts::toggle,
             onShowIn = screens.dashboard::showIn,
+            onToggleZero = { screens.zeroAccounts.hide(!screens.zeroAccounts.hidden.value) },
             modifier = modifier,
         )
     }
@@ -310,6 +313,9 @@ private fun UnlockedApp(core: Core, screens: Screens) {
         Destination.Settings -> SettingsScreen(
             biometrics = screens.biometrics.ui.collectAsState().value,
             onBiometrics = { on -> if (on) screens.biometrics.enable() else screens.biometrics.disable() },
+            zeroAccountsHidden = screens.zeroAccounts.hidden.collectAsState().value,
+            onZeroAccountsHidden = screens.zeroAccounts::hide,
+            anyAtZero = (screens.dashboard.ui.collectAsState().value?.atZero ?: 0) > 0,
             onCurrencies = { navigator.open(Destination.Currencies) },
             onBackup = { navigator.open(Destination.Backup) },
             onReport = screens.report::open,

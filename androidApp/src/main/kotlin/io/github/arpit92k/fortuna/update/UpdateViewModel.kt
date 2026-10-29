@@ -52,6 +52,8 @@ data class UpdatePlan(
     val due: List<DueSource>,
     val leftOut: Int,
     val rates: List<RateToConfirm> = emptyList(),
+    /** Accounts at zero that were due on the date but are hidden, so left out; the screen warns about them. */
+    val hiddenAtZero: List<DueSource> = emptyList(),
 )
 
 /** The entry being typed for the current source. Kept across a lock, so nothing typed is lost. */
@@ -88,9 +90,9 @@ data class UpdateUi(
 }
 
 /** The update's plan for [date], from the core's update queue. */
-fun updatePlanOf(data: Dataset, date: LocalDate, today: LocalDate): UpdatePlan? {
+fun updatePlanOf(data: Dataset, date: LocalDate, today: LocalDate, hideZero: Boolean = false): UpdatePlan? {
     val queue = (data.updateQueue(date, today) as? UpdateQueueResult.Success)?.queue ?: return null
-    return UpdatePlan(
+    val plan = UpdatePlan(
         date = date,
         due = queue.sources.map { source ->
             val latest = source.snapshots.latest()!!
@@ -106,6 +108,12 @@ fun updatePlanOf(data: Dataset, date: LocalDate, today: LocalDate): UpdatePlan? 
         leftOut = queue.leftOut,
         rates = queue.currencies.map { RateToConfirm(it.currency, it.lastRate?.value, it.lastRate?.date, it.ageInDays) },
     )
+    if (!hideZero) return plan
+    // Due accounts whose latest value, before the date, is zero: hidden, and left out of this update.
+    val (atZero, due) = plan.due.partition { it.lastValue.minorUnits == 0L }
+    if (atZero.isEmpty()) return plan
+    val stillDue = due.map { it.lastValue.currency }.toSet()
+    return plan.copy(due = due, hiddenAtZero = atZero, rates = plan.rates.filter { it.currency in stillDue })
 }
 
 /**
@@ -114,15 +122,19 @@ fun updatePlanOf(data: Dataset, date: LocalDate, today: LocalDate): UpdatePlan? 
  * made, so the queue shrinks as the user goes, and stopping part-way loses
  * nothing.
  */
-class UpdateViewModel(private val core: Core, private val locale: () -> Locale = { Locale.getDefault() }) : ViewModel() {
+class UpdateViewModel(
+    private val core: Core,
+    private val locale: () -> Locale = { Locale.getDefault() },
+    private val hideZero: StateFlow<Boolean> = MutableStateFlow(false),
+) : ViewModel() {
     private val mutableUi = MutableStateFlow(UpdateUi())
     val ui: StateFlow<UpdateUi> = mutableUi.asStateFlow()
     private val chosenDate = MutableStateFlow<LocalDate?>(null)
 
     init {
         viewModelScope.launch {
-            combine(core.state, core.dataset, chosenDate) { state, data, date -> Triple(state == SessionState.Unlocked && data != null, data, date) }
-                .collect { (open, _, date) ->
+            combine(core.state, core.dataset, chosenDate, hideZero) { state, data, date, _ -> (state == SessionState.Unlocked && data != null) to date }
+                .collect { (open, date) ->
                     // While locked the plan is kept as it was; it is worked out afresh on unlocking.
                     if (open) {
                         val plan = plan(date)
@@ -133,7 +145,7 @@ class UpdateViewModel(private val core: Core, private val locale: () -> Locale =
     }
 
     private suspend fun plan(date: LocalDate?): UpdatePlan? = try {
-        core.run { read { data, today -> updatePlanOf(data, date ?: today, today) } }
+        core.run { read { data, today -> updatePlanOf(data, date ?: today, today, hideZero.value) } }
     } catch (e: IllegalStateException) {
         // Locked in the meantime.
         null

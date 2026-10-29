@@ -1,5 +1,8 @@
 package io.github.arpit92k.fortuna.dashboard
 
+import io.github.arpit92k.fortuna.ui.currencyLocale
+import androidx.compose.material3.FilterChip
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -86,6 +89,7 @@ fun DashboardScreen(
     onToggleAmounts: () -> Unit,
     modifier: Modifier = Modifier,
     onShowIn: (Currency) -> Unit = {},
+    onToggleZero: () -> Unit = {},
 ) {
     val hidden = LocalAmountsHidden.current
     Scaffold(
@@ -153,7 +157,7 @@ fun DashboardScreen(
                         Totals(ui, onShowIn, Modifier.fillMaxWidth())
                         NetWorthChart(ui, onOpenChart, Modifier.fillMaxWidth())
                     }
-                    SourceList(ui, Modifier.weight(1f), header = false, onOpen = onOpen, onOpenChart = onOpenChart, onShowIn = onShowIn)
+                    SourceList(ui, Modifier.weight(1f), header = false, onOpen = onOpen, onOpenChart = onOpenChart, onShowIn = onShowIn, onToggleZero = onToggleZero)
                 }
                 else -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
                     SourceList(
@@ -163,6 +167,7 @@ fun DashboardScreen(
                         onOpen = onOpen,
                         onOpenChart = onOpenChart,
                         onShowIn = onShowIn,
+                        onToggleZero = onToggleZero,
                     )
                 }
             }
@@ -261,6 +266,45 @@ private fun ShownInChip(ui: DashboardUi, onShowIn: (Currency) -> Unit) {
     }
 }
 
+/**
+ * Hides or shows the accounts at zero, beside the list's heading: a chip
+ * reading "£0" in the base currency, ticked while they are hidden, with how
+ * many are hidden. Only when there are any.
+ */
+@Composable
+private fun ZeroToggle(ui: DashboardUi, onToggleZero: () -> Unit) {
+    if (ui.atZero == 0) return
+    val base = ui.currencies.firstOrNull() ?: return
+    val zero = remember(base) { zeroIn(base) }
+    val description = if (ui.zeroHidden) {
+        pluralStringResource(R.plurals.dashboard_show_zero, ui.atZero, ui.atZero)
+    } else {
+        pluralStringResource(R.plurals.dashboard_hide_zero, ui.atZero, ui.atZero)
+    }
+    FilterChip(
+        selected = ui.zeroHidden,
+        onClick = onToggleZero,
+        label = { Text(if (ui.zeroHidden) "$zero \u00B7 ${ui.atZero}" else zero) },
+        leadingIcon = if (ui.zeroHidden) {
+            { FortunaIconImage(FortunaIcon.Check, size = 18.dp, line = LocalContentColor.current) }
+        } else {
+            null
+        },
+        modifier = Modifier
+            .semantics { contentDescription = description }
+            .testTag("toggle-zero"),
+    )
+}
+
+/** Zero in [currency], with its symbol and no decimals, as its own country writes it: "£0", "0 €". */
+private fun zeroIn(currency: Currency): String {
+    val format = java.text.NumberFormat.getCurrencyInstance(currencyLocale(currency))
+    runCatching { format.currency = java.util.Currency.getInstance(currency.code) }
+    format.maximumFractionDigits = 0
+    format.minimumFractionDigits = 0
+    return format.format(0)
+}
+
 @Composable
 private fun NetWorthChart(ui: DashboardUi, onOpenChart: () -> Unit, modifier: Modifier = Modifier) {
     Card(modifier.testTag("net-worth-chart")) {
@@ -279,6 +323,7 @@ private fun SourceList(
     onOpen: (SourceId) -> Unit,
     onOpenChart: () -> Unit,
     onShowIn: (Currency) -> Unit,
+    onToggleZero: () -> Unit,
 ) {
     // Room at the end, so the add button never covers the last source.
     LazyColumn(modifier.testTag("source-list"), contentPadding = PaddingValues(top = 16.dp, bottom = 96.dp)) {
@@ -287,11 +332,14 @@ private fun SourceList(
             item { NetWorthChart(ui, onOpenChart, Modifier.fillMaxWidth().padding(bottom = 16.dp)) }
         }
         item {
-            Text(
-                stringResource(R.string.dashboard_sources),
-                style = MaterialTheme.typography.titleSmall,
-                modifier = Modifier.padding(vertical = 8.dp),
-            )
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    stringResource(R.string.dashboard_sources),
+                    style = MaterialTheme.typography.titleSmall,
+                    modifier = Modifier.weight(1f).padding(vertical = 8.dp),
+                )
+                ZeroToggle(ui, onToggleZero)
+            }
         }
         items(ui.sources, key = { it.id.value }) { row ->
             SourceRowItem(row, onClick = { onOpen(row.id) })

@@ -72,6 +72,20 @@ fun UpdateStartScreen(
                     modifier = Modifier.testTag("update-date"),
                 )
                 if (plan != null) {
+                    // Due on this date, but hidden at zero: said, so none is missed without the user knowing.
+                    if (plan.hiddenAtZero.isNotEmpty()) {
+                        Text(
+                            pluralStringResource(
+                                R.plurals.update_hidden_at_zero,
+                                plan.hiddenAtZero.size,
+                                plan.hiddenAtZero.size,
+                                plan.hiddenAtZero.joinToString(", ") { it.name },
+                            ),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.error,
+                            modifier = Modifier.testTag("update-hidden-at-zero"),
+                        )
+                    }
                     if (plan.due.isEmpty()) {
                         Text(stringResource(R.string.update_nothing_due), style = MaterialTheme.typography.bodyLarge, modifier = Modifier.testTag("update-none-due"))
                     } else {

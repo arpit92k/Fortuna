@@ -45,9 +45,16 @@ data class DashboardUi(
     val shownIn: Currency? = null,
     /** The currencies the figures can be shown in: the base currency, then those of the accounts. */
     val currencies: List<Currency> = emptyList(),
+    /** How many accounts are at zero, hidden or not; the list offers to hide or show them when there are any. */
+    val atZero: Int = 0,
+    /** Whether accounts at zero are hidden, and so left off [sources]. */
+    val zeroHidden: Boolean = false,
 ) {
-    /** With no sources, the dashboard only invites the first one. */
-    val empty: Boolean get() = sources.isEmpty()
+    /** How many accounts at zero are left off [sources]. */
+    val hiddenAtZero: Int get() = if (zeroHidden) atZero else 0
+
+    /** With no sources, the dashboard only invites the first one. Hidden ones still count. */
+    val empty: Boolean get() = sources.isEmpty() && hiddenAtZero == 0
 }
 
 /** One source in the dashboard's list. */
@@ -71,11 +78,19 @@ data class SourceRow(
  * for the totals and gains. Percentages stay as they are. The base currency
  * when [shownIn] is null or has no rate.
  */
-fun dashboardOf(data: Dataset, today: LocalDate, shownIn: Currency? = null): DashboardUi {
+fun dashboardOf(data: Dataset, today: LocalDate, shownIn: Currency? = null, hideZero: Boolean = false): DashboardUi {
     val base = data.baseCurrency!!
     val currencies = (listOf(base) + currenciesInUse(data.sources.map { it.currency })).distinct()
     val shown = shownIn?.takeIf { it in currencies && data.fromBase(Money(0, base), it, today) != null } ?: base
-    val inBase = dashboardInBase(data, today)
+    val inBase = dashboardInBase(data, today).let { ui ->
+        // Hidden accounts at zero leave the list only; they add nothing to the totals anyway.
+        val atZero = ui.sources.count { it.value.minorUnits == 0L }
+        ui.copy(
+            sources = if (hideZero) ui.sources.filter { it.value.minorUnits != 0L } else ui.sources,
+            atZero = atZero,
+            zeroHidden = hideZero,
+        )
+    }
     if (shown == base) return inBase.copy(shownIn = base, currencies = currencies)
     fun Money.shown(date: LocalDate = today) = data.fromBase(this, shown, date)!!
     fun Gain.shown() = Gain(amount.shown(), this.base?.shown())
@@ -147,7 +162,11 @@ private fun dashboardInBase(data: Dataset, today: LocalDate): DashboardUi {
  * Follows the open dataset and works out the dashboard each time it changes.
  * Null while locked, when there is nothing to show.
  */
-class DashboardViewModel(private val core: Core, private val preferences: DisplayPreferences? = null) : ViewModel() {
+class DashboardViewModel(
+    private val core: Core,
+    private val preferences: DisplayPreferences? = null,
+    private val hideZero: StateFlow<Boolean> = MutableStateFlow(false),
+) : ViewModel() {
     private val mutableUi = MutableStateFlow<DashboardUi?>(null)
     val ui: StateFlow<DashboardUi?> = mutableUi.asStateFlow()
 
@@ -157,10 +176,11 @@ class DashboardViewModel(private val core: Core, private val preferences: Displa
     init {
         viewModelScope.launch {
             // Both: setup writes the dataset a moment before the app is unlocked.
-            combine(core.state, core.dataset, shownIn) { state, data, currency -> (state == SessionState.Unlocked && data != null) to currency }
-                .collect { (open, currency) ->
-                    mutableUi.value = if (open) figures(currency) else null
-                }
+            combine(core.state, core.dataset, shownIn, hideZero) { state, data, currency, zero ->
+                Triple(state == SessionState.Unlocked && data != null, currency, zero)
+            }.collect { (open, currency, zero) ->
+                mutableUi.value = if (open) figures(currency, zero) else null
+            }
         }
     }
 
@@ -171,8 +191,8 @@ class DashboardViewModel(private val core: Core, private val preferences: Displa
         shownIn.value = currency
     }
 
-    private suspend fun figures(currency: Currency?): DashboardUi? = try {
-        core.run { read { data, today -> dashboardOf(data, today, currency) } }
+    private suspend fun figures(currency: Currency?, hideZero: Boolean): DashboardUi? = try {
+        core.run { read { data, today -> dashboardOf(data, today, currency, hideZero) } }
     } catch (e: IllegalStateException) {
         // Locked in the meantime.
         null
