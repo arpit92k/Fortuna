@@ -5,6 +5,9 @@ import io.github.arpit92k.fortuna.core.insights.fromBase
 import io.github.arpit92k.fortuna.core.insights.netWorthOn
 import io.github.arpit92k.fortuna.core.money.Currency
 import io.github.arpit92k.fortuna.core.money.Money
+import io.github.arpit92k.fortuna.ui.ChartPoint
+import io.github.arpit92k.fortuna.ui.netWorthPoints
+import io.github.arpit92k.fortuna.ui.pointsFrom
 import kotlinx.datetime.DatePeriod
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.minus
@@ -27,6 +30,8 @@ data class GrowthUi(
     val comparisons: List<Comparison>,
     /** Net worth on this date in each of the last five years and today, oldest first, from the first value on. */
     val years: List<YearPoint>,
+    /** Net worth over the last five years, for the chart: the value alone, as growth counts money paid in too. */
+    val chart: List<ChartPoint> = emptyList(),
 )
 
 /**
@@ -35,6 +40,7 @@ data class GrowthUi(
  * recorded have no figure: nothing was tracked then.
  */
 fun growthOf(data: Dataset, today: LocalDate, shownIn: Currency? = null): GrowthUi? {
+    val fiveYearsAgo = today.minus(DatePeriod(years = 5))
     val base = data.baseCurrency ?: return null
     val first = data.sources.mapNotNull { it.snapshots.earliest()?.date }.minOrNull() ?: return null
     val currency = shownIn?.takeIf { data.fromBase(Money(0, base), it, today) != null } ?: base
@@ -52,5 +58,8 @@ fun growthOf(data: Dataset, today: LocalDate, shownIn: Currency? = null): Growth
             YearPoint(date, value, worthOn(date.minus(DatePeriod(years = 1)))?.let { value - it })
         }
     }
-    return GrowthUi(now, comparisons, years)
+    val chart = pointsFrom(netWorthPoints(data, today), fiveYearsAgo).map { point ->
+        ChartPoint(point.date, data.fromBase(point.value, currency, point.date)!!)
+    }
+    return GrowthUi(now, comparisons, years, chart)
 }

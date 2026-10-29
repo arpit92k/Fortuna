@@ -51,6 +51,16 @@ class GrowthTest {
         assertEquals(gbp(10_000), years[2].change)
     }
 
+    // The chart: net worth alone over the last five years, no second line for money paid in.
+    @Test
+    fun theChartCoversTheLastFiveYearsWithTheValueAlone() {
+        val chart = assertNotNull(growthOf(data, today)).chart
+        assertEquals(LocalDate(2021, 10, 29), chart.first().date)
+        assertEquals(today, chart.last().date)
+        assertEquals(gbp(30_000), chart.last().value)
+        assertEquals(true, chart.all { it.invested == null })
+    }
+
     @Test
     fun yearsBeforeTheFirstValueAreNotTracked() {
         val recent = Dataset.new().chooseBaseCurrency(pounds).dataset()

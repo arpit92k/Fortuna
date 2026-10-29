@@ -34,6 +34,7 @@ import io.github.arpit92k.fortuna.core.money.Money
 import io.github.arpit92k.fortuna.ui.AmountText
 import io.github.arpit92k.fortuna.ui.BackButton
 import io.github.arpit92k.fortuna.ui.ReadableWidth
+import io.github.arpit92k.fortuna.ui.ValueChart
 import io.github.arpit92k.fortuna.ui.change
 import io.github.arpit92k.fortuna.ui.formatDate
 import io.github.arpit92k.fortuna.ui.formatPercent
@@ -67,6 +68,18 @@ fun GrowthScreen(ui: GrowthUi?, onBack: () -> Unit) {
                         AmountText(ui.now, style = MaterialTheme.typography.headlineMedium, modifier = Modifier.testTag("growth-now"))
                         HorizontalDivider()
                         for (comparison in ui.comparisons) ComparisonRow(comparison)
+                    }
+                }
+            }
+            item {
+                Card(Modifier.fillMaxWidth().testTag("growth-chart")) {
+                    Column(Modifier.padding(start = 12.dp, end = 16.dp, top = 16.dp, bottom = 12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Text(
+                            stringResource(R.string.growth_chart_title),
+                            style = MaterialTheme.typography.labelLarge,
+                            modifier = Modifier.padding(start = 8.dp),
+                        )
+                        ValueChart(ui.chart)
                     }
                 }
             }

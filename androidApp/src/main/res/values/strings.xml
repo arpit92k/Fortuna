@@ -65,6 +65,7 @@
     <string name="dashboard_growth">Growth over the years</string>
     <string name="growth_title">Growth</string>
     <string name="growth_body">How net worth itself has grown, whether from money paid in or money earned.</string>
+    <string name="growth_chart_title">Net worth over the last five years</string>
     <string name="growth_each_year">On this date each year</string>
     <string name="growth_not_tracked">Not tracked yet</string>
     <plurals name="growth_vs_years">
