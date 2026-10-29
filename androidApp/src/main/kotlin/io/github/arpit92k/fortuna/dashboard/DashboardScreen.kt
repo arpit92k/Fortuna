@@ -1,5 +1,6 @@
 package io.github.arpit92k.fortuna.dashboard
 
+import androidx.compose.material3.FilledTonalIconButton
 import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.Badge
 import androidx.compose.ui.res.pluralStringResource
@@ -267,9 +268,9 @@ private fun ShownInChip(ui: DashboardUi, onShowIn: (Currency) -> Unit) {
 }
 
 /**
- * Hides or shows the accounts at zero, beside the list's heading. A zero,
- * crossed out while they are hidden, with how many are hidden. Only when
- * there are any.
+ * Hides or shows the accounts at zero, beside the list's heading: a filter,
+ * filled in while they are hidden, with how many are hidden. On a tinted
+ * circle, so it reads as a button. Only when there are any.
  */
 @Composable
 private fun ZeroToggle(ui: DashboardUi, onToggleZero: () -> Unit) {
@@ -279,9 +280,9 @@ private fun ZeroToggle(ui: DashboardUi, onToggleZero: () -> Unit) {
     } else {
         pluralStringResource(R.plurals.dashboard_hide_zero, ui.atZero, ui.atZero)
     }
-    IconButton(onClick = onToggleZero, modifier = Modifier.testTag("toggle-zero")) {
+    FilledTonalIconButton(onClick = onToggleZero, modifier = Modifier.testTag("toggle-zero")) {
         BadgedBox(badge = { if (ui.zeroHidden) Badge { Text(ui.atZero.toString()) } }) {
-            FortunaIconImage(if (ui.zeroHidden) FortunaIcon.ZeroHidden else FortunaIcon.ZeroShown, contentDescription = description)
+            FortunaIconImage(if (ui.zeroHidden) FortunaIcon.Filtered else FortunaIcon.Filter, contentDescription = description)
         }
     }
 }
