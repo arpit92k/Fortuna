@@ -1,5 +1,6 @@
 package io.github.arpit92k.fortuna.dashboard
 
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -296,6 +297,17 @@ private fun SourceList(
         items(ui.sources, key = { it.id.value }) { row ->
             SourceRowItem(row, onClick = { onOpen(row.id) })
             HorizontalDivider()
+        }
+        // So hidden accounts are never forgotten: how many, and where to show them.
+        if (ui.hiddenAtZero > 0) {
+            item {
+                Text(
+                    pluralStringResource(R.plurals.dashboard_hidden_at_zero, ui.hiddenAtZero, ui.hiddenAtZero),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(vertical = 12.dp).testTag("hidden-at-zero"),
+                )
+            }
         }
     }
 }
