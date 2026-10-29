@@ -1,5 +1,7 @@
 package io.github.arpit92k.fortuna.dashboard
 
+import io.github.arpit92k.fortuna.core.insights.netWorthChange
+import io.github.arpit92k.fortuna.core.insights.NetWorthChange
 import io.github.arpit92k.fortuna.ui.currenciesInUse
 import io.github.arpit92k.fortuna.platform.DisplayPreferences
 import io.github.arpit92k.fortuna.core.money.Currency
@@ -92,6 +94,25 @@ fun dashboardOf(data: Dataset, today: LocalDate, shownIn: Currency? = null): Das
         shownIn = shown,
         currencies = currencies,
     )
+}
+
+/**
+ * How net worth changed from [from] to [to], as [netWorthChange] splits it,
+ * shown in [currency]. Net deposits, growth and new accounts are converted at
+ * [to]'s rate. The change itself is net worth on [to] at [to]'s rate less
+ * net worth on [from] at [from]'s, as the chart draws it, and the currency
+ * effect is what is left: it then includes the base currency moving against
+ * [currency], which is a currency effect too, seen from [currency].
+ */
+fun netWorthChangeIn(data: Dataset, from: LocalDate?, to: LocalDate, currency: Currency): NetWorthChange {
+    val inBase = data.netWorthChange(from, to)
+    if (currency == data.baseCurrency) return inBase
+    fun Money.at(date: LocalDate) = data.fromBase(this, currency, date)!!
+    val total = data.netWorthOn(to).total.at(to) - (from?.let { data.netWorthOn(it).total.at(it) } ?: Money(0, currency))
+    val added = inBase.added.at(to)
+    val growth = inBase.growth.at(to)
+    val newlyTracked = inBase.newlyTracked.at(to)
+    return NetWorthChange(total, added, growth, total - added - growth - newlyTracked, newlyTracked)
 }
 
 private fun dashboardInBase(data: Dataset, today: LocalDate): DashboardUi {

@@ -34,6 +34,8 @@ import io.github.arpit92k.fortuna.ui.GainText
 import io.github.arpit92k.fortuna.ui.ValueChart
 import io.github.arpit92k.fortuna.ui.pointsFrom
 import io.github.arpit92k.fortuna.ui.rangeSummary
+import io.github.arpit92k.fortuna.core.insights.NetWorthChange
+import kotlinx.datetime.LocalDate
 import kotlinx.datetime.toKotlinLocalDate
 
 /**
@@ -45,11 +47,18 @@ import kotlinx.datetime.toKotlinLocalDate
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ChartScreen(title: String, points: List<ChartPoint>, onBack: () -> Unit, liability: Boolean = false) {
+fun ChartScreen(
+    title: String,
+    points: List<ChartPoint>,
+    onBack: () -> Unit,
+    liability: Boolean = false,
+    breakdown: ((LocalDate?) -> NetWorthChange?)? = null,
+) {
     var range by rememberSaveable { mutableStateOf(ChartRange.ALL) }
     val today = remember { java.time.LocalDate.now().toKotlinLocalDate() }
     val shown = remember(points, range) { pointsFrom(points, range.start(today)) }
     val summary = remember(shown, liability) { rangeSummary(shown, liability) }
+    val split = remember(points, range, breakdown) { breakdown?.invoke(range.start(today)) }
 
     Column(Modifier.fillMaxSize().safeDrawingPadding().testTag(CHART_SCREEN)) {
         Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(start = 4.dp, top = 4.dp, end = 16.dp)) {
@@ -75,6 +84,7 @@ fun ChartScreen(title: String, points: List<ChartPoint>, onBack: () -> Unit, lia
                     }
                 }
             }
+            if (split != null) Breakdown(split)
             SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth().testTag("chart-ranges")) {
                 ChartRange.entries.forEachIndexed { index, choice ->
                     SegmentedButton(
@@ -86,6 +96,27 @@ fun ChartScreen(title: String, points: List<ChartPoint>, onBack: () -> Unit, lia
                 }
             }
             ValueChart(shown, Modifier.fillMaxWidth().weight(1f), fill = true)
+        }
+    }
+}
+
+/** Where the change in net worth over the range came from. Accounts added only when there were some. */
+@Composable
+private fun Breakdown(split: NetWorthChange) {
+    Row(horizontalArrangement = Arrangement.spacedBy(16.dp), modifier = Modifier.padding(horizontal = 8.dp).testTag("breakdown")) {
+        Figure(stringResource(R.string.chart_screen_deposits), Modifier.weight(1f)) {
+            AmountText(split.added, style = MaterialTheme.typography.bodyLarge, signed = true, modifier = Modifier.testTag("breakdown-deposits"))
+        }
+        Figure(stringResource(R.string.chart_screen_growth), Modifier.weight(1f)) {
+            AmountText(split.growth, style = MaterialTheme.typography.bodyLarge, signed = true, modifier = Modifier.testTag("breakdown-growth"))
+        }
+        Figure(stringResource(R.string.chart_screen_currency), Modifier.weight(1f)) {
+            AmountText(split.currencyEffect, style = MaterialTheme.typography.bodyLarge, signed = true, modifier = Modifier.testTag("breakdown-currency"))
+        }
+        if (split.newlyTracked.minorUnits != 0L) {
+            Figure(stringResource(R.string.chart_screen_new_accounts), Modifier.weight(1f)) {
+                AmountText(split.newlyTracked, style = MaterialTheme.typography.bodyLarge, signed = true, modifier = Modifier.testTag("breakdown-new"))
+            }
         }
     }
 }

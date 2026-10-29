@@ -1,6 +1,8 @@
 package io.github.arpit92k.fortuna
 
 import io.github.arpit92k.fortuna.ui.currenciesInUse
+import androidx.compose.runtime.remember
+import io.github.arpit92k.fortuna.dashboard.netWorthChangeIn
 import io.github.arpit92k.fortuna.chart.ChartScreen
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -342,10 +344,22 @@ private fun UnlockedApp(core: Core, screens: Screens) {
             val id = current.source
             if (id == null) {
                 val ui by screens.dashboard.ui.collectAsState()
+                val data = dataset
+                val today = java.time.LocalDate.now().toKotlinLocalDate()
                 ChartScreen(
                     title = stringResource(R.string.dashboard_chart_title),
                     points = ui?.timeline.orEmpty(),
                     onBack = tryLeave,
+                    // Where the change in net worth over the range came from.
+                    // In the currency the dashboard shows, as the chart is.
+                    breakdown = remember(data, ui?.shownIn) {
+                        val shown = ui?.shownIn
+                        if (data == null || data.baseCurrency == null || shown == null) {
+                            null
+                        } else {
+                            { from: kotlinx.datetime.LocalDate? -> netWorthChangeIn(data, from, today, shown) }
+                        }
+                    },
                 )
             } else {
                 LaunchedEffect(id) { screens.sourcePage.show(id) }
