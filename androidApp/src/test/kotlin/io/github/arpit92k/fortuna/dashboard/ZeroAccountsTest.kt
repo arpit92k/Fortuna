@@ -48,6 +48,8 @@ class ZeroAccountsTest {
         assertEquals(3, shown.sources.size)
         assertEquals(listOf("Current account"), hidden.sources.map { it.name })
         assertEquals(2, hidden.hiddenAtZero)
+        assertEquals(2, shown.atZero, "counted while shown too, so the toggle can offer to hide them")
+        assertEquals(0, shown.hiddenAtZero)
         assertEquals(shown.netWorth, hidden.netWorth)
     }
 

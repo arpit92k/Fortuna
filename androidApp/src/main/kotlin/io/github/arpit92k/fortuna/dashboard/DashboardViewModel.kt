@@ -45,9 +45,14 @@ data class DashboardUi(
     val shownIn: Currency? = null,
     /** The currencies the figures can be shown in: the base currency, then those of the accounts. */
     val currencies: List<Currency> = emptyList(),
-    /** How many accounts at zero are left off [sources] because the setting hides them. */
-    val hiddenAtZero: Int = 0,
+    /** How many accounts are at zero, hidden or not; the list offers to hide or show them when there are any. */
+    val atZero: Int = 0,
+    /** Whether accounts at zero are hidden, and so left off [sources]. */
+    val zeroHidden: Boolean = false,
 ) {
+    /** How many accounts at zero are left off [sources]. */
+    val hiddenAtZero: Int get() = if (zeroHidden) atZero else 0
+
     /** With no sources, the dashboard only invites the first one. Hidden ones still count. */
     val empty: Boolean get() = sources.isEmpty() && hiddenAtZero == 0
 }
@@ -79,12 +84,12 @@ fun dashboardOf(data: Dataset, today: LocalDate, shownIn: Currency? = null, hide
     val shown = shownIn?.takeIf { it in currencies && data.fromBase(Money(0, base), it, today) != null } ?: base
     val inBase = dashboardInBase(data, today).let { ui ->
         // Hidden accounts at zero leave the list only; they add nothing to the totals anyway.
-        if (hideZero) {
-            val (atZero, shown) = ui.sources.partition { it.value.minorUnits == 0L }
-            ui.copy(sources = shown, hiddenAtZero = atZero.size)
-        } else {
-            ui
-        }
+        val atZero = ui.sources.count { it.value.minorUnits == 0L }
+        ui.copy(
+            sources = if (hideZero) ui.sources.filter { it.value.minorUnits != 0L } else ui.sources,
+            atZero = atZero,
+            zeroHidden = hideZero,
+        )
     }
     if (shown == base) return inBase.copy(shownIn = base, currencies = currencies)
     fun Money.shown(date: LocalDate = today) = data.fromBase(this, shown, date)!!

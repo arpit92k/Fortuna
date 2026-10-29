@@ -1,5 +1,7 @@
 package io.github.arpit92k.fortuna.dashboard
 
+import androidx.compose.material3.BadgedBox
+import androidx.compose.material3.Badge
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.DropdownMenu
@@ -87,6 +89,7 @@ fun DashboardScreen(
     onToggleAmounts: () -> Unit,
     modifier: Modifier = Modifier,
     onShowIn: (Currency) -> Unit = {},
+    onToggleZero: () -> Unit = {},
 ) {
     val hidden = LocalAmountsHidden.current
     Scaffold(
@@ -154,7 +157,7 @@ fun DashboardScreen(
                         Totals(ui, onShowIn, Modifier.fillMaxWidth())
                         NetWorthChart(ui, onOpenChart, Modifier.fillMaxWidth())
                     }
-                    SourceList(ui, Modifier.weight(1f), header = false, onOpen = onOpen, onOpenChart = onOpenChart, onShowIn = onShowIn)
+                    SourceList(ui, Modifier.weight(1f), header = false, onOpen = onOpen, onOpenChart = onOpenChart, onShowIn = onShowIn, onToggleZero = onToggleZero)
                 }
                 else -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
                     SourceList(
@@ -164,6 +167,7 @@ fun DashboardScreen(
                         onOpen = onOpen,
                         onOpenChart = onOpenChart,
                         onShowIn = onShowIn,
+                        onToggleZero = onToggleZero,
                     )
                 }
             }
@@ -262,6 +266,26 @@ private fun ShownInChip(ui: DashboardUi, onShowIn: (Currency) -> Unit) {
     }
 }
 
+/**
+ * Hides or shows the accounts at zero, beside the list's heading. A zero,
+ * crossed out while they are hidden, with how many are hidden. Only when
+ * there are any.
+ */
+@Composable
+private fun ZeroToggle(ui: DashboardUi, onToggleZero: () -> Unit) {
+    if (ui.atZero == 0) return
+    val description = if (ui.zeroHidden) {
+        pluralStringResource(R.plurals.dashboard_show_zero, ui.atZero, ui.atZero)
+    } else {
+        pluralStringResource(R.plurals.dashboard_hide_zero, ui.atZero, ui.atZero)
+    }
+    IconButton(onClick = onToggleZero, modifier = Modifier.testTag("toggle-zero")) {
+        BadgedBox(badge = { if (ui.zeroHidden) Badge { Text(ui.atZero.toString()) } }) {
+            FortunaIconImage(if (ui.zeroHidden) FortunaIcon.ZeroHidden else FortunaIcon.ZeroShown, contentDescription = description)
+        }
+    }
+}
+
 @Composable
 private fun NetWorthChart(ui: DashboardUi, onOpenChart: () -> Unit, modifier: Modifier = Modifier) {
     Card(modifier.testTag("net-worth-chart")) {
@@ -280,6 +304,7 @@ private fun SourceList(
     onOpen: (SourceId) -> Unit,
     onOpenChart: () -> Unit,
     onShowIn: (Currency) -> Unit,
+    onToggleZero: () -> Unit,
 ) {
     // Room at the end, so the add button never covers the last source.
     LazyColumn(modifier.testTag("source-list"), contentPadding = PaddingValues(top = 16.dp, bottom = 96.dp)) {
@@ -288,26 +313,18 @@ private fun SourceList(
             item { NetWorthChart(ui, onOpenChart, Modifier.fillMaxWidth().padding(bottom = 16.dp)) }
         }
         item {
-            Text(
-                stringResource(R.string.dashboard_sources),
-                style = MaterialTheme.typography.titleSmall,
-                modifier = Modifier.padding(vertical = 8.dp),
-            )
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    stringResource(R.string.dashboard_sources),
+                    style = MaterialTheme.typography.titleSmall,
+                    modifier = Modifier.weight(1f).padding(vertical = 8.dp),
+                )
+                ZeroToggle(ui, onToggleZero)
+            }
         }
         items(ui.sources, key = { it.id.value }) { row ->
             SourceRowItem(row, onClick = { onOpen(row.id) })
             HorizontalDivider()
-        }
-        // So hidden accounts are never forgotten: how many, and where to show them.
-        if (ui.hiddenAtZero > 0) {
-            item {
-                Text(
-                    pluralStringResource(R.plurals.dashboard_hidden_at_zero, ui.hiddenAtZero, ui.hiddenAtZero),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(vertical = 12.dp).testTag("hidden-at-zero"),
-                )
-            }
         }
     }
 }

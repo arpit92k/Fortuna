@@ -219,6 +219,7 @@ private fun UnlockedApp(core: Core, screens: Screens) {
             onLock = { core.post { lock() } },
             onToggleAmounts = screens.amounts::toggle,
             onShowIn = screens.dashboard::showIn,
+            onToggleZero = { screens.zeroAccounts.hide(!screens.zeroAccounts.hidden.value) },
             modifier = modifier,
         )
     }

@@ -154,9 +154,13 @@
     <string name="update_body">Bring every account up to date in one go, the one updated longest ago first. Each value is saved as you enter it, so you can stop part-way and carry on later.</string>
     <string name="update_date_today">Update as of today</string>
     <string name="update_date">Update as of %1$s</string>
-    <plurals name="dashboard_hidden_at_zero">
-        <item quantity="one">%1$d account at zero is hidden. Settings shows it again.</item>
-        <item quantity="other">%1$d accounts at zero are hidden. Settings shows them again.</item>
+    <plurals name="dashboard_hide_zero">
+        <item quantity="one">Hide %1$d account at zero</item>
+        <item quantity="other">Hide %1$d accounts at zero</item>
+    </plurals>
+    <plurals name="dashboard_show_zero">
+        <item quantity="one">Show %1$d hidden account at zero</item>
+        <item quantity="other">Show %1$d hidden accounts at zero</item>
     </plurals>
     <plurals name="update_hidden_at_zero">
         <item quantity="one">%1$d account at zero is hidden and will be skipped, though it is due on this date: %2$s. Show accounts at zero in Settings to update it.</item>

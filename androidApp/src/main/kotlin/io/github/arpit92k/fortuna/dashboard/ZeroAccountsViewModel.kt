@@ -15,7 +15,7 @@ class ZeroAccountsViewModel(private val preferences: DisplayPreferences) : ViewM
     private val mutableHidden = MutableStateFlow(preferences.zeroAccountsHidden)
     val hidden: StateFlow<Boolean> = mutableHidden.asStateFlow()
 
-    /** The switch in Settings. */
+    /** The switch in Settings, and the toggle beside the dashboard's list. */
     fun hide(hide: Boolean) {
         preferences.zeroAccountsHidden = hide
         mutableHidden.value = hide
