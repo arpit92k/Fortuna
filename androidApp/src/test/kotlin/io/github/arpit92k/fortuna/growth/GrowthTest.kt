@@ -40,9 +40,9 @@ class GrowthTest {
     @Test
     fun fiveYearsOfHistoryCompareWithTheLongestPeriodsThatFit() {
         val growth = assertNotNull(growthOf(long, today))
-        // 2, 3 and 5 years fit; 10 do not. The start is five years ago, so it is not repeated.
-        assertEquals(listOf(24, 36, 60), months(growth.comparisons))
-        val five = growth.comparisons.last()
+        // 2, 3 and 5 years fit; 10 do not. The start comes last every time, even on the same date as 5 years.
+        assertEquals(listOf(24, 36, 60, null), months(growth.comparisons))
+        val five = growth.comparisons[2]
         assertEquals(gbp(20_000), five.change, "money paid in counts as growth")
         assertEquals(200.0, five.percent!!, 1e-9)
     }

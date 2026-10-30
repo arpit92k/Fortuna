@@ -45,7 +45,7 @@ data class GrowthUi(
     val now: Money,
     /** The first value's date: everything before it was not tracked. */
     val since: LocalDate,
-    /** Against up to three periods that fit in the history, longest last, then against the start. */
+    /** Against up to three periods that fit in the history, longest last, then always against the start. */
     val comparisons: List<Comparison>,
     val step: Step,
     /** Net worth on this date in each of the last steps, oldest first, from the first value on. */
@@ -81,12 +81,12 @@ fun growthOf(data: Dataset, today: LocalDate, shownIn: Currency? = null): Growth
     val dates = data.sources.flatMap { source -> source.snapshots.map { it.date } }.distinct()
     if (dates.size < 2) return GrowthUi(now, first, emptyList(), Step.MONTH, emptyList())
 
-    // The longest periods that fit, then the start, unless the start is one of them.
+    // The longest periods that fit, then always the start.
     val fitting = Lookback.CHOICES
         .map { it to today.minus(DatePeriod(months = it.months!!)) }
         .filter { (_, date) -> date >= first }
         .takeLast(COMPARISONS)
-    val comparisons = (fitting + listOfNotNull((Lookback.SINCE_START to first).takeIf { fitting.none { (_, date) -> date == first } && first < today }))
+    val comparisons = (fitting + (Lookback.SINCE_START to first))
         .map { (lookback, date) -> worthOn(date)!!.let { then -> Comparison(lookback, date, then, now - then) } }
 
     val step = if (first <= today.minus(DatePeriod(years = YEARS_FOR_YEARLY))) Step.YEAR else Step.MONTH
