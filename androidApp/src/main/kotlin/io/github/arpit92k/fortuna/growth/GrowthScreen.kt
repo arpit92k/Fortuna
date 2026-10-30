@@ -67,10 +67,19 @@ fun GrowthScreen(ui: GrowthUi?, onBack: () -> Unit) {
                         Text(stringResource(R.string.dashboard_net_worth), style = MaterialTheme.typography.labelLarge)
                         AmountText(ui.now, style = MaterialTheme.typography.headlineMedium, modifier = Modifier.testTag("growth-now"))
                         HorizontalDivider()
+                        if (ui.tooLittleHistory) {
+                            Text(
+                                stringResource(R.string.growth_too_little),
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.testTag("growth-too-little"),
+                            )
+                        }
                         for (comparison in ui.comparisons) ComparisonRow(comparison)
                     }
                 }
             }
+            if (ui.tooLittleHistory) return@LazyColumn
             item {
                 Card(Modifier.fillMaxWidth().testTag("growth-chart")) {
                     Column(Modifier.padding(start = 12.dp, end = 16.dp, top = 16.dp, bottom = 12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {

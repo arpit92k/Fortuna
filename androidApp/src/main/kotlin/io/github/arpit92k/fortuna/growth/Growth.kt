@@ -52,7 +52,10 @@ data class GrowthUi(
     val steps: List<StepPoint>,
     /** Net worth since the first value, up to ten years, for the chart: the value alone, as growth counts money paid in too. */
     val chart: List<ChartPoint> = emptyList(),
-)
+) {
+    /** Values on one date only: nothing has grown yet, so the page says so instead of showing +£0 everywhere. */
+    val tooLittleHistory: Boolean get() = comparisons.isEmpty()
+}
 
 /** At most this many periods are compared, besides the start. */
 private const val COMPARISONS = 3
@@ -74,6 +77,9 @@ fun growthOf(data: Dataset, today: LocalDate, shownIn: Currency? = null): Growth
     fun worthOn(date: LocalDate): Money? =
         if (date < first) null else data.fromBase(data.netWorthOn(date).total, currency, date)
     val now = worthOn(today)!!
+    // Values on a single date: no growth to show yet.
+    val dates = data.sources.flatMap { source -> source.snapshots.map { it.date } }.distinct()
+    if (dates.size < 2) return GrowthUi(now, first, emptyList(), Step.MONTH, emptyList())
 
     // The longest periods that fit, then the start, unless the start is one of them.
     val fitting = Lookback.CHOICES

@@ -81,6 +81,21 @@ class GrowthTest {
         assertTrue(chart.all { it.invested == null })
     }
 
+    // Values on one date only, today or earlier: nothing to compare, so no +£0 lines, bars or flat chart.
+    @Test
+    fun valuesOnASingleDateShowNoGrowthYet() {
+        for (date in listOf(today, LocalDate(2026, 8, 31))) {
+            val single = Dataset.new().chooseBaseCurrency(pounds).dataset()
+                .addSource("Savings", CategoryId(1), date, gbp(5_000), today).dataset()
+                .addSource("Current account", CategoryId(1), date, gbp(1_000), today).dataset()
+            val growth = assertNotNull(growthOf(single, today))
+            assertEquals(gbp(6_000), growth.now)
+            assertTrue(growth.tooLittleHistory)
+            assertEquals(emptyList(), growth.steps)
+            assertEquals(emptyList(), growth.chart)
+        }
+    }
+
     @Test
     fun withNothingRecordedThereIsNoGrowth() {
         assertNull(growthOf(Dataset.new().chooseBaseCurrency(pounds).dataset(), today))
