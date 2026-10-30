@@ -84,6 +84,7 @@ fun DashboardScreen(
     onOpen: (SourceId) -> Unit,
     onOpenChart: () -> Unit,
     onUpdate: () -> Unit,
+    onGrowth: () -> Unit = {},
     onSettings: () -> Unit,
     onLock: () -> Unit,
     onToggleAmounts: () -> Unit,
@@ -154,10 +155,10 @@ fun DashboardScreen(
                         Modifier.width(360.dp).fillMaxHeight().verticalScroll(rememberScrollState()).padding(top = 16.dp, bottom = 96.dp),
                         verticalArrangement = Arrangement.spacedBy(16.dp),
                     ) {
-                        Totals(ui, onShowIn, Modifier.fillMaxWidth())
+                        Totals(ui, onShowIn, onGrowth, Modifier.fillMaxWidth())
                         NetWorthChart(ui, onOpenChart, Modifier.fillMaxWidth())
                     }
-                    SourceList(ui, Modifier.weight(1f), header = false, onOpen = onOpen, onOpenChart = onOpenChart, onShowIn = onShowIn, onToggleZero = onToggleZero)
+                    SourceList(ui, Modifier.weight(1f), header = false, onOpen = onOpen, onOpenChart = onOpenChart, onShowIn = onShowIn, onToggleZero = onToggleZero, onGrowth = onGrowth)
                 }
                 else -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
                     SourceList(
@@ -168,6 +169,7 @@ fun DashboardScreen(
                         onOpenChart = onOpenChart,
                         onShowIn = onShowIn,
                         onToggleZero = onToggleZero,
+                        onGrowth = onGrowth,
                     )
                 }
             }
@@ -195,7 +197,7 @@ private fun EmptyDashboard(onAddSource: () -> Unit) {
 }
 
 @Composable
-private fun Totals(ui: DashboardUi, onShowIn: (Currency) -> Unit, modifier: Modifier = Modifier) {
+private fun Totals(ui: DashboardUi, onShowIn: (Currency) -> Unit, onGrowth: () -> Unit, modifier: Modifier = Modifier) {
     Card(modifier.testTag("totals")) {
         Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -228,6 +230,11 @@ private fun Totals(ui: DashboardUi, onShowIn: (Currency) -> Unit, modifier: Modi
                         GainText(sinceStart, style = MaterialTheme.typography.titleSmall, modifier = Modifier.testTag("gain-since-start"))
                     }
                 }
+            }
+            // Growth: against earlier years, money paid in counting as much as money earned.
+            TextButton(onClick = onGrowth, modifier = Modifier.testTag("open-growth")) {
+                ButtonIcon(FortunaIcon.Investments)
+                Text(stringResource(R.string.dashboard_growth))
             }
         }
     }
@@ -324,11 +331,12 @@ private fun SourceList(
     onOpenChart: () -> Unit,
     onShowIn: (Currency) -> Unit,
     onToggleZero: () -> Unit,
+    onGrowth: () -> Unit,
 ) {
     // Room at the end, so the add button never covers the last source.
     LazyColumn(modifier.testTag("source-list"), contentPadding = PaddingValues(top = 16.dp, bottom = 96.dp)) {
         if (header) {
-            item { Totals(ui, onShowIn, Modifier.fillMaxWidth().padding(bottom = 16.dp)) }
+            item { Totals(ui, onShowIn, onGrowth, Modifier.fillMaxWidth().padding(bottom = 16.dp)) }
             item { NetWorthChart(ui, onOpenChart, Modifier.fillMaxWidth().padding(bottom = 16.dp)) }
         }
         item {
