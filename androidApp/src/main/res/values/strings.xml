@@ -67,7 +67,7 @@
     <string name="growth_body">How net worth itself has grown, whether from money paid in or money earned, over the periods your history covers.</string>
     <string name="growth_chart_title">Net worth over time</string>
     <string name="growth_each_year">On this date each year</string>
-    <string name="growth_too_little">Growth shows once you've recorded values on more than one date.</string>
+    <string name="growth_too_little">Growth shows once you\'ve recorded values on more than one date.</string>
     <string name="growth_each_month">On this date each month</string>
     <string name="growth_since_start">Since %1$s</string>
     <plurals name="growth_vs_months">
