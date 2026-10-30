@@ -64,10 +64,16 @@
     <string name="dashboard_shown_in">Figures in %1$s. Change the currency</string>
     <string name="dashboard_growth">Growth over the years</string>
     <string name="growth_title">Growth</string>
-    <string name="growth_body">How net worth itself has grown, whether from money paid in or money earned.</string>
-    <string name="growth_chart_title">Net worth over the last five years</string>
+    <string name="growth_body">How net worth itself has grown, whether from money paid in or money earned, over the periods your history covers.</string>
+    <string name="growth_chart_title">Net worth over time</string>
     <string name="growth_each_year">On this date each year</string>
-    <string name="growth_not_tracked">Not tracked yet</string>
+    <string name="growth_too_little">Growth shows once you\'ve recorded values on more than one date.</string>
+    <string name="growth_each_month">On this date each month</string>
+    <string name="growth_since_start">Since %1$s</string>
+    <plurals name="growth_vs_months">
+        <item quantity="one">vs %1$d month ago</item>
+        <item quantity="other">vs %1$d months ago</item>
+    </plurals>
     <plurals name="growth_vs_years">
         <item quantity="one">vs %1$d year ago</item>
         <item quantity="other">vs %1$d years ago</item>

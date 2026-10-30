@@ -67,10 +67,19 @@ fun GrowthScreen(ui: GrowthUi?, onBack: () -> Unit) {
                         Text(stringResource(R.string.dashboard_net_worth), style = MaterialTheme.typography.labelLarge)
                         AmountText(ui.now, style = MaterialTheme.typography.headlineMedium, modifier = Modifier.testTag("growth-now"))
                         HorizontalDivider()
+                        if (ui.tooLittleHistory) {
+                            Text(
+                                stringResource(R.string.growth_too_little),
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.testTag("growth-too-little"),
+                            )
+                        }
                         for (comparison in ui.comparisons) ComparisonRow(comparison)
                     }
                 }
             }
+            if (ui.tooLittleHistory) return@LazyColumn
             item {
                 Card(Modifier.fillMaxWidth().testTag("growth-chart")) {
                     Column(Modifier.padding(start = 12.dp, end = 16.dp, top = 16.dp, bottom = 12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -83,16 +92,16 @@ fun GrowthScreen(ui: GrowthUi?, onBack: () -> Unit) {
                     }
                 }
             }
-            if (ui.years.size > 1) {
+            if (ui.steps.size > 1) {
                 item {
                     Text(
-                        stringResource(R.string.growth_each_year),
+                        stringResource(if (ui.step == Step.YEAR) R.string.growth_each_year else R.string.growth_each_month),
                         style = MaterialTheme.typography.titleSmall,
                         modifier = Modifier.padding(top = 8.dp),
                     )
                 }
-                val largest = ui.years.maxOf { abs(it.value.minorUnits) }.coerceAtLeast(1)
-                items(ui.years, key = { it.date.toString() }) { point -> YearRow(point, largest) }
+                val largest = ui.steps.maxOf { abs(it.value.minorUnits) }.coerceAtLeast(1)
+                items(ui.steps, key = { it.date.toString() }) { point -> StepRow(point, largest) }
             }
         }
     }
@@ -100,30 +109,30 @@ fun GrowthScreen(ui: GrowthUi?, onBack: () -> Unit) {
 
 @Composable
 private fun ComparisonRow(comparison: Comparison) {
-    Row(Modifier.fillMaxWidth().testTag("growth-${comparison.years}"), verticalAlignment = Alignment.CenterVertically) {
+    val months = comparison.lookback.months
+    Row(Modifier.fillMaxWidth().testTag("growth-${months ?: "start"}"), verticalAlignment = Alignment.CenterVertically) {
         Text(
-            pluralStringResource(R.plurals.growth_vs_years, comparison.years, comparison.years),
+            when {
+                months == null -> stringResource(R.string.growth_since_start, formatDate(comparison.date))
+                months % 12 == 0 -> pluralStringResource(R.plurals.growth_vs_years, months / 12, months / 12)
+                else -> pluralStringResource(R.plurals.growth_vs_months, months, months)
+            },
             style = MaterialTheme.typography.bodyMedium,
             modifier = Modifier.weight(1f),
         )
         val delta = comparison.change
-        if (delta == null) {
-            // Before the first value: nothing to compare with.
-            Text(stringResource(R.string.growth_not_tracked), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        } else {
-            val percent = comparison.percent?.let { " (${formatPercent(it)})" }.orEmpty()
-            val text = change(delta) + percent
-            Text(text, style = MaterialTheme.typography.titleSmall, color = colourOf(delta), modifier = Modifier.readsHidden(text))
-        }
+        val percent = comparison.percent?.let { " (${formatPercent(it)})" }.orEmpty()
+        val text = change(delta) + percent
+        Text(text, style = MaterialTheme.typography.titleSmall, color = colourOf(delta), modifier = Modifier.readsHidden(text))
     }
 }
 
-/** One year: the date, a bar for net worth then, and the change on the year before. */
+/** One step: the date, a bar for net worth then, and the change on the step before. */
 @Composable
-private fun YearRow(point: YearPoint, largest: Long) {
+private fun StepRow(point: StepPoint, largest: Long) {
     val positive = MaterialTheme.colorScheme.primary
     val negative = MaterialTheme.colorScheme.error
-    Column(Modifier.fillMaxWidth().testTag("growth-year-${point.date}"), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+    Column(Modifier.fillMaxWidth().testTag("growth-step-${point.date}"), verticalArrangement = Arrangement.spacedBy(4.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(formatDate(point.date), style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f))
             point.change?.let { delta ->

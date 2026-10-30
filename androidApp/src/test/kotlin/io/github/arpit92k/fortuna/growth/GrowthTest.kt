@@ -15,61 +15,85 @@ import kotlin.test.assertEquals
 import kotlin.test.assertIs
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
+import kotlin.test.assertTrue
 
-/** Growth: net worth against earlier years, money paid in counting as much as money earned. */
+/** Growth: net worth against earlier dates that the history covers, money paid in counting as much as money earned. */
 class GrowthTest {
     private val pounds = Currency.forCode("GBP")!!
-    private val today = LocalDate(2026, 10, 29)
+    private val today = LocalDate(2026, 10, 30)
 
     private fun RecordingResult.dataset(): Dataset = assertIs<RecordingResult.Success>(this).dataset
     private fun gbp(pounds: Long) = Money(pounds * 100, this.pounds)
+    private fun months(comparisons: List<Comparison>) = comparisons.map { it.lookback.months }
 
-    // £10,000 five years ago; £20,000 three years ago, £8,000 of it paid in; £30,000 since June 2025.
-    private val data = Dataset.new().chooseBaseCurrency(pounds).dataset()
-        .addSource("Savings", CategoryId(1), LocalDate(2021, 10, 29), gbp(10_000), today).dataset()
-        .addSnapshot(SourceId(6), LocalDate(2023, 10, 29), gbp(20_000), gbp(8_000), today).dataset()
+    // Five years: £10,000 in October 2021; £20,000 in October 2023, £8,000 of it paid in; £30,000 since June 2025.
+    private val long = Dataset.new().chooseBaseCurrency(pounds).dataset()
+        .addSource("Savings", CategoryId(1), LocalDate(2021, 10, 30), gbp(10_000), today).dataset()
+        .addSnapshot(SourceId(6), LocalDate(2023, 10, 30), gbp(20_000), gbp(8_000), today).dataset()
         .addSnapshot(SourceId(6), LocalDate(2025, 6, 1), gbp(30_000), gbp(0), today).dataset()
 
+    // Eight months: £5,000 in February, £6,000 in August.
+    private val short = Dataset.new().chooseBaseCurrency(pounds).dataset()
+        .addSource("Savings", CategoryId(1), LocalDate(2026, 2, 28), gbp(5_000), today).dataset()
+        .addSnapshot(SourceId(6), LocalDate(2026, 8, 31), gbp(6_000), gbp(500), today).dataset()
+
     @Test
-    fun netWorthIsComparedWithOneThreeAndFiveYearsAgo() {
-        val growth = assertNotNull(growthOf(data, today))
-        assertEquals(gbp(30_000), growth.now)
-        val (one, three, five) = growth.comparisons
-        assertEquals(gbp(0), one.change)
-        assertEquals(gbp(10_000), three.change, "money paid in counts as growth")
-        assertEquals(50.0, three.percent!!, 1e-9)
-        assertEquals(gbp(20_000), five.change)
+    fun fiveYearsOfHistoryCompareWithTheLongestPeriodsThatFit() {
+        val growth = assertNotNull(growthOf(long, today))
+        // 2, 3 and 5 years fit; 10 do not. The start comes last every time, even on the same date as 5 years.
+        assertEquals(listOf(24, 36, 60, null), months(growth.comparisons))
+        val five = growth.comparisons[2]
+        assertEquals(gbp(20_000), five.change, "money paid in counts as growth")
         assertEquals(200.0, five.percent!!, 1e-9)
     }
 
     @Test
-    fun eachYearHasItsValueAndItsChangeOnTheYearBefore() {
-        val years = assertNotNull(growthOf(data, today)).years
-        assertEquals((2021..2026).map { LocalDate(it, 10, 29) }, years.map { it.date })
-        assertEquals(listOf(10_000L, 10_000, 20_000, 20_000, 30_000, 30_000).map { gbp(it) }, years.map { it.value })
-        assertNull(years.first().change, "nothing tracked a year before")
-        assertEquals(gbp(10_000), years[2].change)
+    fun eightMonthsOfHistoryCompareWithMonthsAndTheStart() {
+        val growth = assertNotNull(growthOf(short, today))
+        assertEquals(listOf(1, 3, 6, null), months(growth.comparisons))
+        val start = growth.comparisons.last()
+        assertEquals(LocalDate(2026, 2, 28), start.date)
+        assertEquals(gbp(1_000), start.change)
     }
 
-    // The chart: net worth alone over the last five years, no second line for money paid in.
     @Test
-    fun theChartCoversTheLastFiveYearsWithTheValueAlone() {
-        val chart = assertNotNull(growthOf(data, today)).chart
-        assertEquals(LocalDate(2021, 10, 29), chart.first().date)
+    fun aLongHistoryStepsByYearAndAShortOneByMonth() {
+        val long = assertNotNull(growthOf(long, today))
+        assertEquals(Step.YEAR, long.step)
+        assertEquals((2021..2026).map { LocalDate(it, 10, 30) }, long.steps.map { it.date })
+        assertNull(long.steps.first().change, "nothing tracked a year before")
+        assertEquals(gbp(10_000), long.steps[2].change)
+
+        val short = assertNotNull(growthOf(short, today))
+        assertEquals(Step.MONTH, short.step)
+        // The 30th of each month back to the start: eight months back is 28 February, the first value's own date.
+        assertEquals(LocalDate(2026, 2, 28), short.steps.first().date)
+        assertEquals(LocalDate(2026, 3, 30), short.steps[1].date)
+        assertEquals(today, short.steps.last().date)
+        assertEquals(9, short.steps.size)
+    }
+
+    @Test
+    fun theChartRunsFromTheFirstValueWithTheValueAlone() {
+        val chart = assertNotNull(growthOf(short, today)).chart
+        assertEquals(LocalDate(2026, 2, 28), chart.first().date)
         assertEquals(today, chart.last().date)
-        assertEquals(gbp(30_000), chart.last().value)
-        assertEquals(true, chart.all { it.invested == null })
+        assertTrue(chart.all { it.invested == null })
     }
 
+    // Values on one date only, today or earlier: nothing to compare, so no +£0 lines, bars or flat chart.
     @Test
-    fun yearsBeforeTheFirstValueAreNotTracked() {
-        val recent = Dataset.new().chooseBaseCurrency(pounds).dataset()
-            .addSource("Savings", CategoryId(1), LocalDate(2024, 1, 31), gbp(5_000), today).dataset()
-        val growth = assertNotNull(growthOf(recent, today))
-        assertEquals(gbp(5_000), growth.comparisons[0].then)
-        assertNull(growth.comparisons[1].change)
-        assertNull(growth.comparisons[2].change)
-        assertEquals(listOf(LocalDate(2024, 10, 29), LocalDate(2025, 10, 29), today), growth.years.map { it.date })
+    fun valuesOnASingleDateShowNoGrowthYet() {
+        for (date in listOf(today, LocalDate(2026, 8, 31))) {
+            val single = Dataset.new().chooseBaseCurrency(pounds).dataset()
+                .addSource("Savings", CategoryId(1), date, gbp(5_000), today).dataset()
+                .addSource("Current account", CategoryId(1), date, gbp(1_000), today).dataset()
+            val growth = assertNotNull(growthOf(single, today))
+            assertEquals(gbp(6_000), growth.now)
+            assertTrue(growth.tooLittleHistory)
+            assertEquals(emptyList(), growth.steps)
+            assertEquals(emptyList(), growth.chart)
+        }
     }
 
     @Test
