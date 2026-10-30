@@ -6,8 +6,8 @@ package io.github.arpit92k.fortuna.core.domain
  * Never edit one: each is what a real app wrote, and every later version of
  * the app must still read it. A new format version adds a new fixture here.
  *
- * Version 1 is not frozen until the first release (plan step 24), so until
- * then this fixture may still change along with the format.
+ * Version 1 was frozen for the first release (plan step 26); FrozenFormatsTest
+ * fails if this fixture changes.
  */
 object FormatFixtures {
     /**
@@ -88,6 +88,40 @@ object FormatFixtures {
     "revision": 12,
     "lastBackupRevision": 11,
     "lastBackup": "2026-04-30"
+  }
+}
+"""
+
+    /**
+     * Format version 1, with an account added with a gain it had already
+     * made: £12,000, of which £10,000 was deposited. The opening principal is
+     * optional, and absent from [DATASET_V1].
+     */
+    const val DATASET_V1_OPENING_PRINCIPAL: String = """
+{
+  "formatVersion": 1,
+  "baseCurrency": "GBP",
+  "nextId": 7,
+  "categories": [
+    { "id": 1, "name": "Cash", "kind": "asset", "status": "active" },
+    { "id": 2, "name": "Investments", "kind": "asset", "status": "active" },
+    { "id": 3, "name": "Property", "kind": "asset", "status": "active" },
+    { "id": 4, "name": "Pension", "kind": "asset", "status": "active" },
+    { "id": 5, "name": "Debt", "kind": "liability", "status": "active" }
+  ],
+  "sources": [
+    {
+      "id": 6, "name": "ISA", "category": 2, "currency": "GBP",
+      "updateFrequency": "monthly", "status": "active", "openingPrincipal": "10000.00",
+      "snapshots": [
+        { "date": "2026-01-31", "value": "12000.00", "amountAdded": "0.00" }
+      ]
+    }
+  ],
+  "rates": [],
+  "settings": {
+    "defaultUpdateFrequency": "monthly",
+    "revision": 1
   }
 }
 """
