@@ -24,8 +24,9 @@ android {
         applicationId = "app.arpits.fortuna"
         minSdk = libs.versions.android.minSdk.get().toInt()
         targetSdk = libs.versions.android.targetSdk.get().toInt()
-        versionCode = 1
-        versionName = "0.1.0"
+        // The Release workflow sets both for each build Play receives; Play refuses a version code it has seen.
+        versionCode = (findProperty("fortuna.versionCode") as String?)?.toInt() ?: 1
+        versionName = (findProperty("fortuna.versionName") as String?) ?: "0.1.0"
 
         // Device tests (androidTest) run on a phone or emulator: see .github/workflows/device-tests.yml.
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
