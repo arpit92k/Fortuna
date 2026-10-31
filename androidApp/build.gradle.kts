@@ -1,4 +1,5 @@
 import com.android.build.api.artifact.SingleArtifact
+import java.util.Properties
 
 plugins {
     alias(libs.plugins.android.application)
@@ -9,12 +10,18 @@ kotlin {
     jvmToolchain(17)
 }
 
+// The upload key's location and password, kept out of the repository. Without this
+// file a release build is left unsigned, and Play will not accept it.
+val uploadKey = rootProject.file("keystore.properties").takeIf { it.exists() }?.let { file ->
+    Properties().apply { file.inputStream().use { load(it) } }
+}
+
 android {
     namespace = "io.github.arpit92k.fortuna"
     compileSdk = libs.versions.android.compileSdk.get().toInt()
 
     defaultConfig {
-        applicationId = "io.github.arpit92k.fortuna"
+        applicationId = "app.arpits.fortuna"
         minSdk = libs.versions.android.minSdk.get().toInt()
         targetSdk = libs.versions.android.targetSdk.get().toInt()
         versionCode = 1
@@ -22,6 +29,27 @@ android {
 
         // Device tests (androidTest) run on a phone or emulator: see .github/workflows/device-tests.yml.
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+    }
+
+    signingConfigs {
+        if (uploadKey != null) {
+            create("upload") {
+                storeFile = file(uploadKey.getProperty("storeFile"))
+                storePassword = uploadKey.getProperty("storePassword")
+                keyAlias = uploadKey.getProperty("keyAlias")
+                keyPassword = uploadKey.getProperty("keyPassword")
+            }
+        }
+    }
+
+    buildTypes {
+        debug {
+            // A separate app, so a debug build and the Play build can share a phone.
+            applicationIdSuffix = ".debug"
+        }
+        release {
+            signingConfig = signingConfigs.findByName("upload")
+        }
     }
 
     buildFeatures {
