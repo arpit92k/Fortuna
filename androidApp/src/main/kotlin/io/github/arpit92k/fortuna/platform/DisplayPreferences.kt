@@ -15,6 +15,11 @@ interface DisplayPreferences {
         get() = null
         set(_) {}
 
+    /** Whether the About tour has been seen; it shows once, the first time the app is open. */
+    var aboutSeen: Boolean
+        get() = true
+        set(_) {}
+
     /** Whether accounts whose latest value is zero are left off the dashboard and out of updates. */
     var zeroAccountsHidden: Boolean
         get() = false
@@ -43,7 +48,14 @@ class AndroidDisplayPreferences(context: Context) : DisplayPreferences {
             preferences.edit().putBoolean(ZERO_ACCOUNTS_HIDDEN, value).apply()
         }
 
+    override var aboutSeen: Boolean
+        get() = preferences.getBoolean(ABOUT_SEEN, false)
+        set(value) {
+            preferences.edit().putBoolean(ABOUT_SEEN, value).apply()
+        }
+
     private companion object {
+        const val ABOUT_SEEN = "about_seen"
         const val ZERO_ACCOUNTS_HIDDEN = "zero_accounts_hidden"
         const val AMOUNTS_HIDDEN = "amounts_hidden"
         const val DASHBOARD_CURRENCY = "dashboard_currency"

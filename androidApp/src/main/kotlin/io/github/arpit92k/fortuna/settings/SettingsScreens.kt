@@ -74,6 +74,7 @@ fun SettingsScreen(
     onBackup: () -> Unit,
     onReport: () -> Unit,
     onBack: () -> Unit,
+    onAbout: () -> Unit = {},
     biometrics: BiometricsUi = BiometricsUi(),
     onBiometrics: (Boolean) -> Unit = {},
     zeroAccountsHidden: Boolean = false,
@@ -145,6 +146,14 @@ fun SettingsScreen(
             stringResource(R.string.settings_backup_body),
             onBackup,
             "settings-backup",
+        )
+        HorizontalDivider()
+        SettingsItem(
+            FortunaIcon.Phone,
+            stringResource(R.string.settings_about),
+            stringResource(R.string.settings_about_body),
+            onAbout,
+            "settings-about",
         )
         HorizontalDivider()
         SettingsItem(

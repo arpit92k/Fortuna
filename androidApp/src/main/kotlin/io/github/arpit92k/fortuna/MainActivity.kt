@@ -1,5 +1,6 @@
 package io.github.arpit92k.fortuna
 
+import io.github.arpit92k.fortuna.about.AboutViewModel
 import io.github.arpit92k.fortuna.dashboard.ZeroAccountsViewModel
 import android.os.Bundle
 import android.view.WindowManager
@@ -62,6 +63,7 @@ class MainActivity : FragmentActivity() {
                 backup = viewModel { BackupViewModel(core, files) },
                 amounts = viewModel { AmountsViewModel(display) },
                 zeroAccounts = zeroAccounts,
+                about = viewModel { AboutViewModel(display) },
                 biometrics = viewModel { BiometricsViewModel(core, biometrics) },
                 report = viewModel { BugReportViewModel((application as FortunaApplication).crashes, deviceInfo()) },
             )
