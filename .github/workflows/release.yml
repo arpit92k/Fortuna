@@ -1,0 +1,87 @@
+name: Release
+
+# Builds the bundle to upload to Google Play, started by hand ("Run workflow"
+# on the Actions tab) from main. It is signed with the upload key held in the
+# repository's secrets; Play then re-signs it with the app signing key Google
+# keeps. The bundle and its mapping file are attached to the run.
+
+on:
+  workflow_dispatch:
+    inputs:
+      version-name:
+        description: Version name users see, such as 0.1.0
+        required: true
+        default: 0.1.0
+      version-code:
+        description: Version code, higher than any Play has seen. Leave blank to use this workflow's run number.
+        required: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  bundle:
+    name: Signed bundle for Google Play
+    # Only what is on main goes to Play.
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: 17
+      - uses: gradle/actions/setup-gradle@v6
+      - name: Use the upload key
+        env:
+          UPLOAD_KEYSTORE_BASE64: ${{ secrets.UPLOAD_KEYSTORE_BASE64 }}
+          UPLOAD_STORE_PASSWORD: ${{ secrets.UPLOAD_STORE_PASSWORD }}
+          UPLOAD_KEY_ALIAS: ${{ secrets.UPLOAD_KEY_ALIAS }}
+          UPLOAD_KEY_PASSWORD: ${{ secrets.UPLOAD_KEY_PASSWORD }}
+        run: |
+          for name in UPLOAD_KEYSTORE_BASE64 UPLOAD_STORE_PASSWORD UPLOAD_KEY_ALIAS UPLOAD_KEY_PASSWORD; do
+            if [ -z "${!name}" ]; then
+              echo "::error title=Missing secret::$name is not set. Add it under Settings, Secrets and variables, Actions."
+              exit 1
+            fi
+          done
+          # The key lives only in this run's temporary folder, which is removed with the runner.
+          printf '%s' "$UPLOAD_KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/upload.jks"
+          {
+            echo "storeFile=$RUNNER_TEMP/upload.jks"
+            echo "storePassword=$UPLOAD_STORE_PASSWORD"
+            echo "keyAlias=$UPLOAD_KEY_ALIAS"
+            echo "keyPassword=$UPLOAD_KEY_PASSWORD"
+          } > keystore.properties
+      - name: Build the signed bundle and check its manifest
+        env:
+          VERSION_NAME: ${{ inputs.version-name }}
+          VERSION_CODE: ${{ inputs.version-code || github.run_number }}
+        run: |
+          echo "Building version $VERSION_NAME, code $VERSION_CODE"
+          ./gradlew :androidApp:bundleRelease :androidApp:verifyReleaseNoInternetPermission \
+            -Pfortuna.versionName="$VERSION_NAME" -Pfortuna.versionCode="$VERSION_CODE" 2>&1 | tee "$RUNNER_TEMP/gradle.log"
+      - name: Attach the bundle
+        uses: actions/upload-artifact@v7
+        with:
+          path: androidApp/build/outputs/bundle/release/androidApp-release.aab
+          archive: false
+          if-no-files-found: error
+      - name: Attach the mapping file, to read crash reports from this build
+        uses: actions/upload-artifact@v7
+        with:
+          name: release-mapping-${{ inputs.version-name }}
+          path: androidApp/build/outputs/mapping/release/mapping.txt
+          if-no-files-found: error
+      - name: Remove the key
+        if: always()
+        run: rm -f "$RUNNER_TEMP/upload.jks" keystore.properties
