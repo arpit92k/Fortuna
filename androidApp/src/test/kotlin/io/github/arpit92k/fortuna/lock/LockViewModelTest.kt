@@ -120,4 +120,16 @@ class LockViewModelTest {
         assertEquals("23:59:59", formatWait(24.hours - 1.seconds))
         assertEquals("0:01", formatWait(1.seconds - Duration.parse("0.5s")), "rounded up, never 0:00 while waiting")
     }
+
+    // A damaged store says so on the lock screen rather than crashing the app.
+    @Test
+    fun aDamagedStoreIsExplained() = runTest(dispatcher) {
+        val name = io.github.arpit92k.fortuna.core.store.DocumentStore.MAIN
+        val stored = phone.files.read(name)
+        phone.files.write(name, stored.copyOf().also { it[it.lastIndex] = (it[it.lastIndex] + 1).toByte() })
+        runCurrent()
+        enter(pin)
+        assertIs<SessionState.Locked>(core.state.value)
+        assertEquals(LockMessage.DATA_DAMAGED, lock.ui.value.message)
+    }
 }

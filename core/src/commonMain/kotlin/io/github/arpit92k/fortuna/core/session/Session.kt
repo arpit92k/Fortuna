@@ -160,8 +160,10 @@ class Session(
         check(state.value is SessionState.Locked) { "The app is not locked" }
         val result = keys.unlock(pin)
         if (result is UnlockResult.Success) {
-            store.open(result.dataKey)
-            result.dataKey.fill(0)
+            openStore(result.dataKey)?.let { newerApp ->
+                mutableState.value = SessionState.Locked(keys.waitRemaining())
+                return UnlockResult.DataUnreadable(newerApp)
+            }
             mutableState.value = SessionState.Unlocked
         } else {
             mutableState.value = SessionState.Locked(keys.waitRemaining())
@@ -174,8 +176,7 @@ class Session(
         check(state.value is SessionState.Locked) { "The app is not locked" }
         val result = keys.recoverWithPhrase(phrase, newPin)
         if (result is RecoveryResult.Success) {
-            store.open(result.dataKey)
-            result.dataKey.fill(0)
+            openStore(result.dataKey)?.let { newerApp -> return RecoveryResult.DataUnreadable(newerApp) }
             mutableState.value = SessionState.Unlocked
         }
         return result
