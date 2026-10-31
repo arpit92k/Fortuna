@@ -188,7 +188,8 @@ The file header (format version, salts, key derivation settings) is authenticate
 - **Build.** Gradle with the Kotlin DSL and a version catalog for dependencies. The catalog, `gradle/libs.versions.toml`, is the one place versions are set.
 - **Checks on every pull request.** GitHub Actions runs the core tests, compiles the native target, and builds a debug version of the Android app that can be downloaded and installed.
 - **Device tests.** The app's adapter tests, and the core's tests again, run on emulators at Android 8.0 and Android 16 from a separate Device tests workflow, started by hand rather than on every pull request, because emulators are slow. Pull requests still compile the app's device tests.
-- **Signing of debug builds.** Every debug build is signed with one fixed key, held as a GitHub secret named `DEBUG_KEYSTORE_BASE64`, so each build installs over the last without losing the app's data. Without the secret the build still passes, signed with a throwaway key.
+- **Signing of debug builds.** Every debug build is signed with one fixed key, held as a GitHub secret named `DEBUG_KEYSTORE_BASE64`, so each build installs over the last without losing the app's data. Without the secret the build still passes, signed with a throwaway key. Debug builds use the package `app.arpits.fortuna.debug`, so they can sit beside the Play build on one phone.
+- **Signing of release builds.** The app is `app.arpits.fortuna` on Play, which holds the key that signs what users install. Bundles are uploaded signed with an upload key, kept on the developer's computer and named in `keystore.properties`, which is not in the repository. Without that file a release build is left unsigned.
 
 ## Other platforms
 
