@@ -17,6 +17,8 @@ An offline, on-device wealth tracker.
 
 ## Checks
 
+[![Checks](https://github.com/arpit92k/Fortuna/actions/workflows/checks.yml/badge.svg)](https://github.com/arpit92k/Fortuna/actions/workflows/checks.yml)
+
 Every pull request runs three checks on GitHub Actions:
 
 - **Core tests:** `./gradlew :core:jvmTest`
