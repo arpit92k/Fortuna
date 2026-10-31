@@ -1,5 +1,7 @@
 package io.github.arpit92k.fortuna
 
+import io.github.arpit92k.fortuna.about.AboutViewModel
+import io.github.arpit92k.fortuna.about.AboutScreen
 import io.github.arpit92k.fortuna.growth.growthOf
 import io.github.arpit92k.fortuna.growth.GrowthScreen
 import io.github.arpit92k.fortuna.dashboard.ZeroAccountsViewModel
@@ -85,6 +87,7 @@ class Screens(
     val backup: BackupViewModel,
     val amounts: AmountsViewModel,
     val zeroAccounts: ZeroAccountsViewModel,
+    val about: AboutViewModel,
     val report: BugReportViewModel,
     val biometrics: BiometricsViewModel,
 )
@@ -206,6 +209,11 @@ private fun UnlockedApp(core: Core, screens: Screens) {
 
     BackHandler(enabled = stack.size > 1) { tryLeave() }
 
+    // The tour of what the app does, once, the first time it is open.
+    LaunchedEffect(Unit) {
+        if (!screens.about.seen) navigator.open(Destination.About(firstRun = true))
+    }
+
     val dashboard: @Composable (Modifier) -> Unit = { modifier ->
         val ui by screens.dashboard.ui.collectAsState()
         DashboardScreen(
@@ -322,6 +330,7 @@ private fun UnlockedApp(core: Core, screens: Screens) {
             onCurrencies = { navigator.open(Destination.Currencies) },
             onBackup = { navigator.open(Destination.Backup) },
             onReport = screens.report::open,
+            onAbout = { navigator.open(Destination.About()) },
             onBack = tryLeave,
         )
         Destination.Backup -> {
@@ -349,6 +358,7 @@ private fun UnlockedApp(core: Core, screens: Screens) {
                 onBack = tryLeave,
             )
         }
+        is Destination.About -> AboutScreen(firstRun = current.firstRun, onDone = tryLeave)
         Destination.Growth -> {
             val ui by screens.dashboard.ui.collectAsState()
             val data = dataset
@@ -438,6 +448,8 @@ private fun leave(current: Destination, screens: Screens) {
         Destination.Update -> screens.update.finish()
         Destination.Currencies -> screens.currencies.clearProblem()
         Destination.Backup -> screens.backup.clearMessage()
+        // Done, Skip or back: the tour is not shown again.
+        is Destination.About -> screens.about.markSeen()
         else -> {}
     }
     screens.navigator.back()

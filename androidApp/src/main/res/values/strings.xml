@@ -361,4 +361,22 @@
     <string name="chart_range_ytd">YTD</string>
     <string name="chart_range_1y">1Y</string>
     <string name="chart_range_all">All</string>
+
+    <!-- About Fortuna: the tour, once after first opening, and from Settings -->
+    <string name="settings_about">About Fortuna</string>
+    <string name="settings_about_body">What the app does, and how it keeps your data private.</string>
+    <string name="about_skip">Skip</string>
+    <string name="about_next">Next</string>
+    <string name="about_done">Done</string>
+    <string name="about_version">Version %1$s</string>
+    <string name="about_private_title">Your data stays on this phone</string>
+    <string name="about_private_body">No account, no cloud, no network. Everything is encrypted and opened with your PIN or fingerprint. If you forget the PIN, only your recovery phrase gets you back in.</string>
+    <string name="about_accounts_title">Every account in one place</string>
+    <string name="about_accounts_body">Add savings, investments, property, pensions and debts, each in its own currency. Net worth adds them up in your base currency, or any currency your accounts use.</string>
+    <string name="about_update_title">Update when it suits you</string>
+    <string name="about_update_body">Enter a new value for one account, or walk through them all in a periodic update. Note what you deposit or withdraw, so it is not mistaken for growth.</string>
+    <string name="about_insights_title">See what is working</string>
+    <string name="about_insights_body">Gains show what your money earned. Growth shows how net worth grew, deposits included. Charts split each change into deposits, growth and the effect of exchange rates.</string>
+    <string name="about_backup_title">Keep a backup</string>
+    <string name="about_backup_body">Save an encrypted backup wherever you like. With it and your recovery phrase, you can restore everything on a new phone. The eye on the dashboard hides amounts when others can see your screen.</string>
 </resources>

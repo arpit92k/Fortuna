@@ -37,6 +37,9 @@ sealed interface Destination {
     /** S-17. */
     data object Backup : Destination
 
+    /** About Fortuna: the tour of what the app does; [firstRun] once after the app is first opened, otherwise from Settings. */
+    data class About(val firstRun: Boolean = false) : Destination
+
     /** Growth: net worth now against earlier years, whatever moved it. */
     data object Growth : Destination
 
