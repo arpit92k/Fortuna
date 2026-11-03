@@ -157,8 +157,22 @@ private fun WideScreen(
             Modifier.weight(1f).widthIn(max = ReadableWidth).fillMaxHeight(),
             contentAlignment = if (actionScrolls) Alignment.TopCenter else Alignment.Center,
         ) {
-            if (hero == null) {
+            if (hero == null && actionScrolls) {
                 action()
+            } else if (hero == null) {
+                // Centred while it fits; scrolling once it does not, as a long form does on a short window
+                // or with the keyboard open, so the last button is always within reach.
+                BoxWithConstraints(Modifier.fillMaxSize()) {
+                    val height = maxHeight
+                    Column(
+                        Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).testTag(SIDE_ACTION),
+                    ) {
+                        Column(
+                            Modifier.fillMaxWidth().heightIn(min = height),
+                            verticalArrangement = Arrangement.Center,
+                        ) { action() }
+                    }
+                }
             } else {
                 Column(
                     // As wide as the picture, so the action is exactly as wide as it.
@@ -217,6 +231,9 @@ private fun NarrowScreen(
         }
     }
 }
+
+/** The action's side of a side-by-side screen, which scrolls when the action does not fit. */
+const val SIDE_ACTION = "side-action"
 
 const val SIDE_BY_SIDE = "side-by-side"
 const val STACKED = "stacked"
