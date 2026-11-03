@@ -1,5 +1,9 @@
 package io.github.arpit92k.fortuna.chart
 
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -65,37 +69,49 @@ fun ChartScreen(
             BackButton(onBack)
             Text(title, style = MaterialTheme.typography.titleLarge, maxLines = 1, overflow = TextOverflow.Ellipsis)
         }
-        Column(
-            Modifier.fillMaxWidth().weight(1f).padding(horizontal = 16.dp, vertical = 8.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp),
-        ) {
-            if (summary != null) {
-                Row(horizontalArrangement = Arrangement.spacedBy(24.dp), modifier = Modifier.padding(horizontal = 8.dp)) {
-                    Figure(stringResource(R.string.chart_screen_value), Modifier.weight(1f)) {
-                        AmountText(summary.value, style = MaterialTheme.typography.titleMedium, modifier = Modifier.testTag("range-value"))
-                    }
-                    Figure(stringResource(R.string.chart_screen_change), Modifier.weight(1f)) {
-                        AmountText(summary.change, style = MaterialTheme.typography.titleMedium, signed = true, modifier = Modifier.testTag("range-change"))
-                    }
-                    summary.gain?.let { gain ->
-                        Figure(stringResource(if (liability) R.string.chart_screen_interest else R.string.chart_screen_gain), Modifier.weight(1f)) {
-                            GainText(gain, style = MaterialTheme.typography.titleMedium, modifier = Modifier.testTag("range-gain"))
+        BoxWithConstraints(Modifier.fillMaxWidth().weight(1f)) {
+            // Tall enough: the chart takes what the figures leave. Too short, as on a phone turned sideways:
+            // the page scrolls, and the chart keeps a height of its own.
+            val roomy = maxHeight >= MinFillHeight
+            Column(
+                Modifier
+                    .fillMaxSize()
+                    .then(if (roomy) Modifier else Modifier.verticalScroll(rememberScrollState()))
+                    .padding(horizontal = 16.dp, vertical = 8.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp),
+            ) {
+                if (summary != null) {
+                    Row(horizontalArrangement = Arrangement.spacedBy(24.dp), modifier = Modifier.padding(horizontal = 8.dp)) {
+                        Figure(stringResource(R.string.chart_screen_value), Modifier.weight(1f)) {
+                            AmountText(summary.value, style = MaterialTheme.typography.titleMedium, modifier = Modifier.testTag("range-value"))
+                        }
+                        Figure(stringResource(R.string.chart_screen_change), Modifier.weight(1f)) {
+                            AmountText(summary.change, style = MaterialTheme.typography.titleMedium, signed = true, modifier = Modifier.testTag("range-change"))
+                        }
+                        summary.gain?.let { gain ->
+                            Figure(stringResource(if (liability) R.string.chart_screen_interest else R.string.chart_screen_gain), Modifier.weight(1f)) {
+                                GainText(gain, style = MaterialTheme.typography.titleMedium, modifier = Modifier.testTag("range-gain"))
+                            }
                         }
                     }
                 }
-            }
-            if (split != null) Breakdown(split)
-            SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth().testTag("chart-ranges")) {
-                ChartRange.entries.forEachIndexed { index, choice ->
-                    SegmentedButton(
-                        selected = range == choice,
-                        onClick = { range = choice },
-                        shape = SegmentedButtonDefaults.itemShape(index, ChartRange.entries.size),
-                        modifier = Modifier.testTag("range-${choice.name}"),
-                    ) { Text(stringResource(choice.label())) }
+                if (split != null) Breakdown(split)
+                SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth().testTag("chart-ranges")) {
+                    ChartRange.entries.forEachIndexed { index, choice ->
+                        SegmentedButton(
+                            selected = range == choice,
+                            onClick = { range = choice },
+                            shape = SegmentedButtonDefaults.itemShape(index, ChartRange.entries.size),
+                            modifier = Modifier.testTag("range-${choice.name}"),
+                        ) { Text(stringResource(choice.label())) }
+                    }
+                }
+                if (roomy) {
+                    ValueChart(shown, Modifier.fillMaxWidth().weight(1f), fill = true)
+                } else {
+                    ValueChart(shown, Modifier.fillMaxWidth().height(ScrollingChartHeight), fill = true)
                 }
             }
-            ValueChart(shown, Modifier.fillMaxWidth().weight(1f), fill = true)
         }
     }
 }
@@ -136,5 +152,11 @@ private fun ChartRange.label(): Int = when (this) {
     ChartRange.ONE_YEAR -> R.string.chart_range_1y
     ChartRange.ALL -> R.string.chart_range_all
 }
+
+/** Below this height the chart page scrolls, rather than squeezing the chart. */
+private val MinFillHeight = 480.dp
+
+/** The chart's height when the page scrolls. */
+private val ScrollingChartHeight = 280.dp
 
 const val CHART_SCREEN = "chart-screen"

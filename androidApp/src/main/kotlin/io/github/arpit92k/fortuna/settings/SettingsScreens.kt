@@ -83,93 +83,96 @@ fun SettingsScreen(
     anyAtZero: Boolean = false,
 ) {
     Page(stringResource(R.string.settings_title), onBack, "settings") {
-        // Only on a phone that can, or if it is on and the phone no longer can, so it can be turned off.
-        if (biometrics.available || biometrics.enabled) {
-            Row(
-                Modifier
-                    .fillMaxWidth()
-                    .toggleable(value = biometrics.enabled, enabled = !biometrics.working, role = Role.Switch, onValueChange = onBiometrics)
-                    .padding(8.dp, 16.dp)
-                    .testTag("settings-biometrics"),
-                horizontalArrangement = Arrangement.spacedBy(16.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                IconTile(FortunaIcon.Fingerprint, size = 40.dp)
-                Column(Modifier.weight(1f)) {
-                    Text(stringResource(R.string.settings_biometrics), style = MaterialTheme.typography.titleMedium)
-                    Text(
-                        stringResource(R.string.settings_biometrics_body),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                    if (biometrics.message == BiometricMessage.NOT_TURNED_ON) Problem(stringResource(R.string.biometric_not_turned_on))
+        // Scrolls once the items do not fit, as on a phone turned sideways.
+        Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState())) {
+            // Only on a phone that can, or if it is on and the phone no longer can, so it can be turned off.
+            if (biometrics.available || biometrics.enabled) {
+                Row(
+                    Modifier
+                        .fillMaxWidth()
+                        .toggleable(value = biometrics.enabled, enabled = !biometrics.working, role = Role.Switch, onValueChange = onBiometrics)
+                        .padding(8.dp, 16.dp)
+                        .testTag("settings-biometrics"),
+                    horizontalArrangement = Arrangement.spacedBy(16.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    IconTile(FortunaIcon.Fingerprint, size = 40.dp)
+                    Column(Modifier.weight(1f)) {
+                        Text(stringResource(R.string.settings_biometrics), style = MaterialTheme.typography.titleMedium)
+                        Text(
+                            stringResource(R.string.settings_biometrics_body),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                        if (biometrics.message == BiometricMessage.NOT_TURNED_ON) Problem(stringResource(R.string.biometric_not_turned_on))
+                    }
+                    Switch(checked = biometrics.enabled, onCheckedChange = null, enabled = !biometrics.working)
                 }
-                Switch(checked = biometrics.enabled, onCheckedChange = null, enabled = !biometrics.working)
+                HorizontalDivider()
             }
-            HorizontalDivider()
-        }
-        // Accounts at zero, such as a closed account or a paid-off card, off the dashboard and out of updates.
-        if (anyAtZero) {
-            Row(
-                Modifier
-                    .fillMaxWidth()
-                    .toggleable(value = zeroAccountsHidden, role = Role.Switch, onValueChange = onZeroAccountsHidden)
-                    .padding(8.dp, 16.dp)
-                    .testTag("settings-hide-zero"),
-                horizontalArrangement = Arrangement.spacedBy(16.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                IconTile(FortunaIcon.Hide, size = 40.dp)
-                Column(Modifier.weight(1f)) {
-                    Text(stringResource(R.string.settings_hide_zero), style = MaterialTheme.typography.titleMedium)
-                    Text(
-                        stringResource(R.string.settings_hide_zero_body),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
+            // Accounts at zero, such as a closed account or a paid-off card, off the dashboard and out of updates.
+            if (anyAtZero) {
+                Row(
+                    Modifier
+                        .fillMaxWidth()
+                        .toggleable(value = zeroAccountsHidden, role = Role.Switch, onValueChange = onZeroAccountsHidden)
+                        .padding(8.dp, 16.dp)
+                        .testTag("settings-hide-zero"),
+                    horizontalArrangement = Arrangement.spacedBy(16.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    IconTile(FortunaIcon.Hide, size = 40.dp)
+                    Column(Modifier.weight(1f)) {
+                        Text(stringResource(R.string.settings_hide_zero), style = MaterialTheme.typography.titleMedium)
+                        Text(
+                            stringResource(R.string.settings_hide_zero_body),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                    Switch(checked = zeroAccountsHidden, onCheckedChange = null)
                 }
-                Switch(checked = zeroAccountsHidden, onCheckedChange = null)
+                HorizontalDivider()
             }
+            SettingsItem(
+                FortunaIcon.Currency,
+                stringResource(R.string.settings_currencies),
+                stringResource(R.string.settings_currencies_body),
+                onCurrencies,
+                "settings-currencies",
+            )
             HorizontalDivider()
-        }
-        SettingsItem(
-            FortunaIcon.Currency,
-            stringResource(R.string.settings_currencies),
-            stringResource(R.string.settings_currencies_body),
-            onCurrencies,
-            "settings-currencies",
-        )
-        HorizontalDivider()
-        SettingsItem(
-            FortunaIcon.Backup,
-            stringResource(R.string.settings_backup),
-            stringResource(R.string.settings_backup_body),
-            onBackup,
-            "settings-backup",
-        )
-        HorizontalDivider()
-        SettingsItem(
-            FortunaIcon.Phone,
-            stringResource(R.string.settings_about),
-            stringResource(R.string.settings_about_body),
-            onAbout,
-            "settings-about",
-        )
-        HorizontalDivider()
-        SettingsItem(
-            FortunaIcon.Report,
-            stringResource(R.string.settings_report),
-            stringResource(R.string.settings_report_body),
-            onReport,
-            "settings-report",
-        )
-        HorizontalDivider()
-        // Debug builds only: a crash on purpose, to check it is recorded and offered on the next start.
-        if (BuildConfig.DEBUG) {
-            TextButton(
-                onClick = { throw IllegalStateException("A crash on purpose, with £1,234.56 in its message, which is never recorded") },
-                modifier = Modifier.padding(top = 8.dp).testTag("settings-crash"),
-            ) { Text("Crash the app (debug builds only)") }
+            SettingsItem(
+                FortunaIcon.Backup,
+                stringResource(R.string.settings_backup),
+                stringResource(R.string.settings_backup_body),
+                onBackup,
+                "settings-backup",
+            )
+            HorizontalDivider()
+            SettingsItem(
+                FortunaIcon.Phone,
+                stringResource(R.string.settings_about),
+                stringResource(R.string.settings_about_body),
+                onAbout,
+                "settings-about",
+            )
+            HorizontalDivider()
+            SettingsItem(
+                FortunaIcon.Report,
+                stringResource(R.string.settings_report),
+                stringResource(R.string.settings_report_body),
+                onReport,
+                "settings-report",
+            )
+            HorizontalDivider()
+            // Debug builds only: a crash on purpose, to check it is recorded and offered on the next start.
+            if (BuildConfig.DEBUG) {
+                TextButton(
+                    onClick = { throw IllegalStateException("A crash on purpose, with £1,234.56 in its message, which is never recorded") },
+                    modifier = Modifier.padding(top = 8.dp).testTag("settings-crash"),
+                ) { Text("Crash the app (debug builds only)") }
+            }
         }
     }
 }
