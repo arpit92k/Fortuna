@@ -99,6 +99,14 @@ fun pointsFrom(points: List<ChartPoint>, from: LocalDate?): List<ChartPoint> {
     return listOf(inForce.copy(date = from)) + points.filter { it.date > from }
 }
 
+/**
+ * Where the breakdown of the change over [shown] starts: the first point the
+ * chart shows, so its parts add up to the change measured from that point.
+ * A range that starts before the history starts at its first value, as the
+ * chart does, rather than at nothing. [shown] must not be empty.
+ */
+fun breakdownStart(shown: List<ChartPoint>): LocalDate = shown.first().date
+
 /** The figures above the full-screen chart, over the points it shows. */
 data class RangeSummary(
     /** The value at the end. */
