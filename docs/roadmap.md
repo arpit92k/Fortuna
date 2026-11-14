@@ -59,6 +59,7 @@ These keep the MVP small. Each is lifted by an item in the future plans.
 - **Periodic update extras (UF-04).** The "unchanged" shortcut, the typing-mistake check and the end-of-update summary.
 - **Change base currency (UF-09).**
 - **Import history from a spreadsheet (UF-15).** The app provides an empty, simplified template for the user to fill in and import.
+- **Tags and chart markers.** Tag a value, such as "bonus" or "house sale", and show tagged values and notes as markers on the chart, so a jump explains itself.
 
 ### Insights
 
@@ -66,17 +67,23 @@ These keep the MVP small. Each is lifted by an item in the future plans.
 - **Allocation by category (UF-10).**
 - **Base-currency view of a source (UF-11),** including the currency effect.
 - **Out-of-date markers.** Each source gets an expected update frequency, with a default, and is marked once that period has passed.
+- **Goals.** A target for net worth, or for one source, with progress towards it and a projected date from past growth.
+- **Projection.** Where net worth is heading at the current rate of saving and growth, worked out on the phone.
+- **Debt payoff.** For a debt, the date it is paid off at the repayments recorded so far.
+- **Year in review.** A summary of each year: what was put in, growth and currency effect. It can be shared as a picture, as other screens can.
 
 ### Protecting the data
 
 - **Security settings (UF-16).** Change the PIN and replace the recovery phrase.
 - **Backup prompts (UF-12).** Offer a backup after each update and show whether data has changed since the last one.
 - **Restore over existing data (UF-13).**
+- **Automatic backups.** Save an encrypted backup on a schedule, or after each update, to a folder the user chooses. If the folder is synced to the user's own cloud storage, the phone uploads it; Fortuna itself still never uses the network.
 
 ### Convenience
 
 - **Unencrypted spreadsheet export.** A readable copy of the data for the user's own analysis. It leaves the app's protection, so the app must say so at the point of export.
 - **Update reminders.** Prompt the user to do a periodic update.
+- **Home-screen widget.** Net worth on the home screen, with amounts hidden unless the user turns them on. It shows figures outside the locked app, so it is opt-in.
 
 ### Network features
 
