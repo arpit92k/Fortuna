@@ -19,7 +19,7 @@ There are four stages:
 | Foundation | 00 | An empty project that builds, tests and produces an app on every pull request |
 | Building blocks | 01 to 05 | Five independent pieces, each tested alone |
 | The core, assembled | 06 to 13 | The whole app working without a screen, proven by an end-to-end test |
-| The Android app | 14 to 24 | The MVP, a group of screens at a time |
+| The Android app | 14 to 26 | The MVP, a group of screens at a time, then the release check |
 
 ## Steps at a glance
 
@@ -78,7 +78,7 @@ flowchart TB
     end
     subgraph app["The Android app"]
         adapters["14 Android adapters"]
-        screens["15 to 24 Screens"]
+        screens["15 to 26 Screens"]
     end
 
     money --> rates
@@ -334,7 +334,7 @@ The screens where a value is entered (S-11 to S-14) each get the two-minute grac
 
 ### Step 21: charts
 
-- **Builds:** one chart composable, with the library (Koalaplot or Vico) chosen here. The net worth timeline on S-09 and the value over time on S-10.
+- **Builds:** one chart composable, with the library chosen here (decided: Vico). The net worth timeline on S-09 and the value over time on S-10.
 - **Done when:** both charts draw from the figures step 08 already produces, and still read sensibly with one data point, with two, and with several years of history.
 
 ### Step 22: welcome screen
@@ -412,7 +412,7 @@ The design documents leave these open. Each is listed with the step that needs i
 |---|---|---|
 | How the timeline picks its dates | 08 | Every date on which a value or a rate changed |
 | How many words S-04 asks for | 15 | Three, at random positions |
-| Chart library | 21 | As the technology document says, decided when the charts are built |
+| Chart library | 21 | Decided: Vico, behind one `ValueChart` composable; the technology document gives the reasons |
 | Support email address for bug reports | 24 | Decided: support.fortuna@gmail.com, a dedicated address for Fortuna |
 
 Decided since this plan was written:
