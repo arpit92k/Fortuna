@@ -36,6 +36,7 @@ import io.github.arpit92k.fortuna.ui.ChartPoint
 import io.github.arpit92k.fortuna.ui.ChartRange
 import io.github.arpit92k.fortuna.ui.GainText
 import io.github.arpit92k.fortuna.ui.ValueChart
+import io.github.arpit92k.fortuna.ui.breakdownStart
 import io.github.arpit92k.fortuna.ui.pointsFrom
 import io.github.arpit92k.fortuna.ui.rangeSummary
 import io.github.arpit92k.fortuna.core.insights.NetWorthChange
@@ -62,7 +63,7 @@ fun ChartScreen(
     val today = remember { java.time.LocalDate.now().toKotlinLocalDate() }
     val shown = remember(points, range) { pointsFrom(points, range.start(today)) }
     val summary = remember(shown, liability) { rangeSummary(shown, liability) }
-    val split = remember(points, range, breakdown) { breakdown?.invoke(range.start(today)) }
+    val split = remember(shown, breakdown) { if (shown.isEmpty()) null else breakdown?.invoke(breakdownStart(shown)) }
 
     Column(Modifier.fillMaxSize().safeDrawingPadding().testTag(CHART_SCREEN)) {
         Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(start = 4.dp, top = 4.dp, end = 16.dp)) {

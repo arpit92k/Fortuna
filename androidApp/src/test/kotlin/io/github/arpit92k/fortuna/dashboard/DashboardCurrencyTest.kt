@@ -13,6 +13,9 @@ import io.github.arpit92k.fortuna.core.recording.addSource
 import io.github.arpit92k.fortuna.core.recording.chooseBaseCurrency
 import io.github.arpit92k.fortuna.core.recording.recordRate
 import io.github.arpit92k.fortuna.core.insights.netWorthChange
+import io.github.arpit92k.fortuna.ui.breakdownStart
+import io.github.arpit92k.fortuna.ui.pointsFrom
+import io.github.arpit92k.fortuna.ui.rangeSummary
 import kotlinx.datetime.LocalDate
 import org.junit.Test
 import kotlin.test.assertEquals
@@ -76,5 +79,19 @@ class DashboardCurrencyTest {
         assertEquals(change.total, change.added + change.growth + change.currencyEffect + change.newlyTracked)
         assertEquals(usd(66_667), change.added, "the £500 paid in, at today's 0.75")
         assertEquals(netWorthChangeIn(data, january, today, pounds), data.netWorthChange(january, today))
+    }
+
+    // A range that starts before the history, and All, measure the breakdown from the
+    // chart's first value, so the parts still add up to the change shown.
+    @Test
+    fun aRangeLongerThanTheHistoryStillAddsUp() {
+        val timeline = dashboardOf(data, today).timeline
+        for (from in listOf(LocalDate(2025, 11, 1), null)) {
+            val shown = pointsFrom(timeline, from)
+            val change = netWorthChangeIn(data, breakdownStart(shown), today, pounds)
+            assertEquals(rangeSummary(shown)!!.change, change.total, "from $from")
+            assertEquals(change.total, change.added + change.growth + change.currencyEffect + change.newlyTracked)
+            assertEquals(gbp(0), change.newlyTracked, "both accounts were there from the first value")
+        }
     }
 }
