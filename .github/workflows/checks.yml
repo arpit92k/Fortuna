@@ -1,9 +1,16 @@
 name: Checks
 
+# Changes to documentation alone build nothing, so they skip these checks.
 on:
   pull_request:
+    paths-ignore:
+      - 'docs/**'
+      - '**.md'
   push:
     branches: [main]
+    paths-ignore:
+      - 'docs/**'
+      - '**.md'
 
 permissions:
   contents: read
