@@ -9,6 +9,8 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -64,8 +66,10 @@ fun formatChange(money: Money): String = formatSignedMoney(money)
  * S-10 Source: the value now, the totals since the opening balance, the value
  * over time, and every value with what changed. Each value can be corrected;
  * the latest can be deleted, and a source with only its opening value can be
- * deleted outright. Deleting asks first.
+ * deleted outright. Deleting asks first. A source can be closed, and a
+ * closed one reopened (UF-07).
  */
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun SourcePageScreen(
     ui: SourcePageUi?,
@@ -78,8 +82,10 @@ fun SourcePageScreen(
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
     showBack: Boolean = true,
+    closing: SourceClosing? = null,
 ) {
     var confirm by rememberSaveable { mutableStateOf<String?>(null) }
+    var closeOpen by rememberSaveable { mutableStateOf(false) }
     Box(modifier.fillMaxSize().safeDrawingPadding(), contentAlignment = Alignment.TopCenter) {
         if (ui == null) {
             CircularProgressIndicator(Modifier.padding(48.dp))
@@ -105,11 +111,29 @@ fun SourcePageScreen(
                 }
             }
             item {
-                Row(Modifier.padding(vertical = 16.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    Button(onClick = onAddValue, modifier = Modifier.testTag("add-value")) { Text(stringResource(R.string.source_add_value)) }
-                    if (ui.canDeleteSource) {
-                        OutlinedButton(onClick = { confirm = DELETE_SOURCE }, modifier = Modifier.testTag("delete-source")) {
-                            Text(stringResource(R.string.source_delete_source))
+                FlowRow(
+                    Modifier.padding(vertical = 16.dp),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    if (ui.closed) {
+                        // Closed: its history stays as it was, until it is reopened.
+                        if (closing != null) {
+                            Button(onClick = closing.onReopen, modifier = Modifier.testTag("reopen-source")) {
+                                Text(stringResource(R.string.source_reopen))
+                            }
+                        }
+                    } else {
+                        Button(onClick = onAddValue, modifier = Modifier.testTag("add-value")) { Text(stringResource(R.string.source_add_value)) }
+                        if (closing != null) {
+                            OutlinedButton(onClick = { closing.onClearProblem(); closeOpen = true }, modifier = Modifier.testTag("close-source")) {
+                                Text(stringResource(R.string.source_close))
+                            }
+                        }
+                        if (ui.canDeleteSource) {
+                            OutlinedButton(onClick = { confirm = DELETE_SOURCE }, modifier = Modifier.testTag("delete-source")) {
+                                Text(stringResource(R.string.source_delete_source))
+                            }
                         }
                     }
                 }
@@ -127,7 +151,8 @@ fun SourcePageScreen(
                     liability = ui.liability,
                     latest = row == ui.entries.first(),
                     canDelete = ui.canDeleteLatest,
-                    onEdit = { onEdit(row.date) },
+                    // A closed source's values are not changed.
+                    onEdit = if (ui.closed) null else { { onEdit(row.date) } },
                     onDelete = { confirm = DELETE_LATEST },
                     openingGain = if (row.opening) ui.openingGain else null,
                     inBase = ui.inBase?.takeIf { ui.showingBase }?.rows?.get(row.date),
@@ -135,6 +160,31 @@ fun SourcePageScreen(
                 HorizontalDivider()
             }
         }
+    }
+
+    if (closeOpen && ui != null && closing != null && !ui.closed) {
+        CloseSourceDialog(
+            name = ui.name,
+            liability = ui.liability,
+            lastValue = ui.entries.first().value,
+            latestDate = ui.latestDate,
+            today = closing.today,
+            problem = closing.problem,
+            onClose = { date, moved -> closing.onClose(date, moved) { closeOpen = false } },
+            onDismiss = { closeOpen = false; closing.onClearProblem() },
+        )
+    }
+    closing?.reopenRefused?.let { name ->
+        AlertDialog(
+            onDismissRequest = closing.onClearReopenRefused,
+            title = { Text(stringResource(R.string.source_reopen_refused_title)) },
+            text = { Text(stringResource(R.string.source_reopen_refused, name)) },
+            confirmButton = {
+                TextButton(onClick = closing.onClearReopenRefused, modifier = Modifier.testTag("reopen-refused-ok")) {
+                    Text(stringResource(R.string.date_ok))
+                }
+            },
+        )
     }
 
     when (confirm) {
@@ -155,6 +205,18 @@ fun SourcePageScreen(
     }
 }
 
+/** Closing and reopening a source (UF-07), from its page. */
+class SourceClosing(
+    val today: LocalDate,
+    val problem: ValueEntryProblem?,
+    val onClose: (date: LocalDate, movedOut: String, onClosed: () -> Unit) -> Unit,
+    val onClearProblem: () -> Unit,
+    val onReopen: () -> Unit,
+    /** The open source whose name keeps this one closed, until the user has read why. */
+    val reopenRefused: String?,
+    val onClearReopenRefused: () -> Unit,
+)
+
 private const val DELETE_LATEST = "latest"
 private const val DELETE_SOURCE = "source"
 
@@ -171,6 +233,14 @@ private fun Header(ui: SourcePageUi, onShowInBase: (Boolean) -> Unit) {
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
+            ui.closedOn?.let { closed ->
+                Text(
+                    stringResource(R.string.source_closed_on, formatDate(closed)),
+                    style = MaterialTheme.typography.labelLarge,
+                    color = MaterialTheme.colorScheme.tertiary,
+                    modifier = Modifier.testTag("source-closed"),
+                )
+            }
             val inBase = ui.inBase
             // A foreign source: its own currency, or the base currency with the currency's effect on it.
             if (inBase != null) {
@@ -259,13 +329,13 @@ private fun HistoryItem(
     liability: Boolean,
     latest: Boolean,
     canDelete: Boolean,
-    onEdit: () -> Unit,
+    onEdit: (() -> Unit)?,
     onDelete: () -> Unit,
     openingGain: Gain? = null,
     inBase: BaseRow? = null,
 ) {
     Column(
-        Modifier.fillMaxWidth().clickable(onClick = onEdit).padding(vertical = 12.dp).testTag("history-${row.date}"),
+        Modifier.fillMaxWidth().then(if (onEdit != null) Modifier.clickable(onClick = onEdit) else Modifier).padding(vertical = 12.dp).testTag("history-${row.date}"),
         verticalArrangement = Arrangement.spacedBy(4.dp),
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {

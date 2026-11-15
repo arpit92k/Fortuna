@@ -14,6 +14,7 @@ import io.github.arpit92k.fortuna.core.recording.RecordingError.BaseCurrencyHasN
 import io.github.arpit92k.fortuna.core.recording.RecordingError.BaseCurrencyNotChosen
 import io.github.arpit92k.fortuna.core.recording.RecordingError.BeforeLatestSnapshot
 import io.github.arpit92k.fortuna.core.recording.RecordingError.CategoryArchived
+import io.github.arpit92k.fortuna.core.recording.RecordingError.CloseNotAfterLatest
 import io.github.arpit92k.fortuna.core.recording.RecordingError.DateInFuture
 import io.github.arpit92k.fortuna.core.recording.RecordingError.EmptyName
 import io.github.arpit92k.fortuna.core.recording.RecordingError.NameInUse
@@ -184,6 +185,58 @@ class RecordingRulesTest {
         val updated = withBoth.addSnapshot(account, april, gbp(300_000), gbp(0), today).dataset()
         assertEquals(SourceHasHistory(account), updated.deleteSource(account).error())
         assertEquals(NoSuchSource(SourceId(99)), withBoth.deleteSource(SourceId(99)).error())
+    }
+
+    // ---- Closing and reopening a source (UF-07) ----
+
+    @Test
+    fun closingRecordsZeroWithTheLastValueMovedOutAndArchives() {
+        val closed = withAccount.closeSource(account, april, today).dataset()
+        val source = closed.source(account)!!
+        assertEquals(Status.ARCHIVED, source.status)
+        val closing = source.snapshots.on(april)!!
+        assertEquals(gbp(0), closing.value)
+        assertEquals(gbp(-250_000), closing.amountAdded, "the last value, moved out")
+        // Kept in history, left out of the update and the list of active sources.
+        assertEquals(2, source.snapshots.size)
+        assertEquals(SourceArchived(account), closed.addSnapshot(account, today, gbp(1), gbp(0), today).error())
+    }
+
+    @Test
+    fun anAssetWrittenOffMovesNothingOut() {
+        val closed = withAccount.closeSource(account, april, today, amountAdded = gbp(0), note = " Written off ").dataset()
+        val closing = closed.source(account)!!.snapshots.on(april)!!
+        assertEquals(gbp(0), closing.amountAdded)
+        assertEquals("Written off", closing.note)
+    }
+
+    @Test
+    fun aSourceIsClosedAfterItsLatestValueAndNotInTheFuture() {
+        assertEquals(CloseNotAfterLatest(january), withAccount.closeSource(account, january, today).error())
+        assertEquals(DateInFuture(tomorrow, today), withAccount.closeSource(account, tomorrow, today).error())
+        assertEquals(WrongCurrency(pounds, dollars), withAccount.closeSource(account, april, today, amountAdded = usd(1)).error())
+        assertEquals(NoSuchSource(SourceId(99)), withAccount.closeSource(SourceId(99), april, today).error())
+        val closed = withAccount.closeSource(account, april, today).dataset()
+        assertEquals(SourceArchived(account), closed.closeSource(account, today, today).error(), "closed once")
+    }
+
+    @Test
+    fun aClosedSourceReopensWithItsHistory() {
+        val closed = withAccount.closeSource(account, april, today).dataset()
+        val reopened = closed.reopenSource(account).dataset()
+        val source = reopened.source(account)!!
+        assertEquals(Status.ACTIVE, source.status)
+        assertEquals(listOf(january, april), source.snapshots.map { it.date })
+        // Closed by mistake: the closing value goes as the latest.
+        val undone = reopened.deleteLatestSnapshot(account).dataset()
+        assertEquals(listOf(january), undone.source(account)!!.snapshots.map { it.date })
+    }
+
+    @Test
+    fun aClosedSourcesNameIsFreeAndReopeningNeedsItBack() {
+        val closed = withAccount.closeSource(account, april, today).dataset()
+        val renamed = closed.addSource("Current account", cash, today, gbp(1), today).dataset()
+        assertEquals(NameInUse("Current account"), renamed.reopenSource(account).error())
     }
 
     // ---- Adding snapshots ----

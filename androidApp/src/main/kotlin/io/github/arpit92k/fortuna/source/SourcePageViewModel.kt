@@ -14,7 +14,15 @@ import io.github.arpit92k.fortuna.core.insights.HistoryEntry
 import io.github.arpit92k.fortuna.core.insights.SourceHistory
 import io.github.arpit92k.fortuna.core.insights.history
 import io.github.arpit92k.fortuna.core.money.Money
+import io.github.arpit92k.fortuna.core.domain.Status
+import io.github.arpit92k.fortuna.core.money.AmountProblem
+import io.github.arpit92k.fortuna.core.money.MoneyParseResult
+import io.github.arpit92k.fortuna.core.recording.RecordingError
 import io.github.arpit92k.fortuna.core.recording.RecordingResult
+import io.github.arpit92k.fortuna.core.recording.closeSource
+import io.github.arpit92k.fortuna.core.recording.reopenSource
+import io.github.arpit92k.fortuna.ui.parseAmount
+import java.util.Locale
 import io.github.arpit92k.fortuna.core.recording.deleteLatestSnapshot
 import io.github.arpit92k.fortuna.core.recording.deleteSource
 import io.github.arpit92k.fortuna.core.session.SessionState
@@ -50,15 +58,22 @@ data class SourcePageUi(
     val inBase: InBase? = null,
     /** Whether the page shows [inBase] rather than the source's own currency. */
     val showingBase: Boolean = false,
+    /** The date it was closed, which is its closing value's, or null while it is open (UF-07). */
+    val closedOn: LocalDate? = null,
 ) {
     /** The chart the page shows: in the base currency when [showingBase]. */
     val shownChart: List<ChartPoint> get() = inBase?.takeIf { showingBase }?.chart ?: chart
 
-    /** The latest value can be deleted unless it is the only one. */
-    val canDeleteLatest: Boolean get() = entries.size > 1
+    val closed: Boolean get() = closedOn != null
+
+    /** The latest value's date: a source is closed on a later one. */
+    val latestDate: LocalDate get() = entries.first().date
+
+    /** The latest value can be deleted unless it is the only one, or the source is closed. */
+    val canDeleteLatest: Boolean get() = entries.size > 1 && !closed
 
     /** A source is deleted only while it has just its opening value; one with history is kept. */
-    val canDeleteSource: Boolean get() = entries.size == 1
+    val canDeleteSource: Boolean get() = entries.size == 1 && !closed
 }
 
 /**
@@ -112,6 +127,7 @@ fun sourcePageOf(data: Dataset, id: SourceId, today: LocalDate): SourcePageUi? {
             val liability = data.category(source.categoryId)?.kind == CategoryKind.LIABILITY
             Gain(if (liability) -gained else gained, source.openingPutIn!!.takeIf { it.minorUnits > 0 })
         },
+        closedOn = if (source.status == Status.ARCHIVED) rows.last().date else null,
     )
 }
 
@@ -170,6 +186,67 @@ class SourcePageViewModel(
         viewModelScope.launch { core.run { record { data, _ -> data.deleteLatestSnapshot(id) } } }
     }
 
+    private val mutableCloseProblem = MutableStateFlow<ValueEntryProblem?>(null)
+
+    /** Why closing was refused, shown in the close dialog. */
+    val closeProblem: StateFlow<ValueEntryProblem?> = mutableCloseProblem.asStateFlow()
+
+    private val mutableReopenRefused = MutableStateFlow<String?>(null)
+
+    /** The name of an open source that keeps this one from reopening, until the user has read why. */
+    val reopenRefused: StateFlow<String?> = mutableReopenRefused.asStateFlow()
+
+    /**
+     * Closes the source on [date] (UF-07), with [movedOut] as typed: what was
+     * moved out, or for a debt repaid, as a positive amount. Blank is all of
+     * the last value. [onClosed] runs once it is closed.
+     */
+    fun close(id: SourceId, date: LocalDate, movedOut: String, locale: Locale = Locale.getDefault(), onClosed: () -> Unit) {
+        val currency = mutableUi.value?.takeIf { it.id == id }?.value?.currency ?: return
+        val moved = if (movedOut.isBlank()) {
+            null
+        } else {
+            when (val parsed = parseAmount(movedOut, currency, locale)) {
+                is MoneyParseResult.Success -> parsed.money
+                is MoneyParseResult.Failure -> {
+                    mutableCloseProblem.value = when (parsed.problem) {
+                        AmountProblem.TOO_MANY_DECIMAL_PLACES -> ValueEntryProblem.TOO_MANY_DECIMAL_PLACES
+                        AmountProblem.OUT_OF_RANGE -> ValueEntryProblem.AMOUNT_TOO_LARGE
+                        else -> ValueEntryProblem.NOT_AN_AMOUNT
+                    }
+                    return
+                }
+            }
+        }
+        viewModelScope.launch {
+            val result = core.run { record { data, today -> data.closeSource(id, date, today, amountAdded = moved?.let { -it }) } }
+            mutableCloseProblem.value = when (val error = (result as? RecordingResult.Failure)?.error) {
+                null -> null
+                is RecordingError.DateInFuture -> ValueEntryProblem.DATE_IN_FUTURE
+                is RecordingError.CloseNotAfterLatest -> ValueEntryProblem.BEFORE_LATEST
+                else -> ValueEntryProblem.NOT_SAVED
+            }
+            if (result is RecordingResult.Success) onClosed()
+        }
+    }
+
+    fun clearCloseProblem() {
+        mutableCloseProblem.value = null
+    }
+
+    /** Reopens a closed source. Refused while an open source has its name. */
+    fun reopen(id: SourceId) {
+        viewModelScope.launch {
+            val result = core.run { record { data, _ -> data.reopenSource(id) } }
+            val error = (result as? RecordingResult.Failure)?.error
+            if (error is RecordingError.NameInUse) mutableReopenRefused.value = error.name
+        }
+    }
+
+    fun clearReopenRefused() {
+        mutableReopenRefused.value = null
+    }
+
     /** Deletes a source created by mistake, after the screen has asked. [onDeleted] runs if it was deleted. */
     fun deleteSource(id: SourceId, onDeleted: () -> Unit) {
         viewModelScope.launch {
@@ -202,3 +279,13 @@ private fun growthOf(history: SourceHistory, liability: Boolean): Gain? {
 }
 
 private data class Shown(val open: Boolean, val data: Dataset?, val id: SourceId?, val base: Boolean)
+
+/** A closed source in the list of closed sources. */
+data class ClosedSourceRow(val id: SourceId, val name: String, val category: String, val closedOn: LocalDate)
+
+/** The closed sources, the most recently closed first. */
+fun closedSourcesOf(data: Dataset): List<ClosedSourceRow> =
+    data.sources
+        .filter { it.status == Status.ARCHIVED }
+        .map { ClosedSourceRow(it.id, it.name, data.category(it.categoryId)?.name.orEmpty(), it.snapshots.latest()!!.date) }
+        .sortedByDescending { it.closedOn }

@@ -245,4 +245,66 @@ class SourceFlowTest {
         entry.discard()
         assertEquals("", entry.form.value.value)
     }
+
+    // Step 28 (UF-07): closing a source, and reopening it.
+    @Test
+    fun aClosedSourceLeavesTheDashboardAndKeepsItsHistory() = runTest(dispatcher) {
+        setUp()
+        show(savings)
+        var closed = false
+        page.close(savings, april, movedOut = "", locale = Locale.UK) { closed = true }
+        advanceUntilIdle()
+        assertTrue(closed)
+        val ui = show(savings)
+        assertEquals(april, ui.closedOn)
+        assertEquals(gbp(0), ui.value)
+        assertEquals(gbp(-300_000), ui.entries.first().added, "all of it moved out")
+        assertFalse(ui.canDeleteLatest, "a closed source's values stay as they are")
+        assertEquals(listOf("Mortgage"), dashboard.ui.value!!.sources.map { it.name })
+        assertEquals(listOf("Savings"), closedSourcesOf(core.run { read { d, _ -> d } }).map { it.name })
+
+        page.reopen(savings)
+        advanceUntilIdle()
+        assertNull(show(savings).closedOn)
+        assertEquals(setOf("Savings", "Mortgage"), dashboard.ui.value!!.sources.map { it.name }.toSet())
+    }
+
+    @Test
+    fun anAssetWrittenOffCountsAsALoss() = runTest(dispatcher) {
+        setUp()
+        show(savings)
+        page.close(savings, april, movedOut = "0", locale = Locale.UK) {}
+        advanceUntilIdle()
+        val ui = show(savings)
+        assertEquals(gbp(0), ui.entries.first().added)
+        assertEquals(gbp(-300_000), ui.entries.first().growth)
+    }
+
+    @Test
+    fun closingIsRefusedOnOrBeforeTheLatestValueAndForABadAmount() = runTest(dispatcher) {
+        setUp()
+        show(savings)
+        var closed = false
+        page.close(savings, january, movedOut = "", locale = Locale.UK) { closed = true }
+        advanceUntilIdle()
+        assertEquals(ValueEntryProblem.BEFORE_LATEST, page.closeProblem.value)
+        page.close(savings, april, movedOut = "12.345", locale = Locale.UK) { closed = true }
+        advanceUntilIdle()
+        assertEquals(ValueEntryProblem.TOO_MANY_DECIMAL_PLACES, page.closeProblem.value)
+        assertFalse(closed)
+        assertNull(show(savings).closedOn)
+    }
+
+    @Test
+    fun aSourceWhoseNameIsTakenAgainStaysClosed() = runTest(dispatcher) {
+        setUp()
+        show(savings)
+        page.close(savings, april, movedOut = "", locale = Locale.UK) {}
+        advanceUntilIdle()
+        add("Savings", 1, 100, april)
+        page.reopen(savings)
+        advanceUntilIdle()
+        assertEquals("Savings", page.reopenRefused.value)
+        assertEquals(april, show(savings).closedOn)
+    }
 }

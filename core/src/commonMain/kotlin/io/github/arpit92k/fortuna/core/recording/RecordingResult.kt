@@ -55,6 +55,9 @@ sealed interface RecordingError {
     /** A source with history is archived, not deleted. Only a source with just its opening snapshot can be deleted. */
     data class SourceHasHistory(val id: SourceId) : RecordingError
 
+    /** A source is closed on a date after its latest snapshot, so closing never replaces a value. */
+    data class CloseNotAfterLatest(val latest: LocalDate) : RecordingError
+
     // Snapshots
 
     /** The opening balance counts as neither added nor growth, so its amount added is zero. */

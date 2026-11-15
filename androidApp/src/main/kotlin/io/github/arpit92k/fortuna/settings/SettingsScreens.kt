@@ -37,6 +37,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import io.github.arpit92k.fortuna.BuildConfig
@@ -52,6 +53,8 @@ import io.github.arpit92k.fortuna.ui.IconTile
 import io.github.arpit92k.fortuna.ui.RateDialog
 import io.github.arpit92k.fortuna.ui.ReadableWidth
 import io.github.arpit92k.fortuna.ui.formatDate
+import io.github.arpit92k.fortuna.core.domain.SourceId
+import io.github.arpit92k.fortuna.source.ClosedSourceRow
 import io.github.arpit92k.fortuna.ui.formatRate
 import kotlinx.datetime.LocalDate
 
@@ -81,6 +84,9 @@ fun SettingsScreen(
     onZeroAccountsHidden: (Boolean) -> Unit = {},
     /** Whether any account is at zero; the switch shows only then, as the dashboard's toggle does. */
     anyAtZero: Boolean = false,
+    /** How many sources are closed; their list shows only when there are some. */
+    closedCount: Int = 0,
+    onClosed: () -> Unit = {},
 ) {
     Page(stringResource(R.string.settings_title), onBack, "settings") {
         // Scrolls once the items do not fit, as on a phone turned sideways.
@@ -142,6 +148,16 @@ fun SettingsScreen(
                 "settings-currencies",
             )
             HorizontalDivider()
+            if (closedCount > 0) {
+                SettingsItem(
+                    FortunaIcon.Check,
+                    stringResource(R.string.settings_closed),
+                    pluralStringResource(R.plurals.settings_closed_body, closedCount, closedCount),
+                    onClosed,
+                    "settings-closed",
+                )
+                HorizontalDivider()
+            }
             SettingsItem(
                 FortunaIcon.Backup,
                 stringResource(R.string.settings_backup),
@@ -396,5 +412,31 @@ private fun decode(key: String): Editing? {
         "add" -> Editing.Add(parts[1])
         "change" -> Editing.Change(parts[1], parts[2])
         else -> null
+    }
+}
+
+/** Closed sources (UF-07): each opens its page, with its history, where it can be reopened. */
+@Composable
+fun ClosedSourcesScreen(rows: List<ClosedSourceRow>, onOpen: (SourceId) -> Unit, onBack: () -> Unit) {
+    Page(stringResource(R.string.closed_title), onBack, "closed-sources") {
+        if (rows.isEmpty()) {
+            Text(stringResource(R.string.closed_none), style = MaterialTheme.typography.bodyLarge, modifier = Modifier.padding(8.dp))
+            return@Page
+        }
+        LazyColumn(contentPadding = PaddingValues(bottom = 24.dp)) {
+            items(rows, key = { it.id.value }) { row ->
+                Column(
+                    Modifier.fillMaxWidth().clickable { onOpen(row.id) }.padding(8.dp, 16.dp).testTag("closed-${row.id.value}"),
+                ) {
+                    Text(row.name, style = MaterialTheme.typography.titleMedium)
+                    Text(
+                        stringResource(R.string.closed_row, row.category, formatDate(row.closedOn)),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+                HorizontalDivider()
+            }
+        }
     }
 }

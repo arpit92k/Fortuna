@@ -46,6 +46,8 @@ Run the sections in order: each starts where the one before left off. Tick a lin
 - [ ] On a source page, add a value with a deposit and a note. The history shows the change, the net deposits and the growth.
 - [ ] Tap an older value and correct it. Delete the latest value: it asks first, and the one before becomes the latest.
 - [ ] A source with only its opening value can be deleted, after asking. One with history offers no delete.
+- [ ] "Close account" on a source with history, with "Moved out" left blank: it leaves the dashboard and the update, net worth before the closing date is unchanged, and its page says "Closed on" with the history kept and no edits. The closing date cannot be on or before its latest value.
+- [ ] Settings shows "Closed accounts" with it. Open it, "Reopen": it is back on the dashboard, and its closing value can be deleted as the latest.
 - [ ] Give an account a value of zero. A "£0" chip appears beside "Your accounts"; tapping it hides that account ("✓ £0 · 1") and again shows it. Settings has the same switch, only while an account is at zero.
 - [ ] With accounts at zero hidden, an update skips them and its first screen names any that were due on its date.
 

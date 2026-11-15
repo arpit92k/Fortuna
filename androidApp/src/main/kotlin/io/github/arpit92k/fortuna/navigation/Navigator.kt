@@ -34,6 +34,9 @@ sealed interface Destination {
     /** S-16. */
     data object Currencies : Destination
 
+    /** Closed sources, from Settings: each opens its page, where it can be reopened (UF-07). */
+    data object ClosedSources : Destination
+
     /** S-17. */
     data object Backup : Destination
 

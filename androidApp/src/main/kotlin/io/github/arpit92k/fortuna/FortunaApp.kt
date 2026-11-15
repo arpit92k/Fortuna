@@ -47,6 +47,8 @@ import io.github.arpit92k.fortuna.lock.RecoverViewModel
 import io.github.arpit92k.fortuna.navigation.Destination
 import io.github.arpit92k.fortuna.navigation.Navigator
 import io.github.arpit92k.fortuna.navigation.entersValue
+import io.github.arpit92k.fortuna.settings.ClosedSourcesScreen
+import io.github.arpit92k.fortuna.source.closedSourcesOf
 import io.github.arpit92k.fortuna.settings.BackupScreen
 import io.github.arpit92k.fortuna.settings.BackupViewModel
 import io.github.arpit92k.fortuna.settings.CurrenciesScreen
@@ -58,6 +60,7 @@ import io.github.arpit92k.fortuna.setup.SetupViewModel
 import io.github.arpit92k.fortuna.source.AddSourceScreen
 import io.github.arpit92k.fortuna.source.AddSourceViewModel
 import io.github.arpit92k.fortuna.source.SourcePageScreen
+import io.github.arpit92k.fortuna.source.SourceClosing
 import io.github.arpit92k.fortuna.source.SourcePageViewModel
 import io.github.arpit92k.fortuna.source.ValueEntryScreen
 import io.github.arpit92k.fortuna.source.valueEntrySourceOf
@@ -264,6 +267,8 @@ private fun UnlockedApp(core: Core, screens: Screens) {
         is Destination.Source -> BoxWithConstraints {
             LaunchedEffect(current.id) { screens.sourcePage.show(current.id) }
             val ui by screens.sourcePage.ui.collectAsState()
+            val closeProblem by screens.sourcePage.closeProblem.collectAsState()
+            val reopenRefused by screens.sourcePage.reopenRefused.collectAsState()
             val page: @Composable (Modifier) -> Unit = { modifier ->
                 SourcePageScreen(
                     ui = ui?.takeIf { it.id == current.id },
@@ -275,6 +280,15 @@ private fun UnlockedApp(core: Core, screens: Screens) {
                     onDeleteSource = { screens.sourcePage.deleteSource(current.id) { navigator.forget(current.id) } },
                     onBack = tryLeave,
                     modifier = modifier,
+                    closing = SourceClosing(
+                        today = java.time.LocalDate.now().toKotlinLocalDate(),
+                        problem = closeProblem,
+                        onClose = { date, moved, onClosed -> screens.sourcePage.close(current.id, date, moved, onClosed = onClosed) },
+                        onClearProblem = screens.sourcePage::clearCloseProblem,
+                        onReopen = { screens.sourcePage.reopen(current.id) },
+                        reopenRefused = reopenRefused,
+                        onClearReopenRefused = screens.sourcePage::clearReopenRefused,
+                    ),
                 )
             }
             // On an expanded window the list stays beside the source it opened.
@@ -330,7 +344,14 @@ private fun UnlockedApp(core: Core, screens: Screens) {
             onCurrencies = { navigator.open(Destination.Currencies) },
             onBackup = { navigator.open(Destination.Backup) },
             onReport = screens.report::open,
+            closedCount = dataset?.sources?.count { it.status == Status.ARCHIVED } ?: 0,
+            onClosed = { navigator.open(Destination.ClosedSources) },
             onAbout = { navigator.open(Destination.About()) },
+            onBack = tryLeave,
+        )
+        Destination.ClosedSources -> ClosedSourcesScreen(
+            rows = dataset?.let(::closedSourcesOf).orEmpty(),
+            onOpen = { navigator.open(Destination.Source(it)) },
             onBack = tryLeave,
         )
         Destination.Backup -> {
