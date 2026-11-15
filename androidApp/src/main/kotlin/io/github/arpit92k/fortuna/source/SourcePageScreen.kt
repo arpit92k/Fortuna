@@ -41,6 +41,9 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import io.github.arpit92k.fortuna.R
 import io.github.arpit92k.fortuna.core.money.Money
+import io.github.arpit92k.fortuna.core.domain.CategoryId
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import io.github.arpit92k.fortuna.ui.ChartCardTitle
 import io.github.arpit92k.fortuna.ui.BackButton
 import io.github.arpit92k.fortuna.ui.IconTile
@@ -83,9 +86,11 @@ fun SourcePageScreen(
     modifier: Modifier = Modifier,
     showBack: Boolean = true,
     closing: SourceClosing? = null,
+    onMove: ((CategoryId) -> Unit)? = null,
 ) {
     var confirm by rememberSaveable { mutableStateOf<String?>(null) }
     var closeOpen by rememberSaveable { mutableStateOf(false) }
+    var moveOpen by rememberSaveable { mutableStateOf(false) }
     Box(modifier.fillMaxSize().safeDrawingPadding(), contentAlignment = Alignment.TopCenter) {
         if (ui == null) {
             CircularProgressIndicator(Modifier.padding(48.dp))
@@ -130,6 +135,11 @@ fun SourcePageScreen(
                                 Text(stringResource(R.string.source_close))
                             }
                         }
+                        if (onMove != null) {
+                            OutlinedButton(onClick = { moveOpen = true }, modifier = Modifier.testTag("move-source")) {
+                                Text(stringResource(R.string.source_move))
+                            }
+                        }
                         if (ui.canDeleteSource) {
                             OutlinedButton(onClick = { confirm = DELETE_SOURCE }, modifier = Modifier.testTag("delete-source")) {
                                 Text(stringResource(R.string.source_delete_source))
@@ -172,6 +182,35 @@ fun SourcePageScreen(
             problem = closing.problem,
             onClose = { date, moved -> closing.onClose(date, moved) { closeOpen = false } },
             onDismiss = { closeOpen = false; closing.onClearProblem() },
+        )
+    }
+    if (moveOpen && ui != null && onMove != null) {
+        AlertDialog(
+            onDismissRequest = { moveOpen = false },
+            title = { Text(stringResource(R.string.source_move_title)) },
+            text = {
+                Column(Modifier.verticalScroll(rememberScrollState())) {
+                    if (ui.moveTargets.isEmpty()) {
+                        Text(stringResource(R.string.source_move_none))
+                    } else {
+                        Text(stringResource(R.string.source_move_text), modifier = Modifier.padding(bottom = 8.dp))
+                        ui.moveTargets.forEach { target ->
+                            Text(
+                                target.name,
+                                style = MaterialTheme.typography.titleMedium,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clickable { onMove(target.id); moveOpen = false }
+                                    .padding(vertical = 12.dp)
+                                    .testTag("move-to-${target.id.value}"),
+                            )
+                        }
+                    }
+                }
+            },
+            confirmButton = {},
+            dismissButton = { TextButton(onClick = { moveOpen = false }) { Text(stringResource(R.string.date_cancel)) } },
+            modifier = Modifier.testTag("move-dialog"),
         )
     }
     closing?.reopenRefused?.let { name ->
@@ -226,7 +265,7 @@ private fun Header(ui: SourcePageUi, onShowInBase: (Boolean) -> Unit) {
     Card(Modifier.fillMaxWidth()) {
         Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             // As on the dashboard: the category's picture, if it has one.
-            categoryIcon(ui.category)?.let { IconTile(it) }
+            categoryIcon(ui.category, ui.categoryId)?.let { IconTile(it) }
             Text(ui.name, style = MaterialTheme.typography.headlineSmall)
             Text(
                 stringResource(if (ui.liability) R.string.source_kind_liability else R.string.source_kind_asset, ui.category),

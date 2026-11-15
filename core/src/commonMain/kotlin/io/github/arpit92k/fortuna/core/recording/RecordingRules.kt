@@ -16,7 +16,11 @@ import io.github.arpit92k.fortuna.core.recording.RecordingError.BaseCurrencyAlre
 import io.github.arpit92k.fortuna.core.recording.RecordingError.BaseCurrencyHasNoRate
 import io.github.arpit92k.fortuna.core.recording.RecordingError.BaseCurrencyNotChosen
 import io.github.arpit92k.fortuna.core.recording.RecordingError.BeforeLatestSnapshot
+import io.github.arpit92k.fortuna.core.domain.Category
+import io.github.arpit92k.fortuna.core.domain.CategoryKind
 import io.github.arpit92k.fortuna.core.recording.RecordingError.CategoryArchived
+import io.github.arpit92k.fortuna.core.recording.RecordingError.CategoryHasSources
+import io.github.arpit92k.fortuna.core.recording.RecordingError.CategoryOfOtherKind
 import io.github.arpit92k.fortuna.core.recording.RecordingError.CloseNotAfterLatest
 import io.github.arpit92k.fortuna.core.recording.RecordingError.DateInFuture
 import io.github.arpit92k.fortuna.core.recording.RecordingError.EmptyName
@@ -169,6 +173,73 @@ fun Dataset.reopenSource(id: SourceId): RecordingResult {
     return ok(replaceSource(source.copy(status = Status.ACTIVE)))
 }
 
+// ---- Categories (UF-08) ----
+
+/**
+ * Adds a category of [kind], last among the categories. Names are unique
+ * among active categories, ignoring case and surrounding spaces.
+ */
+fun Dataset.addCategory(name: String, kind: CategoryKind): RecordingResult {
+    val cleanName = name.trim()
+    if (cleanName.isEmpty()) return fail(EmptyName)
+    if (isCategoryNameInUse(cleanName, except = null)) return fail(NameInUse(cleanName))
+    val category = Category(CategoryId(nextId), cleanName, kind)
+    return ok(copy(categories = categories + category, nextId = nextId + 1))
+}
+
+/** Renames a category. Its sources, and their history, stay in it. */
+fun Dataset.renameCategory(id: CategoryId, name: String): RecordingResult {
+    val category = category(id) ?: return fail(NoSuchCategory(id))
+    val cleanName = name.trim()
+    if (cleanName.isEmpty()) return fail(EmptyName)
+    if (category.status == Status.ACTIVE && isCategoryNameInUse(cleanName, except = id)) return fail(NameInUse(cleanName))
+    return ok(replaceCategory(category.copy(name = cleanName)))
+}
+
+/**
+ * Changes whether a category's sources are assets or debts. Only while it
+ * has no sources at all, closed ones included: changing it later would turn
+ * history round.
+ */
+fun Dataset.setCategoryKind(id: CategoryId, kind: CategoryKind): RecordingResult {
+    val category = category(id) ?: return fail(NoSuchCategory(id))
+    if (category.kind == kind) return ok(this)
+    if (sources.any { it.categoryId == id }) return fail(CategoryHasSources(id))
+    return ok(replaceCategory(category.copy(kind = kind)))
+}
+
+/**
+ * Archives a category, so new sources cannot go in it. Refused while an
+ * open source is in it: move or close those first. Closed sources stay in it,
+ * with their history.
+ */
+fun Dataset.archiveCategory(id: CategoryId): RecordingResult {
+    val category = category(id) ?: return fail(NoSuchCategory(id))
+    if (sources.any { it.categoryId == id && it.status == Status.ACTIVE }) return fail(CategoryHasSources(id))
+    return ok(replaceCategory(category.copy(status = Status.ARCHIVED)))
+}
+
+/** Brings an archived category back. Refused while an active category has its name. */
+fun Dataset.restoreCategory(id: CategoryId): RecordingResult {
+    val category = category(id) ?: return fail(NoSuchCategory(id))
+    if (category.status == Status.ACTIVE) return ok(this)
+    if (isCategoryNameInUse(category.name, except = id)) return fail(NameInUse(category.name))
+    return ok(replaceCategory(category.copy(status = Status.ACTIVE)))
+}
+
+/**
+ * Moves a source into another active category of the same kind, so an
+ * asset stays an asset and a debt a debt, and its history reads the same.
+ */
+fun Dataset.moveSource(id: SourceId, to: CategoryId): RecordingResult {
+    val source = source(id) ?: return fail(NoSuchSource(id))
+    val target = category(to) ?: return fail(NoSuchCategory(to))
+    if (target.status != Status.ACTIVE) return fail(CategoryArchived(to))
+    val from = category(source.categoryId)
+    if (from != null && from.kind != target.kind) return fail(CategoryOfOtherKind(to))
+    return ok(replaceSource(source.copy(categoryId = to)))
+}
+
 // ---- Snapshots ----
 
 /**
@@ -273,6 +344,12 @@ private fun checkCurrency(source: Source, vararg amounts: Money): RecordingError
 
 private fun Dataset.replaceSource(changed: Source): Dataset =
     copy(sources = sources.map { if (it.id == changed.id) changed else it })
+
+private fun Dataset.replaceCategory(changed: Category): Dataset =
+    copy(categories = categories.map { if (it.id == changed.id) changed else it })
+
+private fun Dataset.isCategoryNameInUse(name: String, except: CategoryId?): Boolean =
+    categories.any { it.id != except && it.status == Status.ACTIVE && it.name.trim().equals(name, ignoreCase = true) }
 
 private fun Rate.relates(currency: Currency, base: Currency): Boolean =
     setOf(unit, quote) == setOf(currency, base)

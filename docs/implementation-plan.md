@@ -479,7 +479,7 @@ The order follows four ideas:
 
 Two features from the roadmap are already in the MVP: the change breakdown for a period and the base-currency view of a source.
 
-**The saved format after step 26.** Every step that changes what is saved adds a new format version and fixture, and still reads every older version, including backups made by earlier releases. Steps 29, 33, 35, 37 and 41 are expected to change it; step 28 did not need to, as version 1 already saves a source's status.
+**The saved format after step 26.** Every step that changes what is saved adds a new format version and fixture, and still reads every older version, including backups made by earlier releases. Steps 33, 35, 37 and 41 are expected to change it; steps 28 and 29 did not need to, as version 1 already saves a source's status and every category with its kind and status.
 
 ## Stage 5: after the release check
 
@@ -505,6 +505,7 @@ Two features from the roadmap are already in the MVP: the change breakdown for a
 ### Step 29: manage categories (UF-08)
 
 - **Builds:** a categories screen under S-15 to add, rename and archive categories, and to move sources between them. A category in use cannot be removed, only archived.
+  - **Built:** the core's `addCategory`, `renameCategory`, `setCategoryKind`, `archiveCategory`, `restoreCategory` and `moveSource`. A category's kind can change only while it has no sources, closed ones included, and a source moves only within its kind, so history never turns round. Archiving waits until no open source is in it; closed sources stay. Names are unique among active categories. Categories were already saved with their kind and status, so the format is unchanged. The five starter categories keep their pictures when renamed, as pictures now follow the category's id. Settings has "Categories"; a source's page has "Change category".
 - **Done when:** the user can create a category, move a source into it, and rename or archive it, with the dashboard following each change.
 
 ### Step 30: backfilling (UF-06)

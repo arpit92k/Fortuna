@@ -1,6 +1,7 @@
 package io.github.arpit92k.fortuna.core.recording
 
 import io.github.arpit92k.fortuna.core.domain.CategoryId
+import io.github.arpit92k.fortuna.core.domain.CategoryKind
 import io.github.arpit92k.fortuna.core.domain.Dataset
 import io.github.arpit92k.fortuna.core.domain.SourceId
 import io.github.arpit92k.fortuna.core.domain.Status
@@ -14,6 +15,8 @@ import io.github.arpit92k.fortuna.core.recording.RecordingError.BaseCurrencyHasN
 import io.github.arpit92k.fortuna.core.recording.RecordingError.BaseCurrencyNotChosen
 import io.github.arpit92k.fortuna.core.recording.RecordingError.BeforeLatestSnapshot
 import io.github.arpit92k.fortuna.core.recording.RecordingError.CategoryArchived
+import io.github.arpit92k.fortuna.core.recording.RecordingError.CategoryHasSources
+import io.github.arpit92k.fortuna.core.recording.RecordingError.CategoryOfOtherKind
 import io.github.arpit92k.fortuna.core.recording.RecordingError.CloseNotAfterLatest
 import io.github.arpit92k.fortuna.core.recording.RecordingError.DateInFuture
 import io.github.arpit92k.fortuna.core.recording.RecordingError.EmptyName
@@ -237,6 +240,62 @@ class RecordingRulesTest {
         val closed = withAccount.closeSource(account, april, today).dataset()
         val renamed = closed.addSource("Current account", cash, today, gbp(1), today).dataset()
         assertEquals(NameInUse("Current account"), renamed.reopenSource(account).error())
+    }
+
+    // ---- Categories (UF-08) ----
+
+    @Test
+    fun aCategoryIsAddedWithItsKindAndATidyUniqueName() {
+        val added = chosen.addCategory("  Crypto ", CategoryKind.ASSET).dataset()
+        val crypto = added.categories.last()
+        assertEquals("Crypto", crypto.name)
+        assertEquals(CategoryKind.ASSET, crypto.kind)
+        assertEquals(chosen.nextId, crypto.id.value)
+        assertEquals(chosen.nextId + 1, added.nextId)
+        assertEquals(NameInUse("cash"), chosen.addCategory("cash", CategoryKind.ASSET).error())
+        assertEquals(EmptyName, chosen.addCategory("  ", CategoryKind.ASSET).error())
+        // A new source can go in it.
+        assertIs<RecordingResult.Success>(added.addSource("Wallet", crypto.id, april, gbp(1), today))
+    }
+
+    @Test
+    fun aCategoryIsRenamedWithItsSources() {
+        val renamed = withAccount.renameCategory(cash, "Bank").dataset()
+        assertEquals("Bank", renamed.category(cash)!!.name)
+        assertEquals(cash, renamed.source(account)!!.categoryId)
+        assertEquals(NameInUse("Debt"), withAccount.renameCategory(cash, "Debt").error())
+        assertIs<RecordingResult.Success>(withAccount.renameCategory(cash, "cash"), "its own name in another case")
+    }
+
+    @Test
+    fun aCategorysKindChangesOnlyWhileItHasNoSources() {
+        val crypto = chosen.addCategory("Crypto", CategoryKind.ASSET).dataset()
+        val id = crypto.categories.last().id
+        assertEquals(CategoryKind.LIABILITY, crypto.setCategoryKind(id, CategoryKind.LIABILITY).dataset().category(id)!!.kind)
+        assertEquals(CategoryHasSources(cash), withAccount.setCategoryKind(cash, CategoryKind.LIABILITY).error())
+    }
+
+    @Test
+    fun aCategoryIsArchivedOnceItsOpenSourcesAreMovedOrClosed() {
+        assertEquals(CategoryHasSources(cash), withAccount.archiveCategory(cash).error())
+        val closed = withAccount.closeSource(account, april, today).dataset()
+        val archived = closed.archiveCategory(cash).dataset()
+        assertEquals(Status.ARCHIVED, archived.category(cash)!!.status)
+        assertEquals(CategoryArchived(cash), archived.addSource("New", cash, april, gbp(1), today).error())
+        // Its name is free while it is archived, and needed back to restore it.
+        val reused = archived.addCategory("Cash", CategoryKind.ASSET).dataset()
+        assertEquals(NameInUse("Cash"), reused.restoreCategory(cash).error())
+        assertEquals(Status.ACTIVE, archived.restoreCategory(cash).dataset().category(cash)!!.status)
+    }
+
+    @Test
+    fun aSourceMovesOnlyToAnActiveCategoryOfTheSameKind() {
+        val moved = withAccount.moveSource(account, investments).dataset()
+        assertEquals(investments, moved.source(account)!!.categoryId)
+        assertEquals(CategoryOfOtherKind(debt), withAccount.moveSource(account, debt).error())
+        val archivedInvestments = withAccount.archiveCategory(investments).dataset()
+        assertEquals(CategoryArchived(investments), archivedInvestments.moveSource(account, investments).error())
+        assertEquals(NoSuchCategory(CategoryId(99)), withAccount.moveSource(account, CategoryId(99)).error())
     }
 
     // ---- Adding snapshots ----

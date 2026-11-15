@@ -103,7 +103,7 @@ fun AddSourceScreen(
                 Text(stringResource(R.string.add_source_category), style = MaterialTheme.typography.labelLarge)
                 FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     for (category in categories) {
-                        val icon = categoryIcon(category.name)
+                        val icon = categoryIcon(category.name, category.id)
                         FilterChip(
                             selected = category.id == form.categoryId,
                             onClick = { onCategory(category) },

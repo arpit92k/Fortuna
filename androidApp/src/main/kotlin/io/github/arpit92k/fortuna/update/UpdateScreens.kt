@@ -185,7 +185,7 @@ fun UpdateStepScreen(
                     style = MaterialTheme.typography.labelLarge,
                     modifier = Modifier.testTag("update-progress"),
                 )
-                categoryIcon(current.category)?.let { IconTile(it) }
+                categoryIcon(current.category, current.categoryId)?.let { IconTile(it) }
                 Text(current.name, style = MaterialTheme.typography.headlineMedium, modifier = Modifier.testTag("update-source"))
                 val last = stringResource(R.string.update_step_last, amount(current.lastValue), formatDate(current.lastDate))
                 Text(last, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.readsHidden(last))

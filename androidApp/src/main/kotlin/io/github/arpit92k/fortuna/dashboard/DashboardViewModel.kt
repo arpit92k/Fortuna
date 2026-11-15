@@ -11,6 +11,7 @@ import androidx.lifecycle.viewModelScope
 import io.github.arpit92k.fortuna.Core
 import io.github.arpit92k.fortuna.core.domain.CategoryKind
 import io.github.arpit92k.fortuna.core.domain.Dataset
+import io.github.arpit92k.fortuna.core.domain.CategoryId
 import io.github.arpit92k.fortuna.core.domain.SourceId
 import io.github.arpit92k.fortuna.core.insights.netWorthOn
 import io.github.arpit92k.fortuna.core.insights.sourceList
@@ -62,6 +63,8 @@ data class SourceRow(
     val id: SourceId,
     val name: String,
     val category: String,
+    /** Picks the category's picture, which a renamed starter category keeps. */
+    val categoryId: CategoryId? = null,
     val liability: Boolean,
     /** In the source's own currency, as its statement shows. */
     val value: Money,
@@ -137,6 +140,7 @@ private fun dashboardInBase(data: Dataset, today: LocalDate): DashboardUi {
             id = summary.source.id,
             name = summary.source.name,
             category = data.category(summary.source.categoryId)?.name.orEmpty(),
+            categoryId = summary.source.categoryId,
             liability = summary.kind == CategoryKind.LIABILITY,
             value = summary.value,
             valueInBase = summary.valueInBase,

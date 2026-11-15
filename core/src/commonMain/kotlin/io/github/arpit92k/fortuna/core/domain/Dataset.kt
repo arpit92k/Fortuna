@@ -65,7 +65,7 @@ data class Dataset(
     companion object {
         /**
          * A new, empty dataset: no base currency yet, no sources, and the
-         * starter categories, which are fixed in the first version.
+         * starter categories, which the user can rename, archive or add to (UF-08).
          */
         fun new(): Dataset = Dataset(
             baseCurrency = null,

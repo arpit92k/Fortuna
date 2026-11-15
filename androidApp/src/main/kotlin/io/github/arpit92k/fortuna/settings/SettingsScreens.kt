@@ -60,7 +60,7 @@ import kotlinx.datetime.LocalDate
 
 /** A page of the unlocked app with a back button and a readable width. */
 @Composable
-private fun Page(title: String, onBack: () -> Unit, tag: String, content: @Composable () -> Unit) {
+internal fun Page(title: String, onBack: () -> Unit, tag: String, content: @Composable () -> Unit) {
     Box(Modifier.fillMaxSize().safeDrawingPadding(), contentAlignment = Alignment.TopCenter) {
         Column(Modifier.widthIn(max = ReadableWidth).fillMaxWidth().padding(horizontal = 16.dp).testTag(tag)) {
             BackButton(onBack)
@@ -87,6 +87,7 @@ fun SettingsScreen(
     /** How many sources are closed; their list shows only when there are some. */
     closedCount: Int = 0,
     onClosed: () -> Unit = {},
+    onCategories: () -> Unit = {},
 ) {
     Page(stringResource(R.string.settings_title), onBack, "settings") {
         // Scrolls once the items do not fit, as on a phone turned sideways.
@@ -146,6 +147,14 @@ fun SettingsScreen(
                 stringResource(R.string.settings_currencies_body),
                 onCurrencies,
                 "settings-currencies",
+            )
+            HorizontalDivider()
+            SettingsItem(
+                FortunaIcon.Investments,
+                stringResource(R.string.settings_categories),
+                stringResource(R.string.settings_categories_body),
+                onCategories,
+                "settings-categories",
             )
             HorizontalDivider()
             if (closedCount > 0) {

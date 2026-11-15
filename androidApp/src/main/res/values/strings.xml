@@ -172,6 +172,40 @@
     <string name="closed_title">Closed accounts</string>
     <string name="closed_none">No account is closed.</string>
     <string name="closed_row">%1$s · Closed on %2$s</string>
+    <string name="settings_categories">Categories</string>
+    <string name="settings_categories_body">Group your accounts your way: add, rename or archive categories.</string>
+    <string name="categories_title">Categories</string>
+    <string name="categories_add">Add a category</string>
+    <string name="categories_assets">Assets</string>
+    <string name="categories_debts">Debts</string>
+    <string name="categories_archived">Archived</string>
+    <string name="categories_restore">Restore</string>
+    <plurals name="categories_count">
+        <item quantity="one">%1$d account</item>
+        <item quantity="other">%1$d accounts</item>
+    </plurals>
+    <plurals name="categories_closed_count">
+        <item quantity="one">%1$d closed</item>
+        <item quantity="other">%1$d closed</item>
+    </plurals>
+    <string name="categories_add_title">New category</string>
+    <string name="categories_edit_title">Edit category</string>
+    <string name="categories_name">Name</string>
+    <string name="categories_kind_asset">Asset</string>
+    <string name="categories_kind_debt">Debt</string>
+    <string name="categories_kind_fixed">It has accounts, so it stays as it is: an asset or a debt.</string>
+    <string name="categories_archive">Archive this category</string>
+    <string name="categories_save">Save</string>
+    <string name="categories_problem_no_name">Give the category a name.</string>
+    <string name="categories_problem_name_in_use">A category is already called %1$s.</string>
+    <plurals name="categories_problem_has_sources">
+        <item quantity="one">%1$d open account is in it. Move it to another category, or close it, first.</item>
+        <item quantity="other">%1$d open accounts are in it. Move them to another category, or close them, first.</item>
+    </plurals>
+    <string name="source_move">Change category</string>
+    <string name="source_move_title">Move to another category</string>
+    <string name="source_move_text">Its history moves with it. Only categories of the same kind are offered.</string>
+    <string name="source_move_none">There is no other category of the same kind. Add one in Settings, Categories.</string>
 
     <!-- S-12 Value entry -->
     <string name="value_new_title">New value for %1$s</string>

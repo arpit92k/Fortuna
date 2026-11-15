@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import io.github.arpit92k.fortuna.Core
 import io.github.arpit92k.fortuna.core.domain.CategoryKind
 import io.github.arpit92k.fortuna.core.domain.Dataset
+import io.github.arpit92k.fortuna.core.domain.CategoryId
 import io.github.arpit92k.fortuna.core.domain.SourceId
 import io.github.arpit92k.fortuna.core.money.AmountProblem
 import io.github.arpit92k.fortuna.core.money.Currency
@@ -34,6 +35,7 @@ data class DueSource(
     val id: SourceId,
     val name: String,
     val category: String,
+    val categoryId: CategoryId? = null,
     val liability: Boolean,
     val lastValue: Money,
     val lastDate: LocalDate,
@@ -100,6 +102,7 @@ fun updatePlanOf(data: Dataset, date: LocalDate, today: LocalDate, hideZero: Boo
                 id = source.id,
                 name = source.name,
                 category = data.category(source.categoryId)?.name.orEmpty(),
+                categoryId = source.categoryId,
                 liability = data.category(source.categoryId)?.kind == CategoryKind.LIABILITY,
                 lastValue = latest.value.value,
                 lastDate = latest.date,
