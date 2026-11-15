@@ -1,6 +1,6 @@
 # Fortuna implementation plan
 
-This document orders the work of building the first version (the MVP) in the [roadmap](roadmap.md), using the choices in the [technology document](technology.md). It starts with small, independent pieces of the shared core, each with its own tests, then assembles them, then connects them to the Android app one group of screens at a time.
+This document orders the work of building the first version (the MVP) in the [roadmap](roadmap.md), using the choices in the [technology document](technology.md). It starts with small, independent pieces of the shared core, each with its own tests, then assembles them, then connects them to the Android app one group of screens at a time. After the MVP, it orders the offline features from the roadmap's future plans the same way.
 
 Starting point: when this plan was written, the repository held the design documents and no code. Step 00 creates the project afresh; the Hello World project from the earlier sanity check is not reused.
 
@@ -12,7 +12,7 @@ Starting point: when this plan was written, the repository held the design docum
 - **Checked without a computer.** From step 00, every pull request runs the core tests, compiles the Linux target and builds a debug app that can be downloaded and installed on a phone.
 - **Tests come from the documents.** The worked examples in the [architecture](architecture.md) and each rule in the [user flows](user-flows.md) become named test cases.
 
-There are four stages:
+Four stages build the MVP, and six more follow it:
 
 | Stage | Steps | What exists at the end |
 |---|---|---|
@@ -20,6 +20,12 @@ There are four stages:
 | Building blocks | 01 to 05 | Five independent pieces, each tested alone |
 | The core, assembled | 06 to 13 | The whole app working without a screen, proven by an end-to-end test |
 | The Android app | 14 to 26 | The MVP, a group of screens at a time, then the release check |
+| After the release check | 27 | What the manual test run found, fixed |
+| Recording without limits | 28 to 33 | Closed sources, own categories, history in any order, imports, a new base currency, tags |
+| Protecting more data | 34 to 36 | A new PIN or phrase, backups offered and automatic, restore over existing data |
+| Keeping it up to date | 37 and 38 | Out-of-date markers, reminders and a quicker update |
+| Insights | 39 to 43 | Allocation, a projection, goals, debt payoff and a year in review |
+| Data out and sharing | 44 to 46 | Spreadsheet export, shared pictures and a home-screen widget |
 
 ## Steps at a glance
 
@@ -52,6 +58,26 @@ There are four stages:
 | 24 | Bug reports | S-18, a saved record of crashes, links from S-01, S-07 and S-15 | App |
 | 25 | Biometric unlock | The `Biometric gate` port, a prompt on S-07, a switch on S-15 | App |
 | 26 | MVP release check | Frozen file format, release build | App |
+| 27 | Release check fixes | App switcher, restore, rate delete, debt sign, phrase entry | App |
+| 28 | Close a source | Closing value, archive, reopen (UF-07) | Tests; app |
+| 29 | Manage categories | A categories screen under S-15 (UF-08) | Tests; app |
+| 30 | Backfilling | Values at any date, adjustments to confirm (UF-06) | Tests; app |
+| 31 | Spreadsheet import | A template and an import that checks every row (UF-15) | Tests; app |
+| 32 | Change base currency | A choice on S-16, figures recalculated (UF-09) | Tests; app |
+| 33 | Tags and chart markers | Tags on values, markers on the charts | Tests; app |
+| 34 | Security settings | Change the PIN, replace the phrase and data key (UF-16) | Tests; app |
+| 35 | Backup prompts and automatic backups | An offer after updates, scheduled backups to a folder (UF-12) | Tests; app |
+| 36 | Restore over existing data | Restore from S-17 on a phone with data (UF-13) | Tests; app |
+| 37 | Out-of-date markers and reminders | Update frequency, markers on S-09, local notifications | Tests; app |
+| 38 | Periodic update extras | "Unchanged", the typing-mistake check, a summary (UF-04) | Tests; app |
+| 39 | Allocation by category | Net worth split by category (UF-10) | Tests; app |
+| 40 | Projection | Where net worth is heading, as an estimate | Tests; app |
+| 41 | Goals | Targets with progress and a projected date | Tests; app |
+| 42 | Debt payoff | A payoff date for each debt | Tests; app |
+| 43 | Year in review | Each year's change, split | Tests; app |
+| 44 | Spreadsheet export | An unencrypted copy in the import's layout | Tests; app |
+| 45 | Share a picture | A share action with amounts shown or hidden (UF-17) | Tests; app |
+| 46 | Home-screen widget | Net worth on the home screen, opt-in | App |
 
 Screen numbers refer to the [screen map](screen-map.md).
 
@@ -442,16 +468,137 @@ Two notes on working order:
 
 ## After the MVP
 
-The future plans in the roadmap, in a suggested order. Each is one or more steps of the same shape: core first with tests, then the screen.
+The future plans in the roadmap that work without a network, as steps 27 to 46. They follow the same rules as the MVP steps: one step, one pull request; the core first, with tests, then the screen.
 
-1. **Share a picture of a screen** (UF-17). A share action on the dashboard, the source page and the charts, with a preview where amounts are hidden or shown. Decided: with amounts hidden, percentages and the shape of charts stay.
-2. **Change breakdown for a period** (core), then the **update summary**, the "unchanged" shortcut and the typing-mistake check.
-3. **Allocation by category** and **out-of-date markers**.
-4. **Backfilling**, which lifts the date-order restriction.
-5. **Close a source** and **manage categories**.
-6. **Security settings:** change the PIN, replace the recovery phrase and the data key.
-7. **Backup prompts** and **restore over existing data**.
-8. **Spreadsheet import**, then **unencrypted export**.
-9. **Base-currency view of a source** and **change base currency**.
-10. **Update reminders.**
-11. **Network features**, after their own design.
+The order follows four ideas:
+
+- **Fix what the release check found first,** before the first release reaches people.
+- **Settle the data model before building on it.** Recording changes come before the insights that read history, so nothing is built twice.
+- **Protect more as there is more to lose.** Security and backup steps follow the steps that let users enter years of history.
+- **Let data leave the app last.** Export, sharing and the widget show figures outside the app's protection, so they come once everything else is in place.
+
+Two features from the roadmap are already in the MVP: the change breakdown for a period and the base-currency view of a source.
+
+**The saved format after step 26.** Every step that changes what is saved adds a new format version and fixture, and still reads every older version, including backups made by earlier releases. Steps 28, 29, 33, 35, 37 and 41 are expected to change it.
+
+## Stage 5: after the release check
+
+### Step 27: release check fixes
+
+- **Builds:** fixes for what the manual test run of step 26 found.
+  - **App switcher:** the app covers its content as it goes into the background, so its card in the app switcher never shows figures, even when the user swipes straight into it.
+  - **Restore:** a file that is not a Fortuna backup is refused as soon as it is chosen, before the phrase and the PIN are asked for.
+  - **Deleting a rate:** a rate that cannot be deleted is refused straight away, with the reason, instead of after the confirm dialog.
+  - **Debt interest:** the amount and the percentage of a debt's interest have the same sign.
+  - **Phrase entry:** a misspelt word is announced by TalkBack, not only shown in red.
+- **Done when:** the affected lines of the manual test script pass on a phone with a release build.
+
+## Stage 6: recording without limits
+
+### Step 28: close a source (UF-07)
+
+- **Builds:** a closing value and date, after which the source counts as nothing and takes no more values. Closed sources move to an archive list, still part of history and the charts, and can be reopened.
+- **Done when:** a closed source leaves the dashboard list and the update, its history still counts in the timeline, and reopening brings it back.
+
+### Step 29: manage categories (UF-08)
+
+- **Builds:** a categories screen under S-15 to add, rename and archive categories, and to move sources between them. A category in use cannot be removed, only archived.
+- **Done when:** the user can create a category, move a source into it, and rename or archive it, with the dashboard following each change.
+
+### Step 30: backfilling (UF-06)
+
+- **Builds:** values entered or deleted at any date in a source's history, lifting the MVP rule that history is entered in date order. Where a change in the middle affects the next value's amount added, the app proposes the adjustment and the user confirms it. A periodic update dated before a source's latest value no longer leaves that source out.
+- **Tests:** every rule in UF-06 about inserting and deleting in the middle, and the totals and charts after each.
+- **Done when:** the user can add a forgotten value between two others, delete one in the middle, and see the history, totals and charts stay right.
+
+### Step 31: import history from a spreadsheet (UF-15)
+
+- **Builds:** an empty, simplified template the app provides, and an import that reads it back. Import uses the same rules as entering by hand, so it relies on step 30. Every row is checked before anything is saved, and problems are listed by row.
+- **Done when:** a filled template with several sources, currencies and years of values imports in one go, and a template with mistakes is refused with each mistake named, leaving the data unchanged.
+
+### Step 32: change the base currency (UF-09)
+
+- **Builds:** a choice in S-16 to change the base currency. Every figure that depends on it is recalculated from the stored rates. Where a rate is missing, the app asks for it first.
+- **Done when:** after a change, the dashboard, charts and source pages show the new base currency, and changing back gives the figures as before.
+
+### Step 33: tags and chart markers
+
+- **Builds:** tags on a value, such as "bonus" or "house sale", chosen from the user's own list. Tagged values and values with a note appear as markers on the source and net worth charts; pressing one shows the tag or note.
+- **Done when:** a tagged jump shows a marker on both charts, and the note or tag explains it when pressed.
+
+## Stage 7: protecting more data
+
+### Step 34: change security settings (UF-16)
+
+- **Builds:** changing the PIN from settings with the current PIN, and replacing the recovery phrase, which shows and confirms new words. Replacing the data key too, so an old phrase or backup can no longer open new data.
+- **Done when:** after a PIN change the old PIN fails and the new one works; after replacing the phrase the old one is refused and the new one recovers the app.
+
+### Step 35: backup prompts and automatic backups (UF-12)
+
+- **Builds:** an offer to back up after each periodic update when there are changes since the last backup. Automatic backups, off by default: an encrypted backup saved on a schedule, or after each update, to a folder the user chooses once. If the folder is synced to the user's own cloud storage, the phone uploads it; Fortuna itself still never uses the network.
+- **Done when:** finishing an update offers a backup; with automatic backups on, a new file appears in the chosen folder and restores on a fresh install.
+
+### Step 36: restore over existing data (UF-13)
+
+- **Builds:** restoring a backup on a phone that already has data, from S-17. The app says what will be replaced and offers a backup of the current data first.
+- **Done when:** a restore over existing data replaces it with the backup's, and a refused or cancelled restore leaves the current data unchanged.
+
+## Stage 8: keeping it up to date
+
+### Step 37: out-of-date markers and update reminders
+
+- **Builds:** an expected update frequency for each source, with a default, set on S-11 and the source page. Sources past it are marked on S-09. Update reminders are local notifications when an update is due; they name no amounts and no source names.
+- **Done when:** a source left past its frequency is marked, an update clears the mark, and a reminder appears when one is due and opens the app at the lock screen.
+
+### Step 38: periodic update extras (UF-04)
+
+- **Builds:** an "unchanged" action on S-14 that records the same value with nothing added; a check that asks before saving a value far from the last, such as ten times larger; and a summary after the last source, with the change since the previous update split as in the breakdown.
+- **Done when:** an update can mark a source unchanged in one tap, a likely typing mistake is caught before it is saved, and the summary's parts add up to the change.
+
+## Stage 9: insights
+
+### Step 39: allocation by category (UF-10)
+
+- **Builds:** net worth split by category, now and at a past date, as a chart on the net worth card, in the currency the dashboard shows.
+- **Done when:** the split adds up to total assets, debts are shown apart, and it follows the dashboard's currency choice.
+
+### Step 40: projection
+
+- **Builds:** where net worth is heading, from the rate of saving and growth over a chosen period of history. Worked out on the phone, shown as a dashed continuation of the chart, and clearly labelled as an estimate.
+- **Done when:** the projection follows a hand calculation on known data, and says it needs more history when there is too little.
+
+### Step 41: goals
+
+- **Builds:** a target for net worth, or for one source, with progress towards it and a projected date from step 40. Goals are saved with the data and included in backups.
+- **Done when:** a goal shows its progress and date, moves as values are added, and says when it is reached.
+
+### Step 42: debt payoff
+
+- **Builds:** for a debt, the date it is paid off at the repayments recorded so far, with the interest still to pay.
+- **Done when:** the date matches a hand calculation on known repayments, and a debt with no repayments says so instead of showing a date.
+
+### Step 43: year in review
+
+- **Builds:** a summary of each year: net worth at its start and end, what was put in, growth, currency effect, and the best and worst months. Offered from the Growth page.
+- **Done when:** each year's parts add up to its change, and a year with little history still reads sensibly.
+
+## Stage 10: data out and sharing
+
+### Step 44: spreadsheet export
+
+- **Builds:** an unencrypted copy of the data in the same layout as the import template, so a file exported can be imported again. The app says, at the point of export, that the file leaves its protection.
+- **Done when:** an export opens in a spreadsheet app, and importing it into a fresh install gives the same figures.
+
+### Step 45: share a picture of a screen (UF-17)
+
+- **Builds:** a share action on the dashboard, a source page, the charts and the year in review, with a preview where amounts are shown or hidden. With amounts hidden, percentages and the shape of charts stay. The app draws the picture itself and hands it to the share sheet, so it works although the app blocks screenshots.
+- **Done when:** a shared picture with amounts hidden shows no amount, and one with amounts shown matches the screen.
+
+### Step 46: home-screen widget
+
+- **Builds:** an optional widget with net worth and its change, amounts hidden unless the user turns them on in the app. It never shows source names, and it is empty while the app has no data.
+- **Done when:** with amounts hidden, the widget shows only the change as a percentage; turning amounts on in the app shows them; and it updates after a change in the app.
+
+### Not planned here
+
+The network features in the roadmap, automatic exchange rates and open banking, change the app's promise that it never uses the network. They need their own design before they are planned.
