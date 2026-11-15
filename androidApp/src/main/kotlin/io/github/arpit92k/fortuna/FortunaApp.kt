@@ -280,6 +280,7 @@ private fun UnlockedApp(core: Core, screens: Screens) {
                     onShowInBase = screens.sourcePage::showInBase,
                     onEdit = { navigator.open(Destination.ValueEntry(current.id, editing = it)) },
                     onDeleteLatest = { screens.sourcePage.deleteLatest(current.id) },
+                    onDeleteValue = { screens.sourcePage.deleteValue(current.id, it) },
                     onDeleteSource = { screens.sourcePage.deleteSource(current.id) { navigator.forget(current.id) } },
                     onBack = tryLeave,
                     modifier = modifier,
@@ -462,6 +463,7 @@ private fun UnlockedApp(core: Core, screens: Screens) {
                 onSave = { screens.valueEntry.save(source, current.editing) { navigator.back() } },
                 onReplace = { screens.valueEntry.save(source, current.editing, replace = true) { navigator.back() } },
                 onKeep = screens.valueEntry::keepExisting,
+                onNextAdded = screens.valueEntry::nextAdded,
                 onBack = tryLeave,
             )
         }

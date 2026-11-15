@@ -31,6 +31,7 @@ import io.github.arpit92k.fortuna.core.recording.RecordingError.RateNeeded
 import io.github.arpit92k.fortuna.core.recording.RecordingError.RateNeededBySnapshot
 import io.github.arpit92k.fortuna.core.recording.RecordingError.SourceArchived
 import io.github.arpit92k.fortuna.core.recording.RecordingError.SourceHasHistory
+import io.github.arpit92k.fortuna.core.recording.RecordingError.SnapshotOnDate
 import io.github.arpit92k.fortuna.core.recording.RecordingError.WrongCurrency
 import io.github.arpit92k.fortuna.core.recording.RecordingError.WrongRateCurrencies
 import kotlinx.datetime.LocalDate
@@ -401,6 +402,67 @@ class RecordingRulesTest {
     @Test
     fun theOnlySnapshotCannotBeDeleted() {
         assertEquals(OnlySnapshot(account), withBoth.deleteLatestSnapshot(account).error())
+    }
+
+    // ---- Backfilling (UF-06) ----
+
+    // £2,500 in January, then £3,100 in April with £500 added.
+    private val twoValues = withAccount.addSnapshot(account, april, gbp(310_000), gbp(50_000), today).dataset()
+
+    @Test
+    fun aValueInsertedBetweenTwoTakesItsAmountAddedOffTheNext() {
+        val adjustment = twoValues.insertAdjustment(account, february, gbp(280_000), gbp(20_000))
+        assertEquals(NextAdjustment(april, gbp(50_000), gbp(30_000)), adjustment)
+        val inserted = twoValues.insertSnapshot(account, february, gbp(280_000), gbp(20_000), today, note = "Found it").dataset()
+        val snapshots = inserted.source(account)!!.snapshots
+        assertEquals(listOf(january, february, april), snapshots.map { it.date })
+        assertEquals(gbp(20_000), snapshots.on(february)!!.amountAdded)
+        assertEquals(gbp(30_000), snapshots.on(april)!!.amountAdded, "the £500 now split £200 and £300")
+        // The user can change the proposal.
+        val changed = twoValues.insertSnapshot(account, february, gbp(280_000), gbp(20_000), today, nextAmountAdded = gbp(0)).dataset()
+        assertEquals(gbp(0), changed.source(account)!!.snapshots.on(april)!!.amountAdded)
+    }
+
+    @Test
+    fun aValueInsertedBeforeTheOpeningOneBecomesItKeepingWhatWasPutIn() {
+        val before = LocalDate(2025, 12, 31)
+        val adjustment = twoValues.insertAdjustment(account, before, gbp(200_000), gbp(0))!!
+        assertEquals(gbp(50_000), adjustment.proposed, "January's £2,500 put in, less the £2,000 already there")
+        val inserted = twoValues.insertSnapshot(account, before, gbp(200_000), gbp(0), today).dataset()
+        val source = inserted.source(account)!!
+        assertEquals(before, source.snapshots.earliest()!!.date)
+        val putIn = source.openingPutIn!! + source.snapshots.on(january)!!.amountAdded + source.snapshots.on(april)!!.amountAdded
+        assertEquals(gbp(250_000 + 50_000), putIn, "put in overall unchanged, so gains are too")
+        assertEquals(OpeningBalanceHasNoAmountAdded, twoValues.insertSnapshot(account, before, gbp(1), gbp(1), today).error())
+        assertEquals(RateNeeded(dollars, before), withBoth.insertSnapshot(brokerage, before, usd(1), usd(0), today).error())
+    }
+
+    @Test
+    fun insertingIsRefusedOnADateWithAValueInTheFutureOrOnAClosedSource() {
+        assertEquals(SnapshotOnDate(april), twoValues.insertSnapshot(account, april, gbp(1), gbp(0), today).error())
+        assertEquals(DateInFuture(tomorrow, today), twoValues.insertSnapshot(account, tomorrow, gbp(1), gbp(0), today).error())
+        val closed = twoValues.closeSource(account, today, today).dataset()
+        assertEquals(SourceArchived(account), closed.insertSnapshot(account, february, gbp(1), gbp(0), today).error())
+    }
+
+    @Test
+    fun deletingAValueInTheMiddleGivesItsAmountAddedToTheNext() {
+        val three = twoValues.insertSnapshot(account, february, gbp(280_000), gbp(20_000), today).dataset()
+        assertEquals(NextAdjustment(april, gbp(30_000), gbp(50_000)), three.deleteAdjustment(account, february))
+        val deleted = three.deleteSnapshot(account, february).dataset()
+        assertEquals(twoValues.source(account), deleted.source(account), "back as it was")
+        assertEquals(OnlySnapshot(account), withAccount.deleteSnapshot(account, january).error())
+        assertEquals(NoSnapshotOnDate(february), twoValues.deleteSnapshot(account, february).error())
+    }
+
+    @Test
+    fun deletingTheOpeningValueMakesTheNextTheOpeningOneKeepingWhatWasPutIn() {
+        val deleted = twoValues.deleteSnapshot(account, january).dataset()
+        val source = deleted.source(account)!!
+        assertEquals(april, source.snapshots.earliest()!!.date)
+        assertEquals(gbp(0), source.snapshots.on(april)!!.amountAdded, "an opening value has no amount added")
+        assertEquals(gbp(300_000), source.openingPutIn, "£2,500 and £500 put in, as before")
+        assertEquals(gbp(310_000), source.snapshots.on(april)!!.value)
     }
 
     // ---- Exchange rates ----

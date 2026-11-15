@@ -35,6 +35,7 @@ import io.github.arpit92k.fortuna.core.recording.RecordingError.RateNeeded
 import io.github.arpit92k.fortuna.core.recording.RecordingError.RateNeededBySnapshot
 import io.github.arpit92k.fortuna.core.recording.RecordingError.SourceArchived
 import io.github.arpit92k.fortuna.core.recording.RecordingError.SourceHasHistory
+import io.github.arpit92k.fortuna.core.recording.RecordingError.SnapshotOnDate
 import io.github.arpit92k.fortuna.core.recording.RecordingError.WrongCurrency
 import io.github.arpit92k.fortuna.core.recording.RecordingError.WrongRateCurrencies
 import kotlinx.datetime.LocalDate
@@ -288,6 +289,127 @@ fun Dataset.editSnapshot(
         return fail(OpeningBalanceHasNoAmountAdded)
     }
     return ok(replaceSource(source.copy(snapshots = source.snapshots.with(date, Snapshot(value, amountAdded, clean(note))))))
+}
+
+// ---- Backfilling (UF-06) ----
+
+/**
+ * What a change in the middle of a source's history does to the snapshot
+ * after it: the amount added on [date] changes from [current] to [proposed],
+ * which the screen shows for the user to accept or change.
+ */
+data class NextAdjustment(val date: LocalDate, val current: Money, val proposed: Money)
+
+/**
+ * The adjustment inserting a snapshot of [value], with [amountAdded], on
+ * [date] would make to the snapshot after it, or null if none comes after.
+ *
+ * Amount added covers the period since the previous snapshot, so the next
+ * one now covers less: what the new one added comes off it. Inserted before
+ * the opening value, the new snapshot becomes the opening one; the old
+ * opening then gets what was put in between, so what was put in overall, and
+ * so every gain, stays the same.
+ */
+fun Dataset.insertAdjustment(id: SourceId, date: LocalDate, value: Money, amountAdded: Money): NextAdjustment? {
+    val source = source(id) ?: return null
+    val next = source.snapshots.firstOrNull { it.date > date } ?: return null
+    val current = next.value.amountAdded
+    val proposed = if (next.date == source.snapshots.earliest()!!.date) {
+        source.openingPutIn!! - value
+    } else {
+        current - amountAdded
+    }
+    return NextAdjustment(next.date, current, proposed)
+}
+
+/**
+ * Inserts a snapshot at any past [date] without one (UF-06), lifting the
+ * rule that history is entered in date order. A date that already has one is
+ * corrected with [editSnapshot] instead. The snapshot after it gets
+ * [nextAmountAdded], or without it the adjustment [insertAdjustment] proposes.
+ *
+ * Before the opening value, the new snapshot is the opening one: it has no
+ * amount added, all of it counts as put in, and a foreign source needs a
+ * rate on or before its date.
+ */
+fun Dataset.insertSnapshot(
+    id: SourceId,
+    date: LocalDate,
+    value: Money,
+    amountAdded: Money,
+    today: LocalDate,
+    note: String? = null,
+    nextAmountAdded: Money? = null,
+): RecordingResult {
+    val source = source(id) ?: return fail(NoSuchSource(id))
+    if (source.status != Status.ACTIVE) return fail(SourceArchived(id))
+    checkCurrency(source, value, amountAdded)?.let { return fail(it) }
+    if (nextAmountAdded != null) checkCurrency(source, nextAmountAdded)?.let { return fail(it) }
+    if (date > today) return fail(DateInFuture(date, today))
+    if (source.snapshots.on(date) != null) return fail(SnapshotOnDate(date))
+    val opening = source.snapshots.earliest()!!
+    val becomesOpening = date < opening.date
+    if (becomesOpening && amountAdded.minorUnits != 0L) return fail(OpeningBalanceHasNoAmountAdded)
+    if (becomesOpening) {
+        val base = baseCurrency ?: return fail(BaseCurrencyNotChosen)
+        if (source.currency != base && rates[source.currency]?.latestOnOrBefore(date) == null) {
+            return fail(RateNeeded(source.currency, date))
+        }
+    }
+    var snapshots = source.snapshots.with(date, Snapshot(value, amountAdded, clean(note)))
+    val adjustment = insertAdjustment(id, date, value, amountAdded)
+    if (adjustment != null) {
+        val next = source.snapshots.on(adjustment.date)!!
+        snapshots = snapshots.with(adjustment.date, next.copy(amountAdded = nextAmountAdded ?: adjustment.proposed))
+    }
+    // A new opening value is all put in; what the old one had gained is now in the period after it.
+    val changed = if (becomesOpening) source.copy(snapshots = snapshots, openingPrincipal = null) else source.copy(snapshots = snapshots)
+    return ok(replaceSource(changed))
+}
+
+/**
+ * The adjustment deleting the snapshot on [date] would make to the one after
+ * it, or null if none comes after. That one now covers the deleted period
+ * too, so it gets the deleted amount added. Deleting the opening value makes
+ * the next the opening one, with no amount added: what it had added counts as
+ * put in at the start instead.
+ */
+fun Dataset.deleteAdjustment(id: SourceId, date: LocalDate): NextAdjustment? {
+    val source = source(id) ?: return null
+    val deleted = source.snapshots.on(date) ?: return null
+    val next = source.snapshots.firstOrNull { it.date > date } ?: return null
+    val current = next.value.amountAdded
+    val proposed = if (date == source.snapshots.earliest()!!.date) Money(0, source.currency) else current + deleted.amountAdded
+    return NextAdjustment(next.date, current, proposed)
+}
+
+/**
+ * Deletes the snapshot on any date (UF-06). Its only snapshot cannot be
+ * deleted; delete the source instead. The one after it gets
+ * [nextAmountAdded], or without it the adjustment [deleteAdjustment]
+ * proposes. Deleting the opening value makes the next the opening one, and
+ * what had been put in by then stays the same, so gains do too.
+ */
+fun Dataset.deleteSnapshot(id: SourceId, date: LocalDate, nextAmountAdded: Money? = null): RecordingResult {
+    val source = source(id) ?: return fail(NoSuchSource(id))
+    if (source.status != Status.ACTIVE) return fail(SourceArchived(id))
+    if (source.snapshots.on(date) == null) return fail(NoSnapshotOnDate(date))
+    if (source.snapshots.size == 1) return fail(OnlySnapshot(id))
+    if (nextAmountAdded != null) checkCurrency(source, nextAmountAdded)?.let { return fail(it) }
+    val adjustment = deleteAdjustment(id, date)
+    var snapshots = source.snapshots.without(date)
+    val wasOpening = date == source.snapshots.earliest()!!.date
+    if (adjustment != null) {
+        val next = source.snapshots.on(adjustment.date)!!
+        val added = if (wasOpening) Money(0, source.currency) else nextAmountAdded ?: adjustment.proposed
+        snapshots = snapshots.with(adjustment.date, next.copy(amountAdded = added))
+    }
+    if (!wasOpening) return ok(replaceSource(source.copy(snapshots = snapshots)))
+    // The next value is the opening one now: what had been put in by its date is its principal.
+    val next = source.snapshots.on(adjustment!!.date)!!
+    val putIn = source.openingPutIn!! + adjustment.current
+    val principal = putIn.takeIf { it != next.value }
+    return ok(replaceSource(source.copy(snapshots = snapshots, openingPrincipal = principal)))
 }
 
 /** Deletes a source's latest snapshot. Its only snapshot cannot be deleted; delete the source instead. */

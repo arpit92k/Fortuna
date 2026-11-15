@@ -225,6 +225,14 @@
     <string name="value_replace_text">There is already a value for %1$s. The new figures will replace it.</string>
     <string name="value_replace">Replace</string>
     <string name="value_problem_before_latest">A new value cannot be dated before the latest one.</string>
+    <string name="value_next_added_text">This value comes before the one on %1$s, whose amount added covered the time since the value before. Check what it becomes, then save again.</string>
+    <string name="value_next_borrowed_text">This value comes before the one on %1$s, whose amount borrowed covered the time since the value before. Check what it becomes, then save again.</string>
+    <string name="value_next_label">Added by %1$s</string>
+    <string name="value_next_was">It was %1$s.</string>
+    <string name="value_problem_rate_needed">There is no exchange rate on or before this date. Add one in Settings, Currencies and rates.</string>
+    <string name="source_delete_any_title">Delete this value?</string>
+    <string name="source_delete_middle_text">The value on %1$s then covers this time too, so its amount added becomes %2$s.</string>
+    <string name="source_delete_opening_text">The value on %1$s becomes the opening value. What had been put in by then stays the same.</string>
 
     <!-- S-13 and S-14 Update -->
     <string name="update_title">Update your accounts</string>

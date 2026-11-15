@@ -174,12 +174,55 @@ class SourceFlowTest {
         assertEquals(2, show(savings).entries.size, "replaced, not added")
     }
 
+    // Step 30 (UF-06): a value before the latest goes in the middle, after the user sees what the next one becomes.
     @Test
-    fun aNewValueCannotBeDatedBeforeTheLatest() = runTest(dispatcher) {
+    fun aValueBeforeTheLatestGoesInTheMiddleAfterShowingTheNextOnesChange() = runTest(dispatcher) {
+        setUp()
+        enter(savings, "3,600", added = "500", date = april)
+        val march = LocalDate(2026, 3, 1)
+        // The first save shows the April value's amount added becoming £300, and saves nothing.
+        assertFalse(enter(savings, "3,300", added = "200", date = march))
+        val adjustment = assertNotNull(entry.form.value.adjustment)
+        assertEquals(april, adjustment.date)
+        assertEquals(gbp(30_000), adjustment.proposed)
+        assertEquals("300.00", entry.form.value.nextAdded)
+        // Saving again accepts it; the user could change it first.
+        entry.nextAdded("250")
+        var saved = false
+        entry.save(source(savings), null) { saved = true }
+        advanceUntilIdle()
+        assertTrue(saved)
+        val ui = show(savings)
+        assertEquals(listOf(april, march, january), ui.entries.map { it.date })
+        assertEquals(gbp(25_000), ui.entries.first().added)
+        assertEquals(gbp(20_000), ui.entries[1].added)
+    }
+
+    @Test
+    fun aDateWithAValueIsReplacedAfterAsking() = runTest(dispatcher) {
         setUp()
         enter(savings, "3,600", date = april)
-        assertFalse(enter(savings, "3,500", date = LocalDate(2026, 3, 1)))
-        assertEquals(ValueEntryProblem.BEFORE_LATEST, entry.form.value.problem)
+        assertFalse(enter(savings, "3,100", date = january))
+        assertTrue(entry.form.value.confirmReplace)
+        var saved = false
+        entry.save(source(savings), null, replace = true) { saved = true }
+        advanceUntilIdle()
+        assertTrue(saved)
+        assertEquals(gbp(310_000), show(savings).entries.last().value)
+    }
+
+    @Test
+    fun anyValueCanBeDeletedAndTheNextOneCoversItsTime() = runTest(dispatcher) {
+        setUp()
+        enter(savings, "3,300", added = "200", date = LocalDate(2026, 3, 1))
+        enter(savings, "3,600", added = "300", date = april)
+        val march = show(savings).entries[1]
+        assertEquals(gbp(50_000), march.deleteNext?.proposed, "April gets March's £200 too")
+        page.deleteValue(savings, march.date)
+        advanceUntilIdle()
+        val ui = show(savings)
+        assertEquals(listOf(april, january), ui.entries.map { it.date })
+        assertEquals(gbp(50_000), ui.entries.first().added)
     }
 
     // From the plan: delete a value; the totals follow.

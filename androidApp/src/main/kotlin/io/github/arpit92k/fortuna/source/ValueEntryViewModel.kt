@@ -14,6 +14,9 @@ import io.github.arpit92k.fortuna.core.recording.RecordingError
 import io.github.arpit92k.fortuna.core.recording.RecordingResult
 import io.github.arpit92k.fortuna.core.recording.addSnapshot
 import io.github.arpit92k.fortuna.core.recording.editSnapshot
+import io.github.arpit92k.fortuna.core.recording.NextAdjustment
+import io.github.arpit92k.fortuna.core.recording.insertAdjustment
+import io.github.arpit92k.fortuna.core.recording.insertSnapshot
 import io.github.arpit92k.fortuna.ui.parseAmount
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -36,6 +39,13 @@ data class ValueEntryForm(
     val saving: Boolean = false,
     /** The date already has a value; the screen asks before replacing it. */
     val confirmReplace: Boolean = false,
+    /**
+     * A value dated before a later one (UF-06): what the later one's amount
+     * added becomes, for the user to accept or change before saving again.
+     */
+    val adjustment: NextAdjustment? = null,
+    /** The later value's amount added, as typed, once [adjustment] is shown. */
+    val nextAdded: String = "",
 )
 
 /** What the form needs to know about the source: its currency and dates. */
@@ -47,6 +57,8 @@ data class ValueEntrySource(
     val liability: Boolean,
     /** Today, for a new value with no date chosen. */
     val today: LocalDate,
+    /** Every date with a value, so an earlier one is told apart from a new one in the middle. */
+    val dates: Set<LocalDate> = setOf(opening, latest),
 )
 
 /** What S-12 needs to know about a source, or null if it is gone. */
@@ -59,6 +71,7 @@ fun valueEntrySourceOf(data: Dataset, id: SourceId, today: LocalDate): ValueEntr
         latest = source.snapshots.latest()!!.date,
         liability = data.category(source.categoryId)?.kind == CategoryKind.LIABILITY,
         today = today,
+        dates = source.snapshots.map { it.date }.toSet(),
     )
 }
 
@@ -69,6 +82,9 @@ enum class ValueEntryProblem {
     AMOUNT_TOO_LARGE,
     DATE_IN_FUTURE,
     BEFORE_LATEST,
+
+    /** A foreign source's new opening value has no rate on or before its date. */
+    RATE_NEEDED,
 
     /** Anything the form does not expect; the core refused the change and nothing was saved. */
     NOT_SAVED,
@@ -95,7 +111,7 @@ class ValueEntryViewModel(private val core: Core, private val locale: () -> Loca
 
     /** Whether anything has been entered or changed, so leaving asks first. */
     val hasChanges: Boolean
-        get() = mutableForm.value.copy(problem = null, saving = false, confirmReplace = false) != opened
+        get() = mutableForm.value.copy(problem = null, saving = false, confirmReplace = false, adjustment = null, nextAdded = "") != opened
 
     fun open(source: ValueEntrySource, editing: LocalDate?, existing: Pair<Money, Money>?, note: String?) {
         if (openFor == source.id to editing) return
@@ -129,6 +145,9 @@ class ValueEntryViewModel(private val core: Core, private val locale: () -> Loca
 
     fun note(text: String) = edit { it.copy(note = text) }
 
+    /** The later value's amount added, changed from what the app proposed. */
+    fun nextAdded(text: String) = mutableForm.update { if (it.saving) it else it.copy(nextAdded = text, problem = null) }
+
     /** The user decided not to replace the value already recorded for that date. */
     fun keepExisting() = mutableForm.update { it.copy(confirmReplace = false) }
 
@@ -145,7 +164,8 @@ class ValueEntryViewModel(private val core: Core, private val locale: () -> Loca
             is MoneyParseResult.Failure -> return fail(parsed.problem.asFormProblem(ValueEntryProblem.NO_VALUE))
         }
         val date = editing ?: form.date ?: source.today
-        val opening = date == source.opening
+        // On or before the opening value's date, it is the opening value.
+        val opening = date <= source.opening
         val added = if (opening || form.added.isBlank()) {
             // The opening balance counts as neither added nor growth.
             Money(0, source.currency)
@@ -155,18 +175,40 @@ class ValueEntryViewModel(private val core: Core, private val locale: () -> Loca
                 is MoneyParseResult.Failure -> return fail(parsed.problem.asFormProblem(ValueEntryProblem.NOT_AN_AMOUNT))
             }
         }
-        if (editing == null && !replace && date == source.latest) {
+        // A date that already has a value: the new figures replace it, after asking.
+        val existing = editing == null && date in source.dates
+        if (existing && !replace) {
             mutableForm.value = form.copy(confirmReplace = true, problem = null)
+            return
+        }
+        // Before the latest value and on a new date, it goes in the middle (UF-06): the
+        // later value's amount added changes, so it is shown before anything is saved.
+        val inserting = editing == null && !existing && date < source.latest
+        val nextAdded = if (inserting && form.adjustment != null && form.adjustment.date > date) {
+            when (val parsed = parseAmount(form.nextAdded.ifBlank { "0" }, source.currency, locale())) {
+                is MoneyParseResult.Success -> parsed.money
+                is MoneyParseResult.Failure -> return fail(parsed.problem.asFormProblem(ValueEntryProblem.NOT_AN_AMOUNT))
+            }
+        } else {
+            null
+        }
+        if (inserting && nextAdded == null) {
+            viewModelScope.launch {
+                val adjustment = core.run { read { data, _ -> data.insertAdjustment(source.id, date, value, added) } }
+                mutableForm.update { it.copy(adjustment = adjustment, nextAdded = adjustment?.let { a -> typedText(a.proposed) }.orEmpty(), problem = null) }
+            }
             return
         }
         mutableForm.value = form.copy(saving = true, problem = null, confirmReplace = false)
         viewModelScope.launch {
             val result = core.run {
                 record { data, today ->
-                    if (editing != null) {
-                        data.editSnapshot(source.id, editing, value, added, note = form.note)
-                    } else {
-                        data.addSnapshot(source.id, date, value, added, today, note = form.note)
+                    when {
+                        editing != null -> data.editSnapshot(source.id, editing, value, added, note = form.note)
+                        // Replacing a value before the latest is a correction of it.
+                        existing && date < source.latest -> data.editSnapshot(source.id, date, value, added, note = form.note)
+                        inserting -> data.insertSnapshot(source.id, date, value, added, today, note = form.note, nextAmountAdded = nextAdded)
+                        else -> data.addSnapshot(source.id, date, value, added, today, note = form.note)
                     }
                 }
             }
@@ -185,7 +227,8 @@ class ValueEntryViewModel(private val core: Core, private val locale: () -> Loca
     }
 
     private fun edit(change: (ValueEntryForm) -> ValueEntryForm) {
-        mutableForm.update { if (it.saving) it else change(it).copy(problem = null, confirmReplace = false) }
+        // The proposal for a later value depends on what is typed, so it is worked out again on saving.
+        mutableForm.update { if (it.saving) it else change(it).copy(problem = null, confirmReplace = false, adjustment = null, nextAdded = "") }
     }
 
     /** An amount as the user would type it here: the region's decimal separator, no grouping. */
@@ -205,5 +248,6 @@ private fun AmountProblem.asFormProblem(whenEmpty: ValueEntryProblem): ValueEntr
 private fun RecordingError.asFormProblem(): ValueEntryProblem = when (this) {
     is RecordingError.DateInFuture -> ValueEntryProblem.DATE_IN_FUTURE
     is RecordingError.BeforeLatestSnapshot -> ValueEntryProblem.BEFORE_LATEST
+    is RecordingError.RateNeeded -> ValueEntryProblem.RATE_NEEDED
     else -> ValueEntryProblem.NOT_SAVED
 }

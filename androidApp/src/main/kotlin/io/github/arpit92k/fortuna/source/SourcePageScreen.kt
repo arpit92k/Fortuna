@@ -81,6 +81,7 @@ fun SourcePageScreen(
     onShowInBase: (Boolean) -> Unit,
     onEdit: (LocalDate) -> Unit,
     onDeleteLatest: () -> Unit,
+    onDeleteValue: (LocalDate) -> Unit = {},
     onDeleteSource: () -> Unit,
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
@@ -160,10 +161,10 @@ fun SourcePageScreen(
                     row = row,
                     liability = ui.liability,
                     latest = row == ui.entries.first(),
-                    canDelete = ui.canDeleteLatest,
+                    canDelete = ui.canDeleteValues,
                     // A closed source's values are not changed.
                     onEdit = if (ui.closed) null else { { onEdit(row.date) } },
-                    onDelete = { confirm = DELETE_LATEST },
+                    onDelete = { confirm = if (row == ui.entries.first()) DELETE_LATEST else "$DELETE_VALUE${row.date}" },
                     openingGain = if (row.opening) ui.openingGain else null,
                     inBase = ui.inBase?.takeIf { ui.showingBase }?.rows?.get(row.date),
                 )
@@ -226,6 +227,23 @@ fun SourcePageScreen(
         )
     }
 
+    // A value before the latest: what deleting it does to the one after it.
+    val deleting = confirm?.takeIf { it.startsWith(DELETE_VALUE) }?.removePrefix(DELETE_VALUE)?.let(LocalDate::parse)
+    val deletingRow = deleting?.let { date -> ui?.entries?.firstOrNull { it.date == date } }
+    if (deletingRow != null) {
+        val next = deletingRow.deleteNext
+        ConfirmDialog(
+            title = stringResource(R.string.source_delete_any_title),
+            text = when {
+                next == null -> stringResource(R.string.source_delete_value_text)
+                deletingRow.opening -> stringResource(R.string.source_delete_opening_text, formatDate(next.date))
+                else -> stringResource(R.string.source_delete_middle_text, formatDate(next.date), change(next.proposed))
+            },
+            confirm = stringResource(R.string.source_delete),
+            onConfirm = { confirm = null; onDeleteValue(deletingRow.date) },
+            onDismiss = { confirm = null },
+        )
+    }
     when (confirm) {
         DELETE_LATEST -> ConfirmDialog(
             title = stringResource(R.string.source_delete_value_title),
@@ -257,6 +275,7 @@ class SourceClosing(
 )
 
 private const val DELETE_LATEST = "latest"
+private const val DELETE_VALUE = "value:"
 private const val DELETE_SOURCE = "source"
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -422,8 +441,9 @@ private fun HistoryItem(
             }
         }
         row.note?.let { Text(it, style = MaterialTheme.typography.bodySmall) }
-        if (latest && canDelete) {
-            TextButton(onClick = onDelete, modifier = Modifier.testTag("delete-latest")) { Text(stringResource(R.string.source_delete_value)) }
+        // Any value can go (UF-06); the screen says what happens to the one after it.
+        if (canDelete) {
+            TextButton(onClick = onDelete, modifier = Modifier.testTag(if (latest) "delete-latest" else "delete-${row.date}")) { Text(stringResource(R.string.source_delete_value)) }
         }
     }
 }

@@ -77,6 +77,9 @@ sealed interface RecordingError {
 
     data class NoSnapshotOnDate(val date: LocalDate) : RecordingError
 
+    /** A snapshot is inserted only on a date without one; the one already there is corrected instead. */
+    data class SnapshotOnDate(val date: LocalDate) : RecordingError
+
     /** A source always has at least one snapshot. To remove its only one, delete the source. */
     data class OnlySnapshot(val id: SourceId) : RecordingError
 
