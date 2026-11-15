@@ -353,7 +353,9 @@ private fun UnlockedApp(core: Core, screens: Screens) {
             CurrenciesScreen(
                 ui = ui,
                 onSave = screens.currencies::saveRate,
-                onDelete = screens.currencies::deleteRate,
+                onAskDelete = screens.currencies::askDelete,
+                onConfirmDelete = screens.currencies::confirmDelete,
+                onCancelDelete = screens.currencies::cancelDelete,
                 onClearProblem = screens.currencies::clearProblem,
                 onBack = tryLeave,
             )

@@ -175,15 +175,22 @@ class ForeignCurrencyTest {
         currencies.saveRate(dollars, june, rate("0.70"))
         advanceUntilIdle()
 
-        currencies.deleteRate(dollars, january)
+        // Refused straight away, without first asking to confirm.
+        currencies.askDelete(dollars, january)
         advanceUntilIdle()
         assertEquals(RateActionProblem.NeededBy("US brokerage", january), currencies.ui.value!!.problem)
+        assertNull(currencies.ui.value!!.deleting, "not asked about")
         assertEquals(2, currencies.ui.value!!.currencies.single().rates.size, "nothing deleted")
 
         currencies.clearProblem()
-        currencies.deleteRate(dollars, june)
+        currencies.askDelete(dollars, june)
+        advanceUntilIdle()
+        assertEquals(RateToDelete(dollars, june), currencies.ui.value!!.deleting, "asked about first")
+        assertEquals(2, currencies.ui.value!!.currencies.single().rates.size, "nothing deleted yet")
+        currencies.confirmDelete()
         advanceUntilIdle()
         assertNull(currencies.ui.value!!.problem)
+        assertNull(currencies.ui.value!!.deleting)
         assertEquals(listOf(january), currencies.ui.value!!.currencies.single().rates.map { it.date })
         assertEquals(gbp(800_000), dashboard.ui.value!!.netWorth, "back to the January rate")
     }

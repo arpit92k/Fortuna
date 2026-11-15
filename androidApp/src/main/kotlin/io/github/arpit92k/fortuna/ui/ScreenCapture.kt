@@ -3,7 +3,11 @@ package io.github.arpit92k.fortuna.ui
 import android.view.WindowManager
 import androidx.activity.compose.LocalActivity
 import androidx.compose.runtime.Composable
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.Surface
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 
 /**
  * Lets screenshots be taken while the calling screen is showing, in a build
@@ -20,3 +24,18 @@ fun AllowScreenshots() {
         onDispose { if (secure) window.addFlags(WindowManager.LayoutParams.FLAG_SECURE) }
     }
 }
+
+/**
+ * Covers the whole app while [covered]. The app switcher can show an app's
+ * live window, which blocking screenshots does not hide, so swiping from the
+ * app straight into the switcher would show its figures. Covered, its card
+ * shows only the app's background.
+ */
+@Composable
+fun PrivacyCover(covered: Boolean) {
+    if (covered) {
+        FortunaTheme { Surface(Modifier.fillMaxSize().testTag(PRIVACY_COVER)) {} }
+    }
+}
+
+const val PRIVACY_COVER = "privacy-cover"

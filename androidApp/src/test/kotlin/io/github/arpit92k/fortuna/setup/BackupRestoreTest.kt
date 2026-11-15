@@ -182,7 +182,10 @@ class BackupRestoreTest {
     @Test
     fun aFileThatIsNotABackupIsRefused() = runTest(dispatcher) {
         files.saved["content://photo"] = "not a backup at all".encodeToByteArray()
-        restoreWith("content://photo", words)
+        // Refused as soon as it is chosen, without asking for the phrase first.
+        restore.begin()
+        restore.fileChosen("content://photo")
+        advanceUntilIdle()
         assertEquals(RestoreStep.ChooseFile(RestoreProblem.NOT_A_BACKUP), restore.step.value)
         assertFreshPhoneUntouched()
     }

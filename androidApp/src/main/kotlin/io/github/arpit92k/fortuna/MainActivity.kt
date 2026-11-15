@@ -2,7 +2,14 @@ package io.github.arpit92k.fortuna
 
 import io.github.arpit92k.fortuna.about.AboutViewModel
 import io.github.arpit92k.fortuna.dashboard.ZeroAccountsViewModel
+import android.content.res.Configuration
+import android.os.Build
 import android.os.Bundle
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import androidx.compose.foundation.layout.Box
+import io.github.arpit92k.fortuna.ui.PrivacyCover
 import android.view.WindowManager
 import androidx.fragment.app.FragmentActivity
 import androidx.activity.compose.setContent
@@ -16,6 +23,7 @@ import io.github.arpit92k.fortuna.lock.LockViewModel
 import io.github.arpit92k.fortuna.lock.RecoverViewModel
 import io.github.arpit92k.fortuna.platform.AndroidDisplayPreferences
 import io.github.arpit92k.fortuna.platform.AndroidDocumentFiles
+import io.github.arpit92k.fortuna.platform.AppFocus
 import io.github.arpit92k.fortuna.platform.deviceInfo
 import io.github.arpit92k.fortuna.report.BugReportViewModel
 import io.github.arpit92k.fortuna.navigation.Navigator
@@ -31,6 +39,34 @@ import java.util.Locale
 
 // A FragmentActivity, because Android's biometric prompt is shown as a fragment.
 class MainActivity : FragmentActivity() {
+    // Whether the app is the one in front. In the app switcher it stays resumed,
+    // showing a live picture, but every window of the app loses focus.
+    private var resumed by mutableStateOf(false)
+    private var focusLost by mutableStateOf(false)
+    private var splitScreen by mutableStateOf(false)
+
+    /**
+     * Covered while not in front, so the app switcher never shows figures. In split
+     * screen, another app having focus is normal, so only leaving covers it there.
+     */
+    private val covered: Boolean get() = !resumed || (focusLost && !splitScreen)
+
+    override fun onResume() {
+        super.onResume()
+        resumed = true
+        splitScreen = isInMultiWindowMode
+    }
+
+    override fun onPause() {
+        resumed = false
+        super.onPause()
+    }
+
+    override fun onMultiWindowModeChanged(isInMultiWindowMode: Boolean, newConfig: Configuration) {
+        super.onMultiWindowModeChanged(isInMultiWindowMode, newConfig)
+        splitScreen = isInMultiWindowMode
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         // In the released app, figures never appear in the app switcher or in
@@ -39,6 +75,11 @@ class MainActivity : FragmentActivity() {
         // phrase screen lifts this itself, so its words can be kept as a picture.
         if (!BuildConfig.DEBUG) {
             window.setFlags(WindowManager.LayoutParams.FLAG_SECURE, WindowManager.LayoutParams.FLAG_SECURE)
+            // The app switcher keeps no picture of the app either.
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) setRecentsScreenshotEnabled(false)
+            // Its live picture there is covered. Only from Android 10, where the
+            // app can tell its own dialogs taking focus from leaving the front.
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) AppFocus(window.decorView) { focusLost = it }
         }
         enableEdgeToEdge()
         val core = (application as FortunaApplication).core
@@ -67,7 +108,11 @@ class MainActivity : FragmentActivity() {
                 biometrics = viewModel { BiometricsViewModel(core, biometrics) },
                 report = viewModel { BugReportViewModel((application as FortunaApplication).crashes, deviceInfo()) },
             )
-            FortunaApp(core, screens)
+            Box {
+                FortunaApp(core, screens)
+                // Released builds only, like the screenshot block above.
+                if (!BuildConfig.DEBUG) PrivacyCover(covered)
+            }
         }
     }
 }

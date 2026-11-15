@@ -8,6 +8,7 @@ import io.github.arpit92k.fortuna.core.domain.UnsupportedFormatVersionException
 import io.github.arpit92k.fortuna.core.file.DamagedFileException
 import io.github.arpit92k.fortuna.core.file.EncryptedFile
 import io.github.arpit92k.fortuna.core.file.FileKind
+import io.github.arpit92k.fortuna.core.file.LockedKey
 import io.github.arpit92k.fortuna.core.file.NotAnEncryptedFileException
 import io.github.arpit92k.fortuna.core.file.UnsupportedFileVersionException
 import io.github.arpit92k.fortuna.core.keys.KeyGuard
@@ -43,17 +44,10 @@ fun restoreFromBackup(
     if (keys.exists()) return RestoreResult.AlreadySetUp
     pinProblem(newPin)?.let { return RestoreResult.InvalidPin(it) }
 
-    val header = try {
-        EncryptedFile.readHeader(file)
-    } catch (e: NotAnEncryptedFileException) {
-        return RestoreResult.NotABackup
-    } catch (e: UnsupportedFileVersionException) {
-        return RestoreResult.FromNewerApp
-    } catch (e: DamagedFileException) {
-        return RestoreResult.Damaged
+    val phraseCopy = when (val check = checkBackupFile(file)) {
+        is BackupFileCheck.Backup -> check.phraseCopy
+        is BackupFileCheck.Problem -> return check.result
     }
-    val phraseCopy = header.lockedKey
-    if (header.kind != FileKind.BACKUP || phraseCopy == null) return RestoreResult.NotABackup
 
     val dataKey = try {
         openWithPhrase(phraseCopy, phrase, crypto)
@@ -84,6 +78,35 @@ fun restoreFromBackup(
     store.create(dataKey, backedUp)
     keys.finishSetup(pending)
     return RestoreResult.Success
+}
+
+/**
+ * Whether [file] is a Fortuna backup this version can read, from its header
+ * alone, without the phrase. So a photo or another file is refused as soon
+ * as it is chosen, before the user types the phrase and a PIN. The contents
+ * can still turn out damaged once the phrase opens them.
+ */
+fun checkBackupFile(file: ByteArray): BackupFileCheck {
+    val header = try {
+        EncryptedFile.readHeader(file)
+    } catch (e: NotAnEncryptedFileException) {
+        return BackupFileCheck.Problem(RestoreResult.NotABackup)
+    } catch (e: UnsupportedFileVersionException) {
+        return BackupFileCheck.Problem(RestoreResult.FromNewerApp)
+    } catch (e: DamagedFileException) {
+        return BackupFileCheck.Problem(RestoreResult.Damaged)
+    }
+    val phraseCopy = header.lockedKey
+    if (header.kind != FileKind.BACKUP || phraseCopy == null) return BackupFileCheck.Problem(RestoreResult.NotABackup)
+    return BackupFileCheck.Backup(phraseCopy)
+}
+
+sealed interface BackupFileCheck {
+    /** A backup, with the data key locked by the recovery phrase. */
+    class Backup(val phraseCopy: LockedKey) : BackupFileCheck
+
+    /** Not one: [result] is [RestoreResult.NotABackup], [RestoreResult.Damaged] or [RestoreResult.FromNewerApp]. */
+    data class Problem(val result: RestoreResult) : BackupFileCheck
 }
 
 sealed interface RestoreResult {

@@ -491,6 +491,7 @@ Two features from the roadmap are already in the MVP: the change breakdown for a
   - **Deleting a rate:** a rate that cannot be deleted is refused straight away, with the reason, instead of after the confirm dialog.
   - **Debt interest:** the amount and the percentage of a debt's interest have the same sign.
   - **Phrase entry:** a misspelt word is announced by TalkBack, not only shown in red.
+  - **Built:** the app switcher stays resumed while it shows the app's live window, so the cover goes on when no window of the app has focus, from Android 10, and not in split screen. A dialog of the app's own taking focus does not count, so a dialog left open still shows over the cover. From Android 13, the switcher also keeps no picture of the app. The backup file's header is checked as soon as it is chosen. The debt's percentage follows the debt's own view, as its other figures do: interest adds to what is owed, in the loss colour.
 - **Done when:** the affected lines of the manual test script pass on a phone with a release build.
 
 ## Stage 6: recording without limits

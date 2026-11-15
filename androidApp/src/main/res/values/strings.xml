@@ -239,6 +239,7 @@
 
     <!-- The twelve-word entry, on S-06 and S-08 -->
     <string name="phrase_entry_missing">Word %1$d is missing.</string>
+    <string name="phrase_entry_word_error">Not a recovery phrase word</string>
     <string name="phrase_entry_unknown">Word %1$d is not one of the recovery phrase words. Check its spelling.</string>
     <string name="phrase_entry_not_a_phrase">These words are not a recovery phrase. One of them may be wrong, or two may be the wrong way round.</string>
     <string name="phrase_entry_wrong">This is not the recovery phrase for this data. Check the words against the ones you wrote down.</string>
