@@ -102,6 +102,11 @@ class ChartPointsTest {
 
         val paidOff = chartRange(listOf(-300.0, 0.0))
         assertEquals(0.0, paidOff.endInclusive, "below zero, the margin stops at zero too")
+
+        // Pressing a chart with no height crashed the app; a line flat at zero still has some.
+        val zero = chartRange(listOf(0.0, 0.0))
+        assertEquals(0.0, zero.start)
+        assertEquals(1.0, zero.endInclusive)
     }
 
     // The dashboard's gains: the latest change across sources and everything since the start, never money paid in.

@@ -55,7 +55,8 @@ fun sourcePoints(values: List<ChartPoint>, today: LocalDate): List<ChartPoint> {
  * The range the chart's vertical axis shows for [amounts]: the lowest to the
  * highest, with a margin so the line does not touch the edges. Where every
  * amount is on one side of zero, the margin stops at zero rather than
- * crossing it. A flat line gets a margin of a tenth of its value.
+ * crossing it. A flat line gets a margin of a tenth of its value. A line
+ * flat at zero, such as an account at zero throughout, sits at the bottom.
  */
 fun chartRange(amounts: List<Double>): ClosedFloatingPointRange<Double> {
     require(amounts.isNotEmpty()) { "A chart needs at least one amount" }
@@ -64,7 +65,8 @@ fun chartRange(amounts: List<Double>): ClosedFloatingPointRange<Double> {
     val margin = if (high > low) (high - low) * 0.15 else maxOf(abs(high) * 0.1, 1.0)
     val bottom = (low - margin).let { if (low >= 0 && it < 0) 0.0 else it }
     val top = (high + margin).let { if (high <= 0 && it > 0) 0.0 else it }
-    return bottom..top
+    // A line flat at zero would leave no height at all, which the chart cannot draw: show zero to one.
+    return if (top > bottom) bottom..top else 0.0..1.0
 }
 
 /** How far back the full-screen chart looks. */
