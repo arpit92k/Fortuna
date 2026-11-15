@@ -240,8 +240,10 @@ private fun OwnFigures(ui: SourcePageUi) {
             val growth = ui.growth
             val percent = growth?.percent
             if (growth != null && percent != null) {
+                // A debt's figures are as the debt sees them: interest adds to what is owed,
+                // so its percentage has the interest's sign, and its colour says it is a loss.
                 Text(
-                    formatPercent(percent),
+                    formatPercent(if (ui.liability) -percent else percent),
                     style = MaterialTheme.typography.bodySmall,
                     color = gainColor(growth),
                     modifier = Modifier.testTag("growth-percent"),

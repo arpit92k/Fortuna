@@ -190,6 +190,17 @@ class BackupAndRestoreTest {
         assertTrue(second.hasNoData())
     }
 
+    // Checked from the file alone, so a wrong file is refused before the phrase is asked for.
+    @Test
+    fun aFileIsCheckedWithoutThePhrase() {
+        setUp(first)
+        val backup = backUp(first)
+        assertIs<BackupFileCheck.Backup>(checkBackupFile(backup))
+        assertEquals(BackupFileCheck.Problem(RestoreResult.NotABackup), checkBackupFile("a photo".encodeToByteArray()))
+        assertEquals(BackupFileCheck.Problem(RestoreResult.NotABackup), checkBackupFile(first.disk.read(DocumentStore.MAIN)))
+        assertEquals(BackupFileCheck.Problem(RestoreResult.FromNewerApp), checkBackupFile(backup.copyOf().also { it[5] = 2 }))
+    }
+
     @Test
     fun aDeviceWithDataCannotRestoreOverIt() {
         val phrase = setUp(first)

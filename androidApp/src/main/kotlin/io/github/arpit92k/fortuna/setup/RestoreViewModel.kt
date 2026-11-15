@@ -3,7 +3,9 @@ package io.github.arpit92k.fortuna.setup
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import io.github.arpit92k.fortuna.Core
+import io.github.arpit92k.fortuna.core.backup.BackupFileCheck
 import io.github.arpit92k.fortuna.core.backup.RestoreResult
+import io.github.arpit92k.fortuna.core.backup.checkBackupFile
 import io.github.arpit92k.fortuna.core.crypto.Crypto
 import io.github.arpit92k.fortuna.core.crypto.PlatformCrypto
 import io.github.arpit92k.fortuna.core.phrase.RecoveryPhrase
@@ -99,7 +101,10 @@ class RestoreViewModel(
             }
             // Left meanwhile.
             if (mutableStep.value != RestoreStep.ChooseFile(reading = true)) return@launch
-            if (read == null) {
+            // A photo or another file is refused now, before the phrase and the PIN are asked for.
+            val check = read?.let { checkBackupFile(it) }
+            if (check is BackupFileCheck.Problem) problem = problemOf(check.result)
+            if (read == null || problem != null) {
                 mutableStep.value = RestoreStep.ChooseFile(problem)
             } else {
                 file = read
@@ -176,6 +181,12 @@ class RestoreViewModel(
             }
             null -> {}
         }
+    }
+
+    private fun problemOf(result: RestoreResult): RestoreProblem = when (result) {
+        RestoreResult.FromNewerApp -> RestoreProblem.FROM_NEWER_APP
+        RestoreResult.Damaged -> RestoreProblem.DAMAGED
+        else -> RestoreProblem.NOT_A_BACKUP
     }
 
     private fun chooseAgain(problem: RestoreProblem) {

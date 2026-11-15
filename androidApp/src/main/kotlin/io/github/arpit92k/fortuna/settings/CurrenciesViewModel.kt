@@ -43,7 +43,11 @@ data class CurrenciesUi(
     val base: Currency,
     val currencies: List<CurrencyRates>,
     val problem: RateActionProblem? = null,
+    /** The rate being asked about before it is deleted. */
+    val deleting: RateToDelete? = null,
 )
+
+data class RateToDelete(val currency: Currency, val date: LocalDate)
 
 /** The foreign currencies in use, by code: those of sources and those with rates. */
 fun currenciesOf(data: Dataset): List<CurrencyRates> {
@@ -73,7 +77,7 @@ class CurrenciesViewModel(private val core: Core) : ViewModel() {
                 .collect { data ->
                     val base = data?.baseCurrency
                     mutableUi.update { old ->
-                        if (data == null || base == null) null else CurrenciesUi(base, currenciesOf(data), old?.problem)
+                        if (data == null || base == null) null else CurrenciesUi(base, currenciesOf(data), old?.problem, old?.deleting)
                     }
                 }
         }
@@ -87,21 +91,40 @@ class CurrenciesViewModel(private val core: Core) : ViewModel() {
         }
     }
 
-    /** Deletes the rate for [currency] on [date], after the screen has asked. */
-    fun deleteRate(currency: Currency, date: LocalDate) {
+    /**
+     * Delete on the rate for [currency] on [date]. A rate that cannot be deleted
+     * is refused at once, with the reason; any other is asked about first.
+     */
+    fun askDelete(currency: Currency, date: LocalDate) {
         viewModelScope.launch {
-            val result = core.run { record { data, _ -> data.deleteRate(currency, date) } }
-            val problem = (result as? RecordingResult.Failure)?.error
-            if (problem is RecordingError.RateNeededBySnapshot) {
-                val name = core.run { read { data, _ -> data.source(problem.source)?.name.orEmpty() } }
-                mutableUi.update { it?.copy(problem = RateActionProblem.NeededBy(name, problem.date)) }
-            } else {
-                report(result)
+            val result = core.run { read { data, _ -> data.deleteRate(currency, date) } }
+            if (!refusedAsNeeded(result)) {
+                mutableUi.update { it?.copy(problem = null, deleting = RateToDelete(currency, date)) }
             }
         }
     }
 
-    fun clearProblem() = mutableUi.update { it?.copy(problem = null) }
+    /** Deletes the rate the screen asked about. */
+    fun confirmDelete() {
+        val deleting = mutableUi.value?.deleting ?: return
+        mutableUi.update { it?.copy(deleting = null) }
+        viewModelScope.launch {
+            val result = core.run { record { data, _ -> data.deleteRate(deleting.currency, deleting.date) } }
+            if (!refusedAsNeeded(result)) report(result)
+        }
+    }
+
+    fun cancelDelete() = mutableUi.update { it?.copy(deleting = null) }
+
+    /** Says why, if [result] refused a delete because an account's opening value needs the rate. */
+    private suspend fun refusedAsNeeded(result: RecordingResult): Boolean {
+        val problem = (result as? RecordingResult.Failure)?.error as? RecordingError.RateNeededBySnapshot ?: return false
+        val name = core.run { read { data, _ -> data.source(problem.source)?.name.orEmpty() } }
+        mutableUi.update { it?.copy(problem = RateActionProblem.NeededBy(name, problem.date), deleting = null) }
+        return true
+    }
+
+    fun clearProblem() = mutableUi.update { it?.copy(problem = null, deleting = null) }
 
     private fun report(result: RecordingResult) {
         val problem = when (val error = (result as? RecordingResult.Failure)?.error) {

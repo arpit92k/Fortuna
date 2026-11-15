@@ -31,6 +31,8 @@ import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.error
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
@@ -193,13 +195,15 @@ fun PhraseEntry(
                 Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     for (index in column * perColumn until (column + 1) * perColumn) {
                         val word = words[index]
+                        val wrong = phraseWordWrong(word, finished = state.focused != index)
+                        val wrongText = stringResource(R.string.phrase_entry_word_error)
                         OutlinedTextField(
                             value = word,
                             onValueChange = { state.apply(enterPhraseText(words, index, it), onWords, focusManager) },
                             prefix = { Text("${index + 1}.", style = MaterialTheme.typography.bodyMedium) },
                             singleLine = true,
                             enabled = enabled,
-                            isError = phraseWordWrong(word, finished = state.focused != index),
+                            isError = wrong,
                             textStyle = MaterialTheme.typography.bodyLarge.copy(fontFamily = FontFamily.Monospace),
                             keyboardOptions = KeyboardOptions(
                                 capitalization = KeyboardCapitalization.None,
@@ -221,6 +225,8 @@ fun PhraseEntry(
                                         state.focused = -1
                                     }
                                 }
+                                // Said by TalkBack too, not only shown in red.
+                                .semantics { if (wrong) error(wrongText) }
                                 .testTag("phrase-box-${index + 1}"),
                         )
                     }

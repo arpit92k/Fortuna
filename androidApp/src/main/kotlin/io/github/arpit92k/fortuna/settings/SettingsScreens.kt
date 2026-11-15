@@ -247,8 +247,6 @@ private sealed interface Editing {
     data class Add(val currency: String) : Editing
 
     data class Change(val currency: String, val date: String) : Editing
-
-    data class Delete(val currency: String, val date: String) : Editing
 }
 
 /**
@@ -260,7 +258,9 @@ private sealed interface Editing {
 fun CurrenciesScreen(
     ui: CurrenciesUi?,
     onSave: (Currency, LocalDate?, Rate) -> Unit,
-    onDelete: (Currency, LocalDate) -> Unit,
+    onAskDelete: (Currency, LocalDate) -> Unit,
+    onConfirmDelete: () -> Unit,
+    onCancelDelete: () -> Unit,
     onClearProblem: () -> Unit,
     onBack: () -> Unit,
 ) {
@@ -310,7 +310,8 @@ fun CurrenciesScreen(
                             Text(stringResource(R.string.currencies_change))
                         }
                         TextButton(
-                            onClick = { onClearProblem(); editingKey = encode(Editing.Delete(entry.currency.code, dated.date.toString())) },
+                            // Refused at once when an account needs it; asked about otherwise.
+                            onClick = { onClearProblem(); editingKey = null; onAskDelete(entry.currency, dated.date) },
                             modifier = Modifier.testTag("rate-delete-${entry.currency.code}-${dated.date}"),
                         ) { Text(stringResource(R.string.source_delete)) }
                     }
@@ -332,6 +333,16 @@ fun CurrenciesScreen(
                 }
             },
             modifier = Modifier.testTag("rate-problem"),
+        )
+    }
+
+    ui?.deleting?.let { deleting ->
+        ConfirmDialog(
+            title = stringResource(R.string.currencies_delete_title),
+            text = stringResource(R.string.currencies_delete_text, deleting.currency.code, formatDate(deleting.date)),
+            confirm = stringResource(R.string.source_delete),
+            onConfirm = onConfirmDelete,
+            onDismiss = onCancelDelete,
         )
     }
 
@@ -364,17 +375,6 @@ fun CurrenciesScreen(
                 onDismiss = close,
             )
         }
-        is Editing.Delete -> {
-            val currency = Currency.forCode(editing.currency) ?: return
-            val date = LocalDate.parse(editing.date)
-            ConfirmDialog(
-                title = stringResource(R.string.currencies_delete_title),
-                text = stringResource(R.string.currencies_delete_text, currency.code, formatDate(date)),
-                confirm = stringResource(R.string.source_delete),
-                onConfirm = { onDelete(currency, date); close() },
-                onDismiss = close,
-            )
-        }
     }
 }
 
@@ -388,7 +388,6 @@ private fun problemText(problem: RateActionProblem): String = when (problem) {
 private fun encode(editing: Editing): String = when (editing) {
     is Editing.Add -> "add|${editing.currency}"
     is Editing.Change -> "change|${editing.currency}|${editing.date}"
-    is Editing.Delete -> "delete|${editing.currency}|${editing.date}"
 }
 
 private fun decode(key: String): Editing? {
@@ -396,7 +395,6 @@ private fun decode(key: String): Editing? {
     return when (parts.firstOrNull()) {
         "add" -> Editing.Add(parts[1])
         "change" -> Editing.Change(parts[1], parts[2])
-        "delete" -> Editing.Delete(parts[1], parts[2])
         else -> null
     }
 }
