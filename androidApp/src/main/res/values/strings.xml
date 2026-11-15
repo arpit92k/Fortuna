@@ -147,6 +147,31 @@
     <string name="source_delete_source">Delete account</string>
     <string name="source_delete_source_title">Delete %1$s?</string>
     <string name="source_delete_source_text">It has only its opening value, so nothing else is lost. This cannot be undone.</string>
+    <string name="source_close">Close account</string>
+    <string name="source_reopen">Reopen</string>
+    <string name="source_closed_on">Closed on %1$s</string>
+    <string name="source_reopen_refused_title">This account cannot be reopened yet</string>
+    <string name="source_reopen_refused">An open account is already called %1$s. Rename or close it first.</string>
+    <string name="close_title">Close %1$s?</string>
+    <string name="close_text">Its value becomes zero on the date you choose. It leaves the dashboard and the update, and its history still counts in your charts. You can reopen it later.</string>
+    <string name="close_text_liability">What is owed becomes zero on the date you choose. It leaves the dashboard and the update, and its history still counts in your charts. You can reopen it later.</string>
+    <string name="close_date_today">Closed today</string>
+    <string name="close_date">Closed on %1$s</string>
+    <string name="close_moved_out">Moved out (%1$s)</string>
+    <string name="close_moved_out_hint">Leave blank if all of it was moved out. Type 0 if it was written off: the rest counts as a loss.</string>
+    <string name="close_repaid">Repaid (%1$s)</string>
+    <string name="close_repaid_hint">Leave blank if it was repaid in full. Type 0 if it was written off.</string>
+    <string name="close_confirm">Close</string>
+    <string name="close_not_yet">Its latest value is dated %1$s, today. It can be closed from tomorrow.</string>
+    <string name="close_problem_before_latest">Choose a date after the latest value, %1$s.</string>
+    <string name="settings_closed">Closed accounts</string>
+    <plurals name="settings_closed_body">
+        <item quantity="one">%1$d account, kept for its history. Open it to reopen it.</item>
+        <item quantity="other">%1$d accounts, kept for their history. Open one to reopen it.</item>
+    </plurals>
+    <string name="closed_title">Closed accounts</string>
+    <string name="closed_none">No account is closed.</string>
+    <string name="closed_row">%1$s · Closed on %2$s</string>
 
     <!-- S-12 Value entry -->
     <string name="value_new_title">New value for %1$s</string>

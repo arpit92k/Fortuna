@@ -17,6 +17,7 @@ import io.github.arpit92k.fortuna.core.recording.RecordingError.BaseCurrencyHasN
 import io.github.arpit92k.fortuna.core.recording.RecordingError.BaseCurrencyNotChosen
 import io.github.arpit92k.fortuna.core.recording.RecordingError.BeforeLatestSnapshot
 import io.github.arpit92k.fortuna.core.recording.RecordingError.CategoryArchived
+import io.github.arpit92k.fortuna.core.recording.RecordingError.CloseNotAfterLatest
 import io.github.arpit92k.fortuna.core.recording.RecordingError.DateInFuture
 import io.github.arpit92k.fortuna.core.recording.RecordingError.EmptyName
 import io.github.arpit92k.fortuna.core.recording.RecordingError.NameInUse
@@ -122,6 +123,50 @@ fun Dataset.deleteSource(id: SourceId): RecordingResult {
     val source = source(id) ?: return fail(NoSuchSource(id))
     if (source.snapshots.size > 1) return fail(SourceHasHistory(id))
     return ok(copy(sources = sources.filter { it.id != id }))
+}
+
+/**
+ * Closes a source when the account is closed, the asset sold or the debt
+ * repaid (UF-07): a final snapshot of zero on [date], then the source is
+ * archived. It leaves the list of active sources and the periodic update,
+ * and keeps its history, which still counts in net worth up to [date].
+ *
+ * [amountAdded] defaults to minus the last value: the money was moved out,
+ * or for a debt, repaid. A different amount, such as nothing for an asset
+ * written off, counts the rest as a loss.
+ *
+ * The date must be after the latest snapshot, so closing never replaces a
+ * value already recorded.
+ */
+fun Dataset.closeSource(
+    id: SourceId,
+    date: LocalDate,
+    today: LocalDate,
+    amountAdded: Money? = null,
+    note: String? = null,
+): RecordingResult {
+    val source = source(id) ?: return fail(NoSuchSource(id))
+    if (source.status != Status.ACTIVE) return fail(SourceArchived(id))
+    if (amountAdded != null) checkCurrency(source, amountAdded)?.let { return fail(it) }
+    if (date > today) return fail(DateInFuture(date, today))
+    val latest = source.snapshots.latest()!!
+    if (date <= latest.date) return fail(CloseNotAfterLatest(latest.date))
+    val moved = amountAdded ?: -latest.value.value
+    val closing = Snapshot(Money(0, source.currency), moved, clean(note))
+    return ok(replaceSource(source.copy(snapshots = source.snapshots.with(date, closing), status = Status.ARCHIVED)))
+}
+
+/**
+ * Reopens a closed source. Its history, closing value included, is kept: new
+ * values are added after it, or the closing value is deleted as the latest.
+ * Names are unique among active sources, so a source opened since under the
+ * same name keeps it closed.
+ */
+fun Dataset.reopenSource(id: SourceId): RecordingResult {
+    val source = source(id) ?: return fail(NoSuchSource(id))
+    if (source.status == Status.ACTIVE) return ok(this)
+    if (isNameInUse(source.name)) return fail(NameInUse(source.name))
+    return ok(replaceSource(source.copy(status = Status.ACTIVE)))
 }
 
 // ---- Snapshots ----

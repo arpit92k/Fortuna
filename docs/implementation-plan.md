@@ -479,7 +479,7 @@ The order follows four ideas:
 
 Two features from the roadmap are already in the MVP: the change breakdown for a period and the base-currency view of a source.
 
-**The saved format after step 26.** Every step that changes what is saved adds a new format version and fixture, and still reads every older version, including backups made by earlier releases. Steps 28, 29, 33, 35, 37 and 41 are expected to change it.
+**The saved format after step 26.** Every step that changes what is saved adds a new format version and fixture, and still reads every older version, including backups made by earlier releases. Steps 29, 33, 35, 37 and 41 are expected to change it; step 28 did not need to, as version 1 already saves a source's status.
 
 ## Stage 5: after the release check
 
@@ -499,6 +499,7 @@ Two features from the roadmap are already in the MVP: the change breakdown for a
 ### Step 28: close a source (UF-07)
 
 - **Builds:** a closing value and date, after which the source counts as nothing and takes no more values. Closed sources move to an archive list, still part of history and the charts, and can be reopened.
+  - **Built:** "Close account" on the source page asks for a date after the latest value and what was moved out (for a debt, repaid). Left blank, that is all of the last value, so the form never shows a figure while amounts are hidden; 0 is a write-off, counted as a loss. The source is archived, a status format version 1 already saves, so the format is unchanged. A closed source's page says when it closed, and its values cannot be changed until it is reopened. "Closed accounts" in Settings, shown once there is one, lists them. Reopening keeps the closing value, which can then be deleted as the latest; it is refused while an open source has the same name.
 - **Done when:** a closed source leaves the dashboard list and the update, its history still counts in the timeline, and reopening brings it back.
 
 ### Step 29: manage categories (UF-08)
