@@ -44,6 +44,15 @@ sealed interface RecordingError {
     /** New sources go only into active categories. */
     data class CategoryArchived(val id: CategoryId) : RecordingError
 
+    /**
+     * A category's kind cannot change once it has sources, and it cannot be
+     * archived while an open source is in it.
+     */
+    data class CategoryHasSources(val id: CategoryId) : RecordingError
+
+    /** A source moves only to a category of the same kind: an asset stays an asset. */
+    data class CategoryOfOtherKind(val id: CategoryId) : RecordingError
+
     data class NoSuchSource(val id: SourceId) : RecordingError
 
     /** An archived source keeps its history and takes no new values. */
@@ -67,6 +76,9 @@ sealed interface RecordingError {
     data class BeforeLatestSnapshot(val latest: LocalDate) : RecordingError
 
     data class NoSnapshotOnDate(val date: LocalDate) : RecordingError
+
+    /** A snapshot is inserted only on a date without one; the one already there is corrected instead. */
+    data class SnapshotOnDate(val date: LocalDate) : RecordingError
 
     /** A source always has at least one snapshot. To remove its only one, delete the source. */
     data class OnlySnapshot(val id: SourceId) : RecordingError

@@ -37,6 +37,9 @@ sealed interface Destination {
     /** Closed sources, from Settings: each opens its page, where it can be reopened (UF-07). */
     data object ClosedSources : Destination
 
+    /** Categories, from Settings (UF-08). */
+    data object Categories : Destination
+
     /** S-17. */
     data object Backup : Destination
 

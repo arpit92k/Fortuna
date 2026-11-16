@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import io.github.arpit92k.fortuna.Core
 import io.github.arpit92k.fortuna.core.domain.CategoryKind
 import io.github.arpit92k.fortuna.core.domain.Dataset
+import io.github.arpit92k.fortuna.core.domain.CategoryId
 import io.github.arpit92k.fortuna.core.domain.SourceId
 import io.github.arpit92k.fortuna.core.insights.Gain
 import io.github.arpit92k.fortuna.core.insights.sourceInBase
@@ -21,9 +22,13 @@ import io.github.arpit92k.fortuna.core.recording.RecordingError
 import io.github.arpit92k.fortuna.core.recording.RecordingResult
 import io.github.arpit92k.fortuna.core.recording.closeSource
 import io.github.arpit92k.fortuna.core.recording.reopenSource
+import io.github.arpit92k.fortuna.core.recording.moveSource
 import io.github.arpit92k.fortuna.ui.parseAmount
 import java.util.Locale
 import io.github.arpit92k.fortuna.core.recording.deleteLatestSnapshot
+import io.github.arpit92k.fortuna.core.recording.NextAdjustment
+import io.github.arpit92k.fortuna.core.recording.deleteAdjustment
+import io.github.arpit92k.fortuna.core.recording.deleteSnapshot
 import io.github.arpit92k.fortuna.core.recording.deleteSource
 import io.github.arpit92k.fortuna.core.session.SessionState
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -41,6 +46,7 @@ data class SourcePageUi(
     val id: SourceId,
     val name: String,
     val category: String,
+    val categoryId: CategoryId? = null,
     val liability: Boolean,
     val note: String?,
     val value: Money,
@@ -60,6 +66,8 @@ data class SourcePageUi(
     val showingBase: Boolean = false,
     /** The date it was closed, which is its closing value's, or null while it is open (UF-07). */
     val closedOn: LocalDate? = null,
+    /** The other active categories of the same kind, which it can move to (UF-08). */
+    val moveTargets: List<CategoryChoice> = emptyList(),
 ) {
     /** The chart the page shows: in the base currency when [showingBase]. */
     val shownChart: List<ChartPoint> get() = inBase?.takeIf { showingBase }?.chart ?: chart
@@ -71,6 +79,9 @@ data class SourcePageUi(
 
     /** The latest value can be deleted unless it is the only one, or the source is closed. */
     val canDeleteLatest: Boolean get() = entries.size > 1 && !closed
+
+    /** Any value can be deleted (UF-06), on the same terms as the latest. */
+    val canDeleteValues: Boolean get() = canDeleteLatest
 
     /** A source is deleted only while it has just its opening value; one with history is kept. */
     val canDeleteSource: Boolean get() = entries.size == 1 && !closed
@@ -101,6 +112,8 @@ data class HistoryRow(
     val growth: Money?,
     val note: String?,
     val opening: Boolean,
+    /** What deleting it does to the value after it (UF-06), or null for the latest. */
+    val deleteNext: NextAdjustment? = null,
 )
 
 /** The source page's figures on [today], from the core's insights. Null if the source is gone. */
@@ -108,11 +121,16 @@ fun sourcePageOf(data: Dataset, id: SourceId, today: LocalDate): SourcePageUi? {
     val source = data.source(id) ?: return null
     val history = data.history(id)
     val rows = history.entries.mapIndexed { index, entry ->
-        HistoryRow(entry.date, entry.value, entry.change, entry.amountAdded, entry.growth, entry.note, opening = index == 0)
+        HistoryRow(
+            entry.date, entry.value, entry.change, entry.amountAdded, entry.growth, entry.note,
+            opening = index == 0,
+            deleteNext = data.deleteAdjustment(id, entry.date),
+        )
     }
     return SourcePageUi(
         id = id,
         name = source.name,
+        categoryId = source.categoryId,
         category = data.category(source.categoryId)?.name.orEmpty(),
         liability = data.category(source.categoryId)?.kind == CategoryKind.LIABILITY,
         note = source.note,
@@ -128,6 +146,9 @@ fun sourcePageOf(data: Dataset, id: SourceId, today: LocalDate): SourcePageUi? {
             Gain(if (liability) -gained else gained, source.openingPutIn!!.takeIf { it.minorUnits > 0 })
         },
         closedOn = if (source.status == Status.ARCHIVED) rows.last().date else null,
+        moveTargets = data.categories
+            .filter { it.id != source.categoryId && it.status == Status.ACTIVE && it.kind == data.category(source.categoryId)?.kind }
+            .map { CategoryChoice(it.id, it.name) },
     )
 }
 
@@ -247,6 +268,16 @@ class SourcePageViewModel(
         mutableReopenRefused.value = null
     }
 
+    /** Deletes the value on [date], after the screen has asked; the value after it is adjusted (UF-06). */
+    fun deleteValue(id: SourceId, date: LocalDate) {
+        viewModelScope.launch { core.run { record { data, _ -> data.deleteSnapshot(id, date) } } }
+    }
+
+    /** Moves the source to another category of the same kind (UF-08). */
+    fun move(id: SourceId, to: CategoryId) {
+        viewModelScope.launch { core.run { record { data, _ -> data.moveSource(id, to) } } }
+    }
+
     /** Deletes a source created by mistake, after the screen has asked. [onDeleted] runs if it was deleted. */
     fun deleteSource(id: SourceId, onDeleted: () -> Unit) {
         viewModelScope.launch {
@@ -289,3 +320,6 @@ fun closedSourcesOf(data: Dataset): List<ClosedSourceRow> =
         .filter { it.status == Status.ARCHIVED }
         .map { ClosedSourceRow(it.id, it.name, data.category(it.categoryId)?.name.orEmpty(), it.snapshots.latest()!!.date) }
         .sortedByDescending { it.closedOn }
+
+/** A category a source can be moved to. */
+data class CategoryChoice(val id: CategoryId, val name: String)

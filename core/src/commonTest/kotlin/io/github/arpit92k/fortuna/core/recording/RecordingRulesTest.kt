@@ -1,6 +1,7 @@
 package io.github.arpit92k.fortuna.core.recording
 
 import io.github.arpit92k.fortuna.core.domain.CategoryId
+import io.github.arpit92k.fortuna.core.domain.CategoryKind
 import io.github.arpit92k.fortuna.core.domain.Dataset
 import io.github.arpit92k.fortuna.core.domain.SourceId
 import io.github.arpit92k.fortuna.core.domain.Status
@@ -14,6 +15,8 @@ import io.github.arpit92k.fortuna.core.recording.RecordingError.BaseCurrencyHasN
 import io.github.arpit92k.fortuna.core.recording.RecordingError.BaseCurrencyNotChosen
 import io.github.arpit92k.fortuna.core.recording.RecordingError.BeforeLatestSnapshot
 import io.github.arpit92k.fortuna.core.recording.RecordingError.CategoryArchived
+import io.github.arpit92k.fortuna.core.recording.RecordingError.CategoryHasSources
+import io.github.arpit92k.fortuna.core.recording.RecordingError.CategoryOfOtherKind
 import io.github.arpit92k.fortuna.core.recording.RecordingError.CloseNotAfterLatest
 import io.github.arpit92k.fortuna.core.recording.RecordingError.DateInFuture
 import io.github.arpit92k.fortuna.core.recording.RecordingError.EmptyName
@@ -28,6 +31,7 @@ import io.github.arpit92k.fortuna.core.recording.RecordingError.RateNeeded
 import io.github.arpit92k.fortuna.core.recording.RecordingError.RateNeededBySnapshot
 import io.github.arpit92k.fortuna.core.recording.RecordingError.SourceArchived
 import io.github.arpit92k.fortuna.core.recording.RecordingError.SourceHasHistory
+import io.github.arpit92k.fortuna.core.recording.RecordingError.SnapshotOnDate
 import io.github.arpit92k.fortuna.core.recording.RecordingError.WrongCurrency
 import io.github.arpit92k.fortuna.core.recording.RecordingError.WrongRateCurrencies
 import kotlinx.datetime.LocalDate
@@ -239,6 +243,62 @@ class RecordingRulesTest {
         assertEquals(NameInUse("Current account"), renamed.reopenSource(account).error())
     }
 
+    // ---- Categories (UF-08) ----
+
+    @Test
+    fun aCategoryIsAddedWithItsKindAndATidyUniqueName() {
+        val added = chosen.addCategory("  Crypto ", CategoryKind.ASSET).dataset()
+        val crypto = added.categories.last()
+        assertEquals("Crypto", crypto.name)
+        assertEquals(CategoryKind.ASSET, crypto.kind)
+        assertEquals(chosen.nextId, crypto.id.value)
+        assertEquals(chosen.nextId + 1, added.nextId)
+        assertEquals(NameInUse("cash"), chosen.addCategory("cash", CategoryKind.ASSET).error())
+        assertEquals(EmptyName, chosen.addCategory("  ", CategoryKind.ASSET).error())
+        // A new source can go in it.
+        assertIs<RecordingResult.Success>(added.addSource("Wallet", crypto.id, april, gbp(1), today))
+    }
+
+    @Test
+    fun aCategoryIsRenamedWithItsSources() {
+        val renamed = withAccount.renameCategory(cash, "Bank").dataset()
+        assertEquals("Bank", renamed.category(cash)!!.name)
+        assertEquals(cash, renamed.source(account)!!.categoryId)
+        assertEquals(NameInUse("Debt"), withAccount.renameCategory(cash, "Debt").error())
+        assertIs<RecordingResult.Success>(withAccount.renameCategory(cash, "cash"), "its own name in another case")
+    }
+
+    @Test
+    fun aCategorysKindChangesOnlyWhileItHasNoSources() {
+        val crypto = chosen.addCategory("Crypto", CategoryKind.ASSET).dataset()
+        val id = crypto.categories.last().id
+        assertEquals(CategoryKind.LIABILITY, crypto.setCategoryKind(id, CategoryKind.LIABILITY).dataset().category(id)!!.kind)
+        assertEquals(CategoryHasSources(cash), withAccount.setCategoryKind(cash, CategoryKind.LIABILITY).error())
+    }
+
+    @Test
+    fun aCategoryIsArchivedOnceItsOpenSourcesAreMovedOrClosed() {
+        assertEquals(CategoryHasSources(cash), withAccount.archiveCategory(cash).error())
+        val closed = withAccount.closeSource(account, april, today).dataset()
+        val archived = closed.archiveCategory(cash).dataset()
+        assertEquals(Status.ARCHIVED, archived.category(cash)!!.status)
+        assertEquals(CategoryArchived(cash), archived.addSource("New", cash, april, gbp(1), today).error())
+        // Its name is free while it is archived, and needed back to restore it.
+        val reused = archived.addCategory("Cash", CategoryKind.ASSET).dataset()
+        assertEquals(NameInUse("Cash"), reused.restoreCategory(cash).error())
+        assertEquals(Status.ACTIVE, archived.restoreCategory(cash).dataset().category(cash)!!.status)
+    }
+
+    @Test
+    fun aSourceMovesOnlyToAnActiveCategoryOfTheSameKind() {
+        val moved = withAccount.moveSource(account, investments).dataset()
+        assertEquals(investments, moved.source(account)!!.categoryId)
+        assertEquals(CategoryOfOtherKind(debt), withAccount.moveSource(account, debt).error())
+        val archivedInvestments = withAccount.archiveCategory(investments).dataset()
+        assertEquals(CategoryArchived(investments), archivedInvestments.moveSource(account, investments).error())
+        assertEquals(NoSuchCategory(CategoryId(99)), withAccount.moveSource(account, CategoryId(99)).error())
+    }
+
     // ---- Adding snapshots ----
 
     @Test
@@ -342,6 +402,67 @@ class RecordingRulesTest {
     @Test
     fun theOnlySnapshotCannotBeDeleted() {
         assertEquals(OnlySnapshot(account), withBoth.deleteLatestSnapshot(account).error())
+    }
+
+    // ---- Backfilling (UF-06) ----
+
+    // £2,500 in January, then £3,100 in April with £500 added.
+    private val twoValues = withAccount.addSnapshot(account, april, gbp(310_000), gbp(50_000), today).dataset()
+
+    @Test
+    fun aValueInsertedBetweenTwoTakesItsAmountAddedOffTheNext() {
+        val adjustment = twoValues.insertAdjustment(account, february, gbp(280_000), gbp(20_000))
+        assertEquals(NextAdjustment(april, gbp(50_000), gbp(30_000)), adjustment)
+        val inserted = twoValues.insertSnapshot(account, february, gbp(280_000), gbp(20_000), today, note = "Found it").dataset()
+        val snapshots = inserted.source(account)!!.snapshots
+        assertEquals(listOf(january, february, april), snapshots.map { it.date })
+        assertEquals(gbp(20_000), snapshots.on(february)!!.amountAdded)
+        assertEquals(gbp(30_000), snapshots.on(april)!!.amountAdded, "the £500 now split £200 and £300")
+        // The user can change the proposal.
+        val changed = twoValues.insertSnapshot(account, february, gbp(280_000), gbp(20_000), today, nextAmountAdded = gbp(0)).dataset()
+        assertEquals(gbp(0), changed.source(account)!!.snapshots.on(april)!!.amountAdded)
+    }
+
+    @Test
+    fun aValueInsertedBeforeTheOpeningOneBecomesItKeepingWhatWasPutIn() {
+        val before = LocalDate(2025, 12, 31)
+        val adjustment = twoValues.insertAdjustment(account, before, gbp(200_000), gbp(0))!!
+        assertEquals(gbp(50_000), adjustment.proposed, "January's £2,500 put in, less the £2,000 already there")
+        val inserted = twoValues.insertSnapshot(account, before, gbp(200_000), gbp(0), today).dataset()
+        val source = inserted.source(account)!!
+        assertEquals(before, source.snapshots.earliest()!!.date)
+        val putIn = source.openingPutIn!! + source.snapshots.on(january)!!.amountAdded + source.snapshots.on(april)!!.amountAdded
+        assertEquals(gbp(250_000 + 50_000), putIn, "put in overall unchanged, so gains are too")
+        assertEquals(OpeningBalanceHasNoAmountAdded, twoValues.insertSnapshot(account, before, gbp(1), gbp(1), today).error())
+        assertEquals(RateNeeded(dollars, before), withBoth.insertSnapshot(brokerage, before, usd(1), usd(0), today).error())
+    }
+
+    @Test
+    fun insertingIsRefusedOnADateWithAValueInTheFutureOrOnAClosedSource() {
+        assertEquals(SnapshotOnDate(april), twoValues.insertSnapshot(account, april, gbp(1), gbp(0), today).error())
+        assertEquals(DateInFuture(tomorrow, today), twoValues.insertSnapshot(account, tomorrow, gbp(1), gbp(0), today).error())
+        val closed = twoValues.closeSource(account, today, today).dataset()
+        assertEquals(SourceArchived(account), closed.insertSnapshot(account, february, gbp(1), gbp(0), today).error())
+    }
+
+    @Test
+    fun deletingAValueInTheMiddleGivesItsAmountAddedToTheNext() {
+        val three = twoValues.insertSnapshot(account, february, gbp(280_000), gbp(20_000), today).dataset()
+        assertEquals(NextAdjustment(april, gbp(30_000), gbp(50_000)), three.deleteAdjustment(account, february))
+        val deleted = three.deleteSnapshot(account, february).dataset()
+        assertEquals(twoValues.source(account), deleted.source(account), "back as it was")
+        assertEquals(OnlySnapshot(account), withAccount.deleteSnapshot(account, january).error())
+        assertEquals(NoSnapshotOnDate(february), twoValues.deleteSnapshot(account, february).error())
+    }
+
+    @Test
+    fun deletingTheOpeningValueMakesTheNextTheOpeningOneKeepingWhatWasPutIn() {
+        val deleted = twoValues.deleteSnapshot(account, january).dataset()
+        val source = deleted.source(account)!!
+        assertEquals(april, source.snapshots.earliest()!!.date)
+        assertEquals(gbp(0), source.snapshots.on(april)!!.amountAdded, "an opening value has no amount added")
+        assertEquals(gbp(300_000), source.openingPutIn, "£2,500 and £500 put in, as before")
+        assertEquals(gbp(310_000), source.snapshots.on(april)!!.value)
     }
 
     // ---- Exchange rates ----

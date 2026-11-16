@@ -363,7 +363,7 @@ private fun SourceRowItem(row: SourceRow, onClick: () -> Unit) {
         horizontalArrangement = Arrangement.spacedBy(16.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        categoryIcon(row.category)?.let { IconTile(it, size = 40.dp) }
+        categoryIcon(row.category, row.categoryId)?.let { IconTile(it, size = 40.dp) }
         Column(Modifier.weight(1f)) {
             Text(row.name, style = MaterialTheme.typography.titleMedium)
             Text(

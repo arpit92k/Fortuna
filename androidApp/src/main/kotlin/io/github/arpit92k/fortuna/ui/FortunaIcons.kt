@@ -1,5 +1,7 @@
 package io.github.arpit92k.fortuna.ui
 
+import io.github.arpit92k.fortuna.core.domain.CategoryId
+
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -76,8 +78,22 @@ enum class FortunaIcon {
     Debt,
 }
 
-/** The icon for a starter category, or null for a category the app has no picture for. */
-fun categoryIcon(name: String): FortunaIcon? = when (name) {
+/**
+ * The icon for a starter category, or null for a category the app has no
+ * picture for. By [id] where it is known, so a starter category keeps its
+ * picture when renamed (UF-08); by [name] otherwise.
+ */
+fun categoryIcon(name: String, id: CategoryId? = null): FortunaIcon? = when (id?.value) {
+    1L -> FortunaIcon.Cash
+    2L -> FortunaIcon.Investments
+    3L -> FortunaIcon.Property
+    4L -> FortunaIcon.Pension
+    5L -> FortunaIcon.Debt
+    null -> iconByName(name)
+    else -> null
+}
+
+private fun iconByName(name: String): FortunaIcon? = when (name) {
     "Cash" -> FortunaIcon.Cash
     "Investments" -> FortunaIcon.Investments
     "Property" -> FortunaIcon.Property

@@ -21,11 +21,15 @@ import io.github.arpit92k.fortuna.setup.Problem
 import io.github.arpit92k.fortuna.ui.AdaptiveScreen
 import io.github.arpit92k.fortuna.ui.DateButton
 import io.github.arpit92k.fortuna.ui.formatDate
+import io.github.arpit92k.fortuna.ui.change
+import io.github.arpit92k.fortuna.core.recording.NextAdjustment
 import kotlinx.datetime.LocalDate
 
 /**
- * S-12 Value entry. A new value is dated from the source's latest value up to
- * today; a correction keeps its date. The amount added is optional, and the
+ * S-12 Value entry. A new value is dated any day up to today: before the
+ * latest, it goes in the middle of the history and the later value's amount
+ * added is shown for the user to accept or change (UF-06). A correction keeps
+ * its date. The amount added is optional, and the
  * opening value has none.
  */
 @Composable
@@ -41,10 +45,12 @@ fun ValueEntryScreen(
     onSave: () -> Unit,
     onReplace: () -> Unit,
     onKeep: () -> Unit,
+    onNextAdded: (String) -> Unit = {},
     onBack: (() -> Unit)? = null,
 ) {
     val date = editing ?: form.date ?: source.today
-    val opening = date == source.opening
+    // On or before the opening value's date, it is the opening value, with nothing added.
+    val opening = date <= source.opening
     AdaptiveScreen(
         // Leaving without saving forgets what was typed, as the system back does.
         onBack = onBack,
@@ -98,7 +104,7 @@ fun ValueEntryScreen(
                         onDate = onDate,
                         todayText = stringResource(R.string.value_date_today),
                         dateText = { dateText.format(it) },
-                        earliest = source.latest,
+                        // Any past date: one before the latest goes in the middle of the history (UF-06).
                         enabled = !form.saving,
                         modifier = Modifier.testTag("value-date"),
                     )
@@ -113,6 +119,7 @@ fun ValueEntryScreen(
                     keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences),
                     modifier = Modifier.fillMaxWidth().testTag("value-note"),
                 )
+                form.adjustment?.let { NextAdjustmentField(it, form.nextAdded, source.liability, onNextAdded, enabled = !form.saving) }
                 form.problem?.let { Problem(stringResource(it.message())) }
                 Button(onClick = onSave, enabled = !form.saving, modifier = Modifier.fillMaxWidth().testTag("save-value")) {
                     Text(stringResource(R.string.value_save))
@@ -139,5 +146,31 @@ fun ValueEntryProblem.message(): Int = when (this) {
     ValueEntryProblem.AMOUNT_TOO_LARGE -> R.string.add_source_problem_too_large
     ValueEntryProblem.DATE_IN_FUTURE -> R.string.add_source_problem_future
     ValueEntryProblem.BEFORE_LATEST -> R.string.value_problem_before_latest
+    ValueEntryProblem.RATE_NEEDED -> R.string.value_problem_rate_needed
     ValueEntryProblem.NOT_SAVED -> R.string.add_source_problem_not_saved
+}
+
+/**
+ * A value dated before a later one (UF-06): the later one's amount added
+ * covered the time since the value before, so it changes. The app proposes
+ * the new figure; the user accepts it by saving, or changes it first.
+ */
+@Composable
+private fun NextAdjustmentField(adjustment: NextAdjustment, text: String, liability: Boolean, onChange: (String) -> Unit, enabled: Boolean) {
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.testTag("next-adjustment")) {
+        Text(
+            stringResource(if (liability) R.string.value_next_borrowed_text else R.string.value_next_added_text, formatDate(adjustment.date)),
+            style = MaterialTheme.typography.bodyMedium,
+        )
+        OutlinedTextField(
+            value = text,
+            onValueChange = onChange,
+            label = { Text(stringResource(R.string.value_next_label, formatDate(adjustment.date))) },
+            supportingText = { Text(stringResource(R.string.value_next_was, change(adjustment.current))) },
+            singleLine = true,
+            enabled = enabled,
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+            modifier = Modifier.fillMaxWidth().testTag("value-next-added"),
+        )
+    }
 }

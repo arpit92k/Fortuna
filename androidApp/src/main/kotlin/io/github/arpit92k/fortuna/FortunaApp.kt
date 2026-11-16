@@ -48,11 +48,13 @@ import io.github.arpit92k.fortuna.navigation.Destination
 import io.github.arpit92k.fortuna.navigation.Navigator
 import io.github.arpit92k.fortuna.navigation.entersValue
 import io.github.arpit92k.fortuna.settings.ClosedSourcesScreen
+import io.github.arpit92k.fortuna.settings.CategoriesScreen
 import io.github.arpit92k.fortuna.source.closedSourcesOf
 import io.github.arpit92k.fortuna.settings.BackupScreen
 import io.github.arpit92k.fortuna.settings.BackupViewModel
 import io.github.arpit92k.fortuna.settings.CurrenciesScreen
 import io.github.arpit92k.fortuna.settings.CurrenciesViewModel
+import io.github.arpit92k.fortuna.settings.CategoriesViewModel
 import io.github.arpit92k.fortuna.settings.SettingsScreen
 import io.github.arpit92k.fortuna.setup.RestoreViewModel
 import io.github.arpit92k.fortuna.setup.SetupFlow
@@ -93,6 +95,7 @@ class Screens(
     val about: AboutViewModel,
     val report: BugReportViewModel,
     val biometrics: BiometricsViewModel,
+    val categories: CategoriesViewModel? = null,
 )
 
 /**
@@ -277,6 +280,7 @@ private fun UnlockedApp(core: Core, screens: Screens) {
                     onShowInBase = screens.sourcePage::showInBase,
                     onEdit = { navigator.open(Destination.ValueEntry(current.id, editing = it)) },
                     onDeleteLatest = { screens.sourcePage.deleteLatest(current.id) },
+                    onDeleteValue = { screens.sourcePage.deleteValue(current.id, it) },
                     onDeleteSource = { screens.sourcePage.deleteSource(current.id) { navigator.forget(current.id) } },
                     onBack = tryLeave,
                     modifier = modifier,
@@ -289,6 +293,7 @@ private fun UnlockedApp(core: Core, screens: Screens) {
                         reopenRefused = reopenRefused,
                         onClearReopenRefused = screens.sourcePage::clearReopenRefused,
                     ),
+                    onMove = { screens.sourcePage.move(current.id, it) },
                 )
             }
             // On an expanded window the list stays beside the source it opened.
@@ -346,9 +351,23 @@ private fun UnlockedApp(core: Core, screens: Screens) {
             onReport = screens.report::open,
             closedCount = dataset?.sources?.count { it.status == Status.ARCHIVED } ?: 0,
             onClosed = { navigator.open(Destination.ClosedSources) },
+            onCategories = { navigator.open(Destination.Categories) },
             onAbout = { navigator.open(Destination.About()) },
             onBack = tryLeave,
         )
+        Destination.Categories -> {
+            val categories = screens.categories ?: return
+            val ui by categories.ui.collectAsState()
+            CategoriesScreen(
+                ui = ui,
+                onAdd = categories::add,
+                onEdit = categories::edit,
+                onArchive = categories::archive,
+                onRestore = categories::restore,
+                onClearProblem = categories::clearProblem,
+                onBack = tryLeave,
+            )
+        }
         Destination.ClosedSources -> ClosedSourcesScreen(
             rows = dataset?.let(::closedSourcesOf).orEmpty(),
             onOpen = { navigator.open(Destination.Source(it)) },
@@ -444,6 +463,7 @@ private fun UnlockedApp(core: Core, screens: Screens) {
                 onSave = { screens.valueEntry.save(source, current.editing) { navigator.back() } },
                 onReplace = { screens.valueEntry.save(source, current.editing, replace = true) { navigator.back() } },
                 onKeep = screens.valueEntry::keepExisting,
+                onNextAdded = screens.valueEntry::nextAdded,
                 onBack = tryLeave,
             )
         }
@@ -470,6 +490,7 @@ private fun leave(current: Destination, screens: Screens) {
         Destination.UpdateStep -> screens.update.stop()
         Destination.Update -> screens.update.finish()
         Destination.Currencies -> screens.currencies.clearProblem()
+        Destination.Categories -> screens.categories?.clearProblem()
         Destination.Backup -> screens.backup.clearMessage()
         // Done, Skip or back: the tour is not shown again.
         is Destination.About -> screens.about.markSeen()
