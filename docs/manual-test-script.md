@@ -52,6 +52,7 @@ Run the sections in order: each starts where the one before left off. Tick a lin
 - [ ] Settings shows "Closed accounts" with it. Open it, "Reopen": it is back on the dashboard, and its closing value can be deleted as the latest.
 - [ ] Settings, then Categories: add "Crypto" as an asset, rename it, and archive it. Archiving Cash, which has open accounts, is refused and says why. Rename Cash: its picture stays.
 - [ ] On a source page, "Change category" offers only categories of the same kind. Moving it changes its category on the dashboard and keeps its history.
+- [ ] Settings, then Import history: save the template, fill in two accounts in a spreadsheet app, one in another currency, and save it as CSV. Choosing it shows the preview and asks for the rate; nothing changes until Import. A file with a wrong date or a comma in an amount is refused with its line, and nothing changes.
 - [ ] Give an account a value of zero. A "£0" chip appears beside "Your accounts"; tapping it hides that account ("✓ £0 · 1") and again shows it. Settings has the same switch, only while an account is at zero.
 - [ ] With accounts at zero hidden, an update skips them and its first screen names any that were due on its date.
 

@@ -519,6 +519,7 @@ Two features from the roadmap are already in the MVP: the change breakdown for a
 ### Step 31: import history from a spreadsheet (UF-15)
 
 - **Builds:** an empty, simplified template the app provides, and an import that reads it back. Import uses the same rules as entering by hand, so it relies on step 30. Every row is checked before anything is saved, and problems are listed by row.
+  - **Built:** the template is a CSV file with the columns Account, Category, Date, Value, Added and Currency, which any spreadsheet app saves. The core's `checkImport` reads it strictly (ISO dates, amounts with a dot and no separators, so a comma never shifts a figure) and names every problem by its line, or plans the import: new accounts with their category and currency, dates that already have a value, and any rate a foreign account needs. `applyImport` makes it one change or none. Settings has "Import history": save the template, choose the file, see the preview, decide whether to replace values already there, give any rate, import. The app then says to delete the file, which it does not protect.
 - **Done when:** a filled template with several sources, currencies and years of values imports in one go, and a template with mistakes is refused with each mistake named, leaving the data unchanged.
 
 ### Step 32: change the base currency (UF-09)
