@@ -206,6 +206,57 @@
     <string name="source_move_title">Move to another category</string>
     <string name="source_move_text">Its history moves with it. Only categories of the same kind are offered.</string>
     <string name="source_move_none">There is no other category of the same kind. Add one in Settings, Categories.</string>
+    <string name="settings_import">Import history</string>
+    <string name="settings_import_body">Bring in values you tracked elsewhere, from a spreadsheet.</string>
+    <string name="import_title">Import history</string>
+    <string name="import_body">Save the empty template, fill it in with any spreadsheet app, one row per value, and save it as CSV. Then choose it here. You will see what it would do before anything changes.</string>
+    <string name="import_columns">Columns: %1$s. Dates as 2026-01-31. Amounts with a dot for decimals and no thousands separators. A new account needs one of your categories; Added and Currency can be left blank.</string>
+    <string name="import_save_template">Save the template</string>
+    <string name="import_choose">Choose a filled-in file</string>
+    <string name="import_template_saved">Template saved.</string>
+    <string name="import_template_not_saved">The template could not be saved there. Try another place.</string>
+    <string name="import_cannot_read">That file could not be read. Try saving it again, as CSV.</string>
+    <string name="import_problems_title">This file cannot be imported yet</string>
+    <string name="import_problems_nothing_changed">Nothing was changed. Fix these in the file, save it, and choose it again.</string>
+    <string name="import_again">Choose another file</string>
+    <plurals name="import_preview_values">
+        <item quantity="one">%1$d value</item>
+        <item quantity="other">%1$d values</item>
+    </plurals>
+    <plurals name="import_preview_accounts">
+        <item quantity="one">for %1$d account.</item>
+        <item quantity="other">for %1$d accounts.</item>
+    </plurals>
+    <string name="import_new_accounts">New accounts</string>
+    <string name="import_new_account">%1$s · %2$s · %3$s</string>
+    <plurals name="import_conflicts">
+        <item quantity="one">%1$d date already has a value. Replace it with the file\'s?</item>
+        <item quantity="other">%1$d dates already have a value. Replace them with the file\'s?</item>
+    </plurals>
+    <string name="import_rate_needed">%1$s needs a rate on %2$s.</string>
+    <string name="import_rate_given">%1$s on %2$s</string>
+    <string name="import_enter_rate">Enter rate</string>
+    <string name="import_rate_title">%1$s rate</string>
+    <string name="import_confirm">Import</string>
+    <plurals name="import_done">
+        <item quantity="one">Imported %1$d value for %2$d account.</item>
+        <item quantity="other">Imported %1$d values for %2$d accounts.</item>
+    </plurals>
+    <string name="import_delete_file">Delete the file now. It is not protected by Fortuna, so anyone with the phone or that storage can read it.</string>
+    <string name="import_problem_template">The first row must be the template\'s: %1$s.</string>
+    <string name="import_problem_no_rows">The file has no values below its first row.</string>
+    <string name="import_problem_columns">Line %1$d has %2$d columns; the template has 6. A comma inside an amount adds one.</string>
+    <string name="import_problem_no_account">Line %1$d has no account.</string>
+    <string name="import_problem_date">Line %1$d: "%2$s" is not a date like 2026-01-31.</string>
+    <string name="import_problem_future">Line %1$d is dated %2$s, after today.</string>
+    <string name="import_problem_currency">Line %1$d: "%2$s" is not a currency code like GBP.</string>
+    <string name="import_problem_amount">Line %1$d: %2$s "%3$s" is not an amount like 1234.50.</string>
+    <string name="import_problem_category">Line %1$d: "%2$s" is not one of your categories.</string>
+    <string name="import_problem_wrong_currency">Line %1$d: %2$s is in %3$s.</string>
+    <string name="import_problem_inconsistent">Line %1$d gives %2$s another category.</string>
+    <string name="import_problem_duplicate">Line %1$d: %2$s already has a value on %3$s in this file.</string>
+    <string name="import_problem_opening">Line %1$d is the first value of %2$s, its opening value, so nothing can be added.</string>
+    <string name="import_problem_closed">Line %1$d: %2$s is closed. Reopen it first.</string>
 
     <!-- S-12 Value entry -->
     <string name="value_new_title">New value for %1$s</string>

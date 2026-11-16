@@ -40,6 +40,9 @@ sealed interface Destination {
     /** Categories, from Settings (UF-08). */
     data object Categories : Destination
 
+    /** Import history from a spreadsheet, from Settings (UF-15). */
+    data object Import : Destination
+
     /** S-17. */
     data object Backup : Destination
 
@@ -62,7 +65,8 @@ fun entersValue(destination: Destination): Boolean =
     destination is Destination.AddSource ||
         destination is Destination.ValueEntry ||
         destination is Destination.UpdateStep ||
-        destination is Destination.Backup
+        destination is Destination.Backup ||
+        destination is Destination.Import
 
 /**
  * Where the user is in the unlocked app: a stack of screens, the dashboard at

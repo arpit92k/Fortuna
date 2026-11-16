@@ -49,12 +49,14 @@ import io.github.arpit92k.fortuna.navigation.Navigator
 import io.github.arpit92k.fortuna.navigation.entersValue
 import io.github.arpit92k.fortuna.settings.ClosedSourcesScreen
 import io.github.arpit92k.fortuna.settings.CategoriesScreen
+import io.github.arpit92k.fortuna.settings.ImportScreen
 import io.github.arpit92k.fortuna.source.closedSourcesOf
 import io.github.arpit92k.fortuna.settings.BackupScreen
 import io.github.arpit92k.fortuna.settings.BackupViewModel
 import io.github.arpit92k.fortuna.settings.CurrenciesScreen
 import io.github.arpit92k.fortuna.settings.CurrenciesViewModel
 import io.github.arpit92k.fortuna.settings.CategoriesViewModel
+import io.github.arpit92k.fortuna.settings.ImportViewModel
 import io.github.arpit92k.fortuna.settings.SettingsScreen
 import io.github.arpit92k.fortuna.setup.RestoreViewModel
 import io.github.arpit92k.fortuna.setup.SetupFlow
@@ -96,6 +98,7 @@ class Screens(
     val report: BugReportViewModel,
     val biometrics: BiometricsViewModel,
     val categories: CategoriesViewModel? = null,
+    val importer: ImportViewModel? = null,
 )
 
 /**
@@ -352,9 +355,33 @@ private fun UnlockedApp(core: Core, screens: Screens) {
             closedCount = dataset?.sources?.count { it.status == Status.ARCHIVED } ?: 0,
             onClosed = { navigator.open(Destination.ClosedSources) },
             onCategories = { navigator.open(Destination.Categories) },
+            onImport = { navigator.open(Destination.Import) },
             onAbout = { navigator.open(Destination.About()) },
             onBack = tryLeave,
         )
+        Destination.Import -> {
+            val importer = screens.importer ?: return
+            val step by importer.step.collectAsState()
+            val base = dataset?.baseCurrency ?: return
+            // The system pickers: the user chooses where the template goes, and which file to read.
+            val saveTemplate = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument(CSV_TYPE)) { uri ->
+                importer.saveTemplate(uri?.toString())
+            }
+            val chooseFile = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+                importer.fileChosen(uri?.toString())
+            }
+            ImportScreen(
+                step = step,
+                base = base,
+                onSaveTemplate = { saveTemplate.launch(importer.templateName) },
+                onChooseFile = { chooseFile.launch(arrayOf("text/*", "application/vnd.ms-excel", "application/octet-stream")) },
+                onReplace = importer::replace,
+                onRate = importer::rate,
+                onConfirm = importer::confirm,
+                onReset = importer::reset,
+                onBack = tryLeave,
+            )
+        }
         Destination.Categories -> {
             val categories = screens.categories ?: return
             val ui by categories.ui.collectAsState()
@@ -472,6 +499,7 @@ private fun UnlockedApp(core: Core, screens: Screens) {
 
 /** A backup is not a type the phone knows, so it is saved as plain bytes. */
 private const val BACKUP_TYPE = "application/octet-stream"
+private const val CSV_TYPE = "text/csv"
 
 /** Whether [current] has something typed and not saved, which leaving would lose. */
 private fun hasUnsavedInput(current: Destination, screens: Screens): Boolean = when (current) {
@@ -491,6 +519,7 @@ private fun leave(current: Destination, screens: Screens) {
         Destination.Update -> screens.update.finish()
         Destination.Currencies -> screens.currencies.clearProblem()
         Destination.Categories -> screens.categories?.clearProblem()
+        Destination.Import -> screens.importer?.reset()
         Destination.Backup -> screens.backup.clearMessage()
         // Done, Skip or back: the tour is not shown again.
         is Destination.About -> screens.about.markSeen()

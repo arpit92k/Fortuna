@@ -30,6 +30,7 @@ import io.github.arpit92k.fortuna.navigation.Navigator
 import io.github.arpit92k.fortuna.settings.BackupViewModel
 import io.github.arpit92k.fortuna.settings.CurrenciesViewModel
 import io.github.arpit92k.fortuna.settings.CategoriesViewModel
+import io.github.arpit92k.fortuna.settings.ImportViewModel
 import io.github.arpit92k.fortuna.setup.RestoreViewModel
 import io.github.arpit92k.fortuna.setup.SetupViewModel
 import io.github.arpit92k.fortuna.source.AddSourceViewModel
@@ -109,6 +110,7 @@ class MainActivity : FragmentActivity() {
                 biometrics = viewModel { BiometricsViewModel(core, biometrics) },
                 report = viewModel { BugReportViewModel((application as FortunaApplication).crashes, deviceInfo()) },
                 categories = viewModel { CategoriesViewModel(core) },
+                importer = viewModel { ImportViewModel(core, files) },
             )
             Box {
                 FortunaApp(core, screens)

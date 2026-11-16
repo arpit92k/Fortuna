@@ -88,6 +88,7 @@ fun SettingsScreen(
     closedCount: Int = 0,
     onClosed: () -> Unit = {},
     onCategories: () -> Unit = {},
+    onImport: () -> Unit = {},
 ) {
     Page(stringResource(R.string.settings_title), onBack, "settings") {
         // Scrolls once the items do not fit, as on a phone turned sideways.
@@ -155,6 +156,14 @@ fun SettingsScreen(
                 stringResource(R.string.settings_categories_body),
                 onCategories,
                 "settings-categories",
+            )
+            HorizontalDivider()
+            SettingsItem(
+                FortunaIcon.Restore,
+                stringResource(R.string.settings_import),
+                stringResource(R.string.settings_import_body),
+                onImport,
+                "settings-import",
             )
             HorizontalDivider()
             if (closedCount > 0) {
